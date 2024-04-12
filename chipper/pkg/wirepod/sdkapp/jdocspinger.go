@@ -11,9 +11,9 @@ import (
 	"time"
 
 	"github.com/fforchino/vector-go-sdk/pkg/vectorpb"
-	"github.com/kercre123/wire-pod/chipper/pkg/logger"
-	"github.com/kercre123/wire-pod/chipper/pkg/mdnshandler"
-	"github.com/kercre123/wire-pod/chipper/pkg/vars"
+	"github.com/wangergou2023/xiao_wan/chipper/pkg/logger"
+	"github.com/wangergou2023/xiao_wan/chipper/pkg/mdnshandler"
+	"github.com/wangergou2023/xiao_wan/chipper/pkg/vars"
 	"github.com/kercre123/zeroconf"
 )
 

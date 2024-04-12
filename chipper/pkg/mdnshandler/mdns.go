@@ -7,8 +7,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/kercre123/wire-pod/chipper/pkg/logger"
-	botsetup "github.com/kercre123/wire-pod/chipper/pkg/wirepod/setup"
+	"github.com/wangergou2023/xiao_wan/chipper/pkg/logger"
+	botsetup "github.com/wangergou2023/xiao_wan/chipper/pkg/wirepod/setup"
 	"github.com/kercre123/zeroconf"
 )
 

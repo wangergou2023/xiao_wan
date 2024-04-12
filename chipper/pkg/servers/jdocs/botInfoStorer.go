@@ -10,8 +10,8 @@ import (
 	"os"
 	"strings"
 
-	"github.com/kercre123/wire-pod/chipper/pkg/logger"
-	"github.com/kercre123/wire-pod/chipper/pkg/vars"
+	"github.com/wangergou2023/xiao_wan/chipper/pkg/logger"
+	"github.com/wangergou2023/xiao_wan/chipper/pkg/vars"
 	"google.golang.org/grpc/peer"
 	"gopkg.in/ini.v1"
 )

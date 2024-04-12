@@ -9,9 +9,9 @@ import (
 	"strings"
 
 	whisper "github.com/ggerganov/whisper.cpp/bindings/go"
-	"github.com/kercre123/wire-pod/chipper/pkg/logger"
-	"github.com/kercre123/wire-pod/chipper/pkg/vars"
-	sr "github.com/kercre123/wire-pod/chipper/pkg/wirepod/speechrequest"
+	"github.com/wangergou2023/xiao_wan/chipper/pkg/logger"
+	"github.com/wangergou2023/xiao_wan/chipper/pkg/vars"
+	sr "github.com/wangergou2023/xiao_wan/chipper/pkg/wirepod/speechrequest"
 )
 
 var Name string = "whisper.cpp"

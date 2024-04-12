@@ -4,8 +4,8 @@ import (
 	"time"
 
 	pb "github.com/digital-dream-labs/api/go/chipperpb"
-	"github.com/kercre123/wire-pod/chipper/pkg/logger"
-	"github.com/kercre123/wire-pod/chipper/pkg/vtt"
+	"github.com/wangergou2023/xiao_wan/chipper/pkg/logger"
+	"github.com/wangergou2023/xiao_wan/chipper/pkg/vtt"
 )
 
 // StreamingKnowledgeGraph is used for knowledge graph request/responses
