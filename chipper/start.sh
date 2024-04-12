@@ -1,5 +1,5 @@
 #!/bin/bash
-
+set -x
 UNAME=$(uname -a)
 
 if [[ $EUID -ne 0 ]]; then
@@ -26,6 +26,14 @@ if [[ ! -f ./source.sh ]]; then
 fi
 
 source source.sh
+
+rm -f ./plugins/xiao_wan/plugins/compiled/*.so
+# 机器人控制插件
+/usr/local/go/bin/go build -buildmode=plugin -o ./plugins/xiao_wan/plugins/compiled/eyes.so ./plugins/xiao_wan/plugins/source/vector/eyes/plugin.go
+# 外部插件
+/usr/local/go/bin/go build -buildmode=plugin -o ./plugins/xiao_wan/plugins/compiled/memory.so ./plugins/xiao_wan/plugins/source/builtin/memory/plugin.go
+/usr/local/go/bin/go build -buildmode=plugin -o ./plugins/xiao_wan/plugins/compiled/time.so ./plugins/xiao_wan/plugins/source/builtin/time/plugin.go
+/usr/local/go/bin/go build -buildmode=plugin -o ./plugins/xiao_wan/plugins/compiled/weather.so ./plugins/xiao_wan/plugins/source/builtin/weather/plugin.go
 
 #./chipper
 if [[ ${STT_SERVICE} == "leopard" ]]; then
