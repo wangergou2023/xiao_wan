@@ -27,14 +27,6 @@ fi
 
 source source.sh
 
-rm -f ./plugins/xiao_wan/plugins/compiled/*.so
-# 机器人控制插件
-/usr/local/go/bin/go build -buildmode=plugin -o ./plugins/xiao_wan/plugins/compiled/eyes.so ./plugins/xiao_wan/plugins/source/vector/eyes/plugin.go
-# 外部插件
-/usr/local/go/bin/go build -buildmode=plugin -o ./plugins/xiao_wan/plugins/compiled/memory.so ./plugins/xiao_wan/plugins/source/builtin/memory/plugin.go
-/usr/local/go/bin/go build -buildmode=plugin -o ./plugins/xiao_wan/plugins/compiled/time.so ./plugins/xiao_wan/plugins/source/builtin/time/plugin.go
-/usr/local/go/bin/go build -buildmode=plugin -o ./plugins/xiao_wan/plugins/compiled/weather.so ./plugins/xiao_wan/plugins/source/builtin/weather/plugin.go
-
 #./chipper
 if [[ ${STT_SERVICE} == "leopard" ]]; then
 	if [[ -f ./chipper ]]; then
@@ -78,6 +70,14 @@ elif [[ ${STT_SERVICE} == "whisper.cpp" ]]; then
       export GGML_METAL_PATH_RESOURCES="../whisper.cpp"
       /usr/local/go/bin/go run -ldflags "-extldflags '-framework Foundation -framework Metal -framework MetalKit'" cmd/experimental/whisper.cpp/main.go
     else
+      rm -f ./plugins/xiao_wan/plugins/compiled/*.so
+      # 机器人控制插件
+      /usr/local/go/bin/go build -buildmode=plugin -o ./plugins/xiao_wan/plugins/compiled/eyes.so ./plugins/xiao_wan/plugins/source/vector/eyes/plugin.go
+      # 外部插件
+      /usr/local/go/bin/go build -buildmode=plugin -o ./plugins/xiao_wan/plugins/compiled/memory.so ./plugins/xiao_wan/plugins/source/builtin/memory/plugin.go
+      /usr/local/go/bin/go build -buildmode=plugin -o ./plugins/xiao_wan/plugins/compiled/time.so ./plugins/xiao_wan/plugins/source/builtin/time/plugin.go
+      /usr/local/go/bin/go build -buildmode=plugin -o ./plugins/xiao_wan/plugins/compiled/weather.so ./plugins/xiao_wan/plugins/source/builtin/weather/plugin.go
+
       /usr/local/go/bin/go run cmd/experimental/whisper.cpp/main.go
     fi
   fi

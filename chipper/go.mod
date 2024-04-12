@@ -18,6 +18,7 @@ require (
 	github.com/kercre123/vosk-api/go v1.0.2
 	github.com/kercre123/zeroconf v1.0.1
 	github.com/maxhawkins/go-webrtcvad v0.0.0-20210121163624-be60036f3083
+	github.com/milvus-io/milvus-sdk-go/v2 v2.3.6
 	github.com/ncruces/zenity v0.10.10
 	github.com/orcaman/writerseeker v0.0.0-20200621085525-1d3f536ff85e
 	github.com/pkg/errors v0.9.1
@@ -36,7 +37,6 @@ require (
 	github.com/akavel/rsrc v0.10.2 // indirect
 	github.com/alecthomas/template v0.0.0-20160405071501-a0175ee3bccc // indirect
 	github.com/alecthomas/units v0.0.0-20151022065526-2efee857e7cf // indirect
-	github.com/alphacep/vosk-api/go v0.3.46 // indirect
 	github.com/bregydoc/gtranslate v0.0.0-20200913051839-1bd07f6c1fc5 // indirect
 	github.com/cenkalti/backoff v2.2.1+incompatible // indirect
 	github.com/cockroachdb/errors v1.9.1 // indirect
@@ -64,13 +64,11 @@ require (
 	github.com/jbenet/go-base58 v0.0.0-20150317085156-6237cf65f3a6 // indirect
 	github.com/jdkato/prose v1.2.1 // indirect
 	github.com/josephspurrier/goversioninfo v1.4.0 // indirect
-	github.com/kercre123/vosk-api v1.0.1 // indirect
 	github.com/kr/pretty v0.3.0 // indirect
 	github.com/kr/text v0.2.0 // indirect
 	github.com/magiconair/properties v1.8.1 // indirect
 	github.com/miekg/dns v1.1.41 // indirect
 	github.com/milvus-io/milvus-proto/go-api/v2 v2.3.5 // indirect
-	github.com/milvus-io/milvus-sdk-go/v2 v2.3.6 // indirect
 	github.com/mitchellh/mapstructure v1.4.3 // indirect
 	github.com/nfnt/resize v0.0.0-20180221191011-83c6a9932646 // indirect
 	github.com/pelletier/go-toml v1.8.0 // indirect

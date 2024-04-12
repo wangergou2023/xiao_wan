@@ -71,5 +71,7 @@ func New(InitFunc func() error, SttHandler interface{}, voiceProcessor string) (
 	// Load plugins
 	ttr.LoadPlugins()
 
+	// ttr.Xiao_wan_test("你好啊")
+
 	return &Server{}, err
 }
