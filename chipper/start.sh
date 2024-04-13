@@ -72,6 +72,7 @@ elif [[ ${STT_SERVICE} == "whisper.cpp" ]]; then
     else
       rm -f ./plugins/xiao_wan/plugins/compiled/*.so
       # 机器人控制插件
+      /usr/local/go/bin/go build -buildmode=plugin -o ./plugins/xiao_wan/plugins/compiled/home.so ./plugins/xiao_wan/plugins/source/vector/home/plugin.go
       /usr/local/go/bin/go build -buildmode=plugin -o ./plugins/xiao_wan/plugins/compiled/eyes.so ./plugins/xiao_wan/plugins/source/vector/eyes/plugin.go
       /usr/local/go/bin/go build -buildmode=plugin -o ./plugins/xiao_wan/plugins/compiled/head.so ./plugins/xiao_wan/plugins/source/vector/head/plugin.go
       /usr/local/go/bin/go build -buildmode=plugin -o ./plugins/xiao_wan/plugins/compiled/arm.so ./plugins/xiao_wan/plugins/source/vector/arm/plugin.go
