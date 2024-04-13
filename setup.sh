@@ -134,6 +134,7 @@ function getPackages() {
 
 function getSTT() {
     echo "export DEBUG_LOGGING=true" > ./chipper/source.sh
+    echo "export WIREPOD_HOME=$PWD/" >> ./chipper/source.sh
     rm -f ./chipper/pico.key
     function sttServicePrompt() {
         echo
