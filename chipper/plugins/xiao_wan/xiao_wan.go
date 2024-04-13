@@ -142,7 +142,7 @@ func (xiao_wan Xiao_wan) sendRequestToOpenAI() (*openai.ChatCompletionResponse, 
 	resp, err := xiao_wan.Client.CreateChatCompletion(
 		context.Background(),
 		openai.ChatCompletionRequest{
-			Model:        openai.GPT3Dot5Turbo0613,
+			Model:        openai.GPT4Turbo,
 			Messages:     conversation,
 			Functions:    xiao_wan.functionDefinitions,
 			FunctionCall: "auto",
