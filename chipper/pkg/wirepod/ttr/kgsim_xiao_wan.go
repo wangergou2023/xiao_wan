@@ -81,6 +81,7 @@ func Xiao_wan_start(transcribedText string) (string, error) {
 	config.BaseURL = cfg.OpenAibaseURL()
 	openaiClient := openai.NewClientWithConfig(config)
 
+	xiao_wan.SystemPrompt = CreatePrompt(xiao_wan.SystemPrompt)
 	xiao_wan_vector = xiao_wan.Start(cfg, openaiClient)
 
 	// xiao_wan_vector.Message(transcribedText)
@@ -91,8 +92,109 @@ func Xiao_wan_start(transcribedText string) (string, error) {
 func StreamingKGSim_xiao_wan(req interface{}, esn string, transcribedText string) (string, error) {
 
 	sdk_wrapper.InitSDKForWirepod(esn)
-	xiao_wan_vector.Message(transcribedText)
+	response, err := xiao_wan_vector.Message(transcribedText)
+	if err != nil {
+		return "", err
+	}
 
+	// 初始化匹配标志为假
+	matched := false
+	var robot *vector.Vector // 声明一个向量机器人类型的指针变量
+	var guid string          // 机器人的全局唯一标识符
+	var target string        // 机器人的目标IP和端口字符串
+
+	// 遍历所有已知的机器人信息
+	for _, bot := range vars.BotInfo.Robots {
+		if esn == bot.Esn { // 如果找到与提供的ESN匹配的机器人
+			guid = bot.GUID                 // 获取该机器人的GUID
+			target = bot.IPAddress + ":443" // 设置目标IP和端口，端口固定为443
+			matched = true                  // 设置匹配标志为真
+			break                           // 找到匹配项后退出循环
+		}
+	}
+
+	// 如果成功匹配到机器人
+	if matched {
+		var err error
+		// 尝试创建一个新的机器人连接实例
+		robot, err = vector.New(vector.WithSerialNo(esn), vector.WithToken(guid), vector.WithTarget(target))
+		if err != nil {
+			return err.Error(), err // 如果创建失败，返回错误
+		}
+	}
+
+	// 设置行为控制请求的数据结构
+	controlRequest := &vectorpb.BehaviorControlRequest{
+		RequestType: &vectorpb.BehaviorControlRequest_ControlRequest{
+			ControlRequest: &vectorpb.ControlRequest{
+				Priority: vectorpb.ControlRequest_OVERRIDE_BEHAVIORS, // 请求优先级：覆盖当前行为
+			},
+		},
+	}
+
+	// 初始化开始和停止信号的通道
+	start := make(chan bool)
+	stop := make(chan bool)
+	ctx := context.Background()
+	// 启动一个goroutine来处理行为控制逻辑
+	go func() {
+		// 开始行为控制会话
+		r, err := robot.Conn.BehaviorControl(
+			ctx,
+		)
+		if err != nil {
+			log.Println(err)
+			return
+		}
+
+		// 发送行为控制请求
+		if err := r.Send(controlRequest); err != nil {
+			log.Println(err)
+			return
+		}
+
+		// 等待控制权限确认
+		for {
+			ctrlresp, err := r.Recv()
+			if err != nil {
+				log.Println(err)
+				return
+			}
+			if ctrlresp.GetControlGrantedResponse() != nil {
+				start <- true // 接收到控制权限后，发送开始信号
+				break
+			}
+		}
+
+		// 持续监听停止信号，以便随时释放控制
+		for {
+			select {
+			case <-stop:
+				logger.Println("KGSim: releasing behavior control (interrupt)")
+				if err := r.Send(
+					&vectorpb.BehaviorControlRequest{
+						RequestType: &vectorpb.BehaviorControlRequest_ControlRelease{
+							ControlRelease: &vectorpb.ControlRelease{}, // 发送行为控制释放请求
+						},
+					},
+				); err != nil {
+					logger.Println(err)
+					return
+				}
+				return
+			default:
+				continue
+			}
+		}
+	}()
+	for range start {
+		time.Sleep(time.Millisecond * 300)
+		// DoPlayAnimation("veryHappy", robot)
+
+		acts := GetActionsFromString(response)
+		PerformActions(acts, robot)
+		stop <- true
+	}
 	return "", nil
 }
 

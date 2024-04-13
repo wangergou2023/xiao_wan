@@ -23,7 +23,7 @@ type Xiao_wan struct {
 }
 
 // 定义系统提示信息，指导如何使用AI助手
-var systemPrompt = `
+var SystemPrompt = `
 你是一个名为小丸的多才多艺的AI助手。你启动时的首要任务是“激活”你的记忆，即立即回忆并熟悉与用户及其偏好最相关的数据。这有助于个性化并增强用户互动。
 
 利用可用的插件套件提供最佳解决方案。你可以：
@@ -59,7 +59,7 @@ func resetConversation() {
 func (xiao_wan Xiao_wan) restartConversation() {
 	resetConversation() // 重置对话
 
-	appendMessage(openai.ChatMessageRoleSystem, systemPrompt, "") // 添加系统提示到对话
+	appendMessage(openai.ChatMessageRoleSystem, SystemPrompt, "") // 添加系统提示到对话
 
 	response, err := xiao_wan.sendMessage() // 发送系统提示到OpenAI并获取回复
 
