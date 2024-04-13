@@ -4,6 +4,7 @@ import (
 	"crypto/x509"
 	"encoding/json"
 	"encoding/pem"
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -11,8 +12,9 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/wangergou2023/xiao_wan/chipper/pkg/logger"
+	"github.com/fforchino/vector-go-sdk/pkg/vector"
 	"github.com/sashabaranov/go-openai"
+	"github.com/wangergou2023/xiao_wan/chipper/pkg/logger"
 )
 
 // initialize variables so they don't have to be found during runtime
@@ -416,4 +418,26 @@ func LoadChats() {
 		return
 	}
 	json.Unmarshal(file, &RememberedChats)
+}
+
+func GetRobot(esn string) (*vector.Vector, error) {
+	var guid string
+	var target string
+	matched := false
+	for _, bot := range BotInfo.Robots {
+		if esn == bot.Esn {
+			guid = bot.GUID
+			target = bot.IPAddress + ":443"
+			matched = true
+			break
+		}
+	}
+	if !matched {
+		return nil, errors.New("robot not in botsdkinfo")
+	}
+	robot, err := vector.New(vector.WithSerialNo(esn), vector.WithToken(guid), vector.WithTarget(target))
+	if err != nil {
+		return nil, err
+	}
+	return robot, nil
 }
