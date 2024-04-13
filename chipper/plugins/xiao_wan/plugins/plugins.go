@@ -9,8 +9,8 @@ import (
 	"plugin"        // 支持从共享库动态加载代码
 	"runtime"
 
-	config "github.com/wangergou2023/xiao_wan/chipper/plugins/xiao_wan/config" // 配置包
 	"github.com/sashabaranov/go-openai"                                        // OpenAI GPT库
+	config "github.com/wangergou2023/xiao_wan/chipper/plugins/xiao_wan/config" // 配置包
 )
 
 // 已加载插件的映射，键为插件ID，值为插件实例
@@ -94,6 +94,8 @@ func loadSinglePlugin(path string, cfg config.Cfg, openaiClient *openai.Client) 
 // CallPlugin函数通过ID查找插件并执行
 func CallPlugin(id string, jsonInput string) (string, error) {
 	response := PluginResponse{}
+
+	fmt.Println("CallPlugin", id, jsonInput)
 
 	plugin, exists := GetPluginByID(id) // 查找插件
 	if !exists {

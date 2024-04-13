@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	sdk_wrapper "github.com/fforchino/vector-go-sdk/pkg/sdk-wrapper"
 	"github.com/fforchino/vector-go-sdk/pkg/vector"
 	"github.com/fforchino/vector-go-sdk/pkg/vectorpb"
 	"github.com/sashabaranov/go-openai"
@@ -89,6 +90,7 @@ func Xiao_wan_start(transcribedText string) (string, error) {
 
 func StreamingKGSim_xiao_wan(req interface{}, esn string, transcribedText string) (string, error) {
 
+	sdk_wrapper.InitSDKForWirepod(esn)
 	xiao_wan_vector.Message(transcribedText)
 
 	return "", nil

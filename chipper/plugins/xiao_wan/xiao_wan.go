@@ -110,8 +110,9 @@ func (xiao_wan Xiao_wan) sendMessage() (string, error) {
 func (xiao_wan Xiao_wan) handleFunctionCall(resp *openai.ChatCompletionResponse) (string, error) {
 
 	funcName := resp.Choices[0].Message.FunctionCall.Name // 获取函数名称
-	ok := plugins.IsPluginLoaded(funcName)                // 检查是否加载了相应插件
-
+	fmt.Println("获取函数名称", funcName)
+	ok := plugins.IsPluginLoaded(funcName) // 检查是否加载了相应插件
+	fmt.Println("检查是否加载了相应插件", ok)
 	if !ok {
 		return "", fmt.Errorf("no plugin loaded with name %v", funcName)
 	}
