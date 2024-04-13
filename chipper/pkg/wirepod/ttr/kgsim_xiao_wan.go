@@ -71,28 +71,23 @@ func remember(user, ai, esn string) {
 
 var cfg = xiao_wan_config.New()
 
-func Xiao_wan_test(transcribedText string) (string, error) {
+var xiao_wan_vector xiao_wan.Xiao_wan
+
+func Xiao_wan_start(transcribedText string) (string, error) {
 
 	config := openai.DefaultConfig(cfg.OpenAiAPIKey())
 	//need"/v1"
 	config.BaseURL = cfg.OpenAibaseURL()
 	openaiClient := openai.NewClientWithConfig(config)
 
-	xiao_wan_vector := xiao_wan.Start(cfg, openaiClient)
+	xiao_wan_vector = xiao_wan.Start(cfg, openaiClient)
 
-	xiao_wan_vector.Message(transcribedText)
+	// xiao_wan_vector.Message(transcribedText)
 
 	return "", nil
 }
 
 func StreamingKGSim_xiao_wan(req interface{}, esn string, transcribedText string) (string, error) {
-
-	config := openai.DefaultConfig(cfg.OpenAiAPIKey())
-	//need"/v1"
-	config.BaseURL = cfg.OpenAibaseURL()
-	openaiClient := openai.NewClientWithConfig(config)
-
-	xiao_wan_vector := xiao_wan.Start(cfg, openaiClient)
 
 	xiao_wan_vector.Message(transcribedText)
 

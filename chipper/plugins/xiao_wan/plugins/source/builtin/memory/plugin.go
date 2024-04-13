@@ -296,7 +296,7 @@ func (c Memory) initMilvusSchema() error {
 	if exists, _ := c.milvusClient.HasCollection(context.Background(), c.cfg.MalvusCollectionName()); !exists {
 		schema := &entity.Schema{
 			CollectionName: c.cfg.MalvusCollectionName(),
-			Description:    "Clara's long term memory",
+			Description:    "xiao wan's long term memory",
 			Fields: []*entity.Field{
 				{
 					Name:       "memory_id",

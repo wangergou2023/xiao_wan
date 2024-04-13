@@ -16,7 +16,7 @@ import (
 )
 
 // 定义助手结构体，包括配置、OpenAI客户端、函数定义和聊天界面
-type xiao_wan struct {
+type Xiao_wan struct {
 	cfg                 config.Cfg
 	Client              *openai.Client
 	functionDefinitions []openai.FunctionDefinition
@@ -56,7 +56,7 @@ func resetConversation() {
 }
 
 // restartConversation函数用于重置并重新开始对话
-func (xiao_wan xiao_wan) restartConversation() {
+func (xiao_wan Xiao_wan) restartConversation() {
 	resetConversation() // 重置对话
 
 	appendMessage(openai.ChatMessageRoleSystem, systemPrompt, "") // 添加系统提示到对话
@@ -71,7 +71,7 @@ func (xiao_wan xiao_wan) restartConversation() {
 }
 
 // Message函数用于处理用户消息
-func (xiao_wan xiao_wan) Message(message string) (string, error) {
+func (xiao_wan Xiao_wan) Message(message string) (string, error) {
 
 	appendMessage(openai.ChatMessageRoleUser, message, "") // 添加用户消息到对话
 
@@ -82,13 +82,13 @@ func (xiao_wan xiao_wan) Message(message string) (string, error) {
 	}
 
 	appendMessage(openai.ChatMessageRoleAssistant, response, "") // 添加助手回复到对话
-	fmt.Printf("Clara:%s\r\n", response)
+	fmt.Printf("xiao wan:%s\r\n", response)
 
 	return response, nil
 }
 
 // sendMessage函数用于向OpenAI发送请求并获取回复
-func (xiao_wan xiao_wan) sendMessage() (string, error) {
+func (xiao_wan Xiao_wan) sendMessage() (string, error) {
 	resp, err := xiao_wan.sendRequestToOpenAI() // 发送请求到OpenAI
 
 	if err != nil {
@@ -107,7 +107,7 @@ func (xiao_wan xiao_wan) sendMessage() (string, error) {
 }
 
 // handleFunctionCall函数用于处理OpenAI回复中的函数调用
-func (xiao_wan xiao_wan) handleFunctionCall(resp *openai.ChatCompletionResponse) (string, error) {
+func (xiao_wan Xiao_wan) handleFunctionCall(resp *openai.ChatCompletionResponse) (string, error) {
 
 	funcName := resp.Choices[0].Message.FunctionCall.Name // 获取函数名称
 	ok := plugins.IsPluginLoaded(funcName)                // 检查是否加载了相应插件
@@ -137,7 +137,7 @@ func (xiao_wan xiao_wan) handleFunctionCall(resp *openai.ChatCompletionResponse)
 }
 
 // sendRequestToOpenAI函数用于向OpenAI发送请求
-func (xiao_wan xiao_wan) sendRequestToOpenAI() (*openai.ChatCompletionResponse, error) {
+func (xiao_wan Xiao_wan) sendRequestToOpenAI() (*openai.ChatCompletionResponse, error) {
 	resp, err := xiao_wan.Client.CreateChatCompletion(
 		context.Background(),
 		openai.ChatCompletionRequest{
@@ -156,12 +156,12 @@ func (xiao_wan xiao_wan) sendRequestToOpenAI() (*openai.ChatCompletionResponse, 
 }
 
 // Start函数用于启动助手
-func Start(cfg config.Cfg, openaiClient *openai.Client) xiao_wan {
+func Start(cfg config.Cfg, openaiClient *openai.Client) Xiao_wan {
 	if err := plugins.LoadPlugins(cfg, openaiClient); err != nil {
 		fmt.Printf("Error loading plugins: %v", err)
 	}
 	fmt.Println("Plugins loaded successfully")
-	xiao_wan := xiao_wan{
+	xiao_wan := Xiao_wan{
 		cfg:                 cfg,
 		Client:              openaiClient,
 		functionDefinitions: plugins.GenerateOpenAIFunctionsDefinition(),
@@ -195,7 +195,7 @@ func parseOpenAIError(err error) *OpenAIError {
 }
 
 // openaiError函数用于处理OpenAI错误
-func (xiao_wan xiao_wan) openaiError(err error) {
+func (xiao_wan Xiao_wan) openaiError(err error) {
 	parsedError := parseOpenAIError(err)
 
 	switch parsedError.StatusCode {
