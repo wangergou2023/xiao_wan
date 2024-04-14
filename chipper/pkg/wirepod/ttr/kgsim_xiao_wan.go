@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"regexp"
 	"strings"
 	"time"
 
@@ -81,7 +82,11 @@ func Xiao_wan_start(transcribedText string) (string, error) {
 	config.BaseURL = cfg.OpenAibaseURL()
 	openaiClient := openai.NewClientWithConfig(config)
 
-	xiao_wan.SystemPrompt = CreatePrompt(xiao_wan.SystemPrompt)
+	xiao_wan.SystemPrompt = CreatePrompt_xiao_wan(xiao_wan.SystemPrompt)
+	xiao_wan.SystemPrompt += "\n使用中文回答"
+	// xiao_wan.SystemPrompt += "\nAnswer in English"
+	fmt.Println("SystemPrompt>>>>>>>>>>>>>>>>>>>>>" + xiao_wan.SystemPrompt)
+	fmt.Println("<<<<<<<<<<<<<<<<<<<<<<SystemPrompt")
 	xiao_wan_vector = xiao_wan.Start(cfg, openaiClient)
 
 	// xiao_wan_vector.Message(transcribedText)
@@ -95,6 +100,16 @@ func StreamingKGSim_xiao_wan(req interface{}, esn string, transcribedText string
 	response, err := xiao_wan_vector.Message(transcribedText)
 	if err != nil {
 		return "", err
+	}
+	// 移除换行符
+	cleanedMatch := strings.ReplaceAll(response, "\n", "")
+	// 创建正则表达式，用于匹配{{...}}及其后的文本直到下一个{{或文本结束
+	re := regexp.MustCompile(`\{\{[^}]*\}\}[^{]*`)
+	matches := re.FindAllString(cleanedMatch, -1) // 使用正则表达式找到所有匹配的段落
+
+	// 输出匹配到的每个段落
+	for _, match := range matches {
+		fmt.Println("分割后的句子:" + strings.TrimSpace(match))
 	}
 
 	// 初始化匹配标志为假
@@ -189,10 +204,9 @@ func StreamingKGSim_xiao_wan(req interface{}, esn string, transcribedText string
 	}()
 	for range start {
 		time.Sleep(time.Millisecond * 300)
-		// DoPlayAnimation("veryHappy", robot)
-
-		acts := GetActionsFromString(response)
-		PerformActions(acts, robot)
+		// DoPlayAnimation_xiao_wan("veryHappy", robot)
+		acts := GetActionsFromString_xiao_wan(response)
+		PerformActions_xiao_wan(acts, robot)
 		stop <- true
 	}
 	return "", nil
