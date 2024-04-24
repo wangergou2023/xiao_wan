@@ -83,7 +83,12 @@ func Xiao_wan_start(transcribedText string) (string, error) {
 	openaiClient := openai.NewClientWithConfig(config)
 
 	xiao_wan.SystemPrompt = CreatePrompt_xiao_wan(xiao_wan.SystemPrompt)
-	xiao_wan.SystemPrompt += "\n使用中文回答"
+	xiao_wan.SystemPrompt += `\n
+* 补充:请遵守下面的定律
+~~~
+机器人三大定律即：1、机器人不得伤害人类，或者目睹人类遭受危险而袖手旁观;2、在不违反第一定律的前提下，机器人必须服从人给予它的命令;3、机器人在不违反第一、第二定律的情况下要尽力保护自己。
+~~~
+`
 	// xiao_wan.SystemPrompt += "\nAnswer in English"
 	fmt.Println("SystemPrompt>>>>>>>>>>>>>>>>>>>>>" + xiao_wan.SystemPrompt)
 	fmt.Println("<<<<<<<<<<<<<<<<<<<<<<SystemPrompt")

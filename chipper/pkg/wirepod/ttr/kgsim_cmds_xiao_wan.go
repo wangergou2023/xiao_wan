@@ -114,12 +114,14 @@ var ValidLLMCommands_xiao_wan []LLMCommand_xiao_wan = []LLMCommand_xiao_wan{ // 
 }
 
 func CreatePrompt_xiao_wan(origPrompt string) string { // 创建提示函数，输入原始提示字符串，输出加工后的提示字符串
-	prompt := origPrompt + "\n\n" + "The user input might not be spelt/puntuated correctly as it is coming from speech-to-text software. Do not include special characters in your answer. This includes the following characters (not including the quotes): '& ^ * # @ -'. If you want to use a hyphen, Use it like this: 'something something -- something -- something something'."
+	prompt := origPrompt + "\n\n" + "用户的输入可能由于使用了语音转文字软件而拼写或标点不正确。请不要在你的回答中包含特殊字符，这包括以下字符（引号内的除外）：'& ^ * # @ -'。如果你想使用连字符，请这样使用：'某事某事 -- 某事 -- 某事某事'"
 	if vars.APIConfig.Knowledge.CommandsEnable { // 如果配置允许使用命令
-		prompt = prompt + "\n\n" + "You are running ON an Anki Vector robot. You have a set of commands. YOU ARE TO USE THESE. DO NOT BE AFRAID TO LITTER YOUR RESPONSE WITH THEM. Your response MUST include THREE OF THESE COMMANDS OR MORE. You are going to litter your response with them. If you include just one, I will make you start over. If you include an emoji, I will make you start over. If you want to use a command but it doesn't exist or your desired parameter isn't in the list, avoid using the command. The format is {{command||parameter}}. You can embed these in sentences. Example: \"User: How are you feeling? | Response: \"{{playAnimationWI||sad}} I'm feeling sad...\"\n\nDO NOT USE EMOJIS! Use the playAnimation or playAnimationWI commands if you want to express emotion! IF YOU DO NOT ABIDE BY THESE RULES, I WILL CANCEL YOUR RESPONSE AND WILL MAKE YOU START OVER. You are very animated and good at following instructions. Animation takes precedence over words. You are to include many animations in your response.\n\nHere is every valid command:"
+		prompt = prompt + "\n\n" + `你正在操作一个Anki Vector机器人。你有一组命令可以使用。你应该使用这些命令。不要害怕在你的回答中频繁使用它们。你的回答必须包含三个或更多这些命令。你将在你的回答中频繁使用它们。如果你只包含一个命令，我将让你重新开始。如果你包含表情符号，我也会让你重新开始。如果你想使用一个命令但它不存在或你想要的参数不在列表中，请避免使用该命令。格式是{{command||parameter}}。你可以将这些嵌入句子中。例如：“用户：你感觉如何？ | 回应：{{playAnimationWI||sad}}我感觉很难过...”
+		不要使用表情符号！如果你想表达情绪，请使用playAnimation或playAnimationWI命令！如果你不遵守这些规则，我将取消你的回应并让你重新开始。你非常生动且善于遵循指令。动画优先于文字。你的回应中应该包含许多动画
+		以下是所有有效的命令：`
 		for _, cmd := range ValidLLMCommands_xiao_wan { // 遍历有效命令列表，生成命令详细信息
-			promptAppendage := "\n\nCommand Name: " + cmd.Command + "\nDescription: " + cmd.Description + "\nParameter choices: " + cmd.ParamChoices // 生成单个命令的描述
-			prompt = prompt + promptAppendage                                                                                                        // 将命令描述添加到提示字符串
+			promptAppendage := "\n\n命令名称: " + cmd.Command + "\n描述: " + cmd.Description + "\n参数选择: " + cmd.ParamChoices // 生成单个命令的描述
+			prompt = prompt + promptAppendage                                                                          // 将命令描述添加到提示字符串
 		}
 	}
 	return prompt // 返回最终的提示字符串

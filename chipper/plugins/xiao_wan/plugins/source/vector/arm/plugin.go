@@ -85,7 +85,7 @@ func (a ArmControlPlugin) Execute(jsonInput string) (string, error) {
 				time.Sleep(time.Second * 1)
 				sdk_wrapper.MoveLift(0)
 				fmt.Println("正在举起")
-				downTimer.Reset(time.Second * 5) // 重新启动定时器
+				downTimer.Reset(time.Second * 3) // 重新启动定时器
 				go func() {
 					<-downTimer.C
 					// 定时器时间到，自动执行放下操作
