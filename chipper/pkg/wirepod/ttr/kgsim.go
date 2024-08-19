@@ -6,8 +6,13 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"regexp"
 	"strings"
 	"time"
+	"unicode"
+
+	"golang.org/x/text/transform"
+	"golang.org/x/text/unicode/norm"
 
 	"github.com/fforchino/vector-go-sdk/pkg/vector"
 	"github.com/fforchino/vector-go-sdk/pkg/vectorpb"
@@ -35,20 +40,13 @@ func PlaceChat(chat vars.RememberedChat) {
 		}
 	}
 	vars.RememberedChats = append(vars.RememberedChats, chat)
-	vars.SaveChats()
 }
 
 // remember last 16 lines of chat
-func Remember(user, ai, esn string) {
+func Remember(user, ai openai.ChatCompletionMessage, esn string) {
 	chatAppend := []openai.ChatCompletionMessage{
-		{
-			Role:    openai.ChatMessageRoleUser,
-			Content: user,
-		},
-		{
-			Role:    openai.ChatMessageRoleAssistant,
-			Content: ai,
-		},
+		user,
+		ai,
 	}
 	currentChat := GetChat(esn)
 	if len(currentChat.Chats) == 16 {
@@ -67,25 +65,56 @@ func Remember(user, ai, esn string) {
 	PlaceChat(currentChat)
 }
 
-func StreamingKGSim(req interface{}, esn string, transcribedText string) (string, error) {
-	var fullRespText string
-	var fullRespSlice []string
-	var isDone bool
-	var c *openai.Client
-	if vars.APIConfig.Knowledge.Provider == "together" {
-		if vars.APIConfig.Knowledge.Model == "" {
-			vars.APIConfig.Knowledge.Model = "meta-llama/Llama-2-70b-chat-hf"
-			vars.WriteConfigToDisk()
-		}
-		conf := openai.DefaultConfig(vars.APIConfig.Knowledge.Key)
-		conf.BaseURL = "https://api.together.xyz/v1"
-		c = openai.NewClientWithConfig(conf)
-	} else if vars.APIConfig.Knowledge.Provider == "openai" {
-		c = openai.NewClient(vars.APIConfig.Knowledge.Key)
-	}
-	ctx := context.Background()
-	speakReady := make(chan string)
+func isMn(r rune) bool {
+	return unicode.Is(unicode.Mn, r) // Mn: nonspacing marks
+}
 
+func removeSpecialCharacters(str string) string {
+
+	// these two lines create a transformation that decomposes characters, removes non-spacing marks (like diacritics), and then recomposes the characters, effectively removing special characters
+	t := transform.Chain(norm.NFD, transform.RemoveFunc(isMn), norm.NFC)
+	result, _, _ := transform.String(t, str)
+
+	// Define the regular expression to match special characters
+	re := regexp.MustCompile(`[&^*#@]`)
+
+	// Replace special characters with an empty string
+	result = removeEmojis(re.ReplaceAllString(result, ""))
+
+	// Replace special characters with ASCII
+	// * COPY/PASTE TO ADD MORE CHARACTERS:
+	//   result = strings.ReplaceAll(result, "", "")
+	result = strings.ReplaceAll(result, "‘", "'")
+	result = strings.ReplaceAll(result, "’", "'")
+	result = strings.ReplaceAll(result, "“", "\"")
+	result = strings.ReplaceAll(result, "”", "\"")
+	result = strings.ReplaceAll(result, "—", "-")
+	result = strings.ReplaceAll(result, "–", "-")
+	result = strings.ReplaceAll(result, "…", "...")
+	result = strings.ReplaceAll(result, "\u00A0", " ")
+	result = strings.ReplaceAll(result, "•", "*")
+	result = strings.ReplaceAll(result, "¼", "1/4")
+	result = strings.ReplaceAll(result, "½", "1/2")
+	result = strings.ReplaceAll(result, "¾", "3/4")
+	result = strings.ReplaceAll(result, "×", "x")
+	result = strings.ReplaceAll(result, "÷", "/")
+	result = strings.ReplaceAll(result, "ç", "c")
+	result = strings.ReplaceAll(result, "©", "(c)")
+	result = strings.ReplaceAll(result, "®", "(r)")
+	result = strings.ReplaceAll(result, "™", "(tm)")
+	result = strings.ReplaceAll(result, "@", "(a)")
+	result = strings.ReplaceAll(result, " AI ", " A. I. ")
+	return result
+}
+
+func removeEmojis(input string) string {
+	// a mess, but it works!
+	re := regexp.MustCompile(`[\x{1F600}-\x{1F64F}]|[\x{1F300}-\x{1F5FF}]|[\x{1F680}-\x{1F6FF}]|[\x{1F1E0}-\x{1F1FF}]|[\x{2600}-\x{26FF}]|[\x{2700}-\x{27BF}]|[\x{1F900}-\x{1F9FF}]|[\x{1F004}]|[\x{1F0CF}]|[\x{1F18E}]|[\x{1F191}-\x{1F251}]|[\x{1F004}-\x{1F0CF}]|[\x{1F191}-\x{1F251}]|[\x{2B50}]|[\x{1F004}-\x{1F0CF}]|[\x{1F191}-\x{1F251}]|[\x{2B50}]|[\x{1F004}-\x{1F0CF}]|[\x{1F191}-\x{1F251}]|[\x{2B50}]|[\x{1F004}-\x{1F0CF}]|[\x{1F191}-\x{1F251}]|[\x{2B50}]|[\x{1F004}-\x{1F0CF}]|[\x{1F191}-\x{1F251}]|[\x{2B50}]|[\x{1F004}-\x{1F0CF}]|[\x{1F191}-\x{1F251}]|[\x{2B50}]|[\x{1F004}-\x{1F0CF}]|[\x{1F191}-\x{1F251}]|[\x{2B50}]|[\x{1F004}-\x{1F0CF}]|[\x{1F191}-\x{1F251}]|[\x{2B50}]|[\x{1F004}-\x{1F0CF}]|[\x{1F191}-\x{1F251}]|[\x{2B50}]|[\x{1F004}-\x{1F0CF}]|[\x{1F191}-\x{1F251}]|[\x{2B50}]|[\x{1F004}-\x{1F0CF}]|[\x{1F191}-\x{1F251}]|[\x{2B50}]|[\x{1F004}-\x{1F0CF}]|[\x{1F191}-\x{1F251}]|[\x{2B50}]|[\x{1F004}-\x{1F0CF}]|[\x{1F191}-\x{1F251}]|[\x{2B50}]|[\x{1F004}-\x{1F0CF}]|[\x{1F191}-\x{1F251}]|[\x{2B50}]|[\x{1F004}-\x{1F0CF}]|[\x{1F191}-\x{1F251}]|[\x{2B50}]|[\x{1F004}-\x{1F0CF}]|[\x{1F191}-\x{1F251}]|[\x{2B50}]|[\x{1F004}-\x{1F0CF}]|[\x{1F191}-\x{1F251}]|[\x{2B50}]|[\x{1F004}-\x{1F0CF}]|[\x{1F191}-\x{1F251}]|[\x{2B50}]|[\x{1F004}-\x{1F0CF}]|[\x{1F191}-\x{1F251}]|[\x{2B50}]|[\x{1F004}-\x{1F0CF}]|[\x{1F191}-\x{1F251}]|[\x{2B50}]|[\x{1F004}-\x{1F0CF}]|[\x{1F191}-\x{1F251}]|[\x{2B50}]|[\x{1F004}-\x{1F0CF}]|[\x{1F191}-\x{1F251}]|[\x{2B50}]|[\x{1F004}-\x{1F0CF}]|[\x{1F191}-\x{1F251}]|[\x{2B50}]|[\x{1F004}-\x{1F0CF}]|[\x{1F191}-\x{1F251}]|[\x{2B50}]|[\x{1F004}-\x{1F0CF}]|[\x{1F191}-\x{1F251}]|[\x{2B50}]|[\x{1F004}-\x{1F0CF}]|[\x{1F191}-\x{1F251}]|[\x{2B50}]|[\x{1F004}-\x{1F0CF}]|[\x{1F191}-\x{1F251}]|[\x{2B50}]|[\x{1F004}-\x{1F0CF}]|[\x{1F191}-\x{1F251}]|[\x{2B50}]|[\x{1F004}-\x{1F0CF}]|[\x{1F191}-\x{1F251}]|[\x{2B50}]|[\x{1F004}-\x{1F0CF}]|[\x{1F191}-\x{1F251}]|[\x{2B50}]|[\x{1F004}-\x{1F0CF}]|[\x{1F191}-\x{1F251}]|[\x{2B50}]|[\x{1F004}-\x{1F0CF}]|[\x{1F191}-\x{1F251}]|[\x{2B50}]|[\x{1F004}-\x{1F0CF}]|[\x{1F191}-\x{1F251}]|[\x{2B50}]|[\x{1F004}-\x{1F0CF}]|[\x{1F191}-\x{1F251}]|[\x{2B50}]|[\x{1F004}-\x{1F0CF}]|[\x{1F191}-\x{1F251}]|[\x{2B50}]|[\x{1F004}-\x{1F0CF}]|[\x{1F191}-\x{1F251}]|[\x{2B50}]|[\x{1F004}-\x{1F0CF}]|[\x{1F191}-\x{1F251}]|[\x{2B50}]|[\x{1F004}-\x{1F0CF}]|[\x{1F191}-\x{1F251}]|[\x{2B50}]|[\x{1F004}-\x{1F0CF}]|[\x{1F191}-\x{1F251}]|[\x{2B50}]|[\x{1F004}-\x{1F0CF}]|[\x{1F191}-\x{1F251}]|[\x{2B50}]|[\x{1F004}-\x{1F0CF}]|[\x{1F191}-\x{1F251}]|[\x{2B50}]|[\x{1F004}-\x{1F0CF}]|[\x{1F191}-\x{1F251}]|[\x{2B50}]|[\x{1F004}-\x{1F0CF}]|[\x{1F191}-\x{1F251}]|[\x{2B50}]|[\x{1F004}-\x{1F0CF}]|[\x{1F191}-\x{1F251}]|[\x{2B50}]|[\x{1F004}-\x{1F0CF}]|[\x{1F191}-\x{1F251}]|[\x{2B50}]|[\x{1F004}-\x{1F0CF}]|[\x{1F191}-\x{1F251}]|[\x{2B50}]|[\x{1F004}-\x{1F0CF}]|[\x{1F191}-\x{1F251}]|[\x{2B50}]|[\x{1F004}-\x{1F0CF}]|[\x{1F191}-\x{1F251}]|[\x{2B50}]|[\x{1F004}-\x{1F0CF}]|[\x{1F191}-\x{1F251}]|[\x{2B50}]|[\x{1F004}-\x{1F0CF}]|[\x{1F191}-\x{1F251}]|[\x{2B50}]|[\x{1F004}-\x{1F0CF}]|[\x{1F191}-\x{1F251}]|[\x{2B50}]|[\x{1F004}-\x{1F0CF}]|[\x{1F191}-\x{1F251}]|[\x{2B50}]|[\x{1F004}-\x{1F0CF}]|[\x{1F191}-\x{1F251}]|[\x{2B50}]|[\x{1F004}-\x{1F0CF}]|[\x{1F191}-\x{1F251}]|[\x{2B50}]|[\x{1F004}-\x{1F0CF}]|[\x{1F191}-\x{1F251}]|[\x{2B50}]|[\x{1F004}-\x{1F0CF}]|[\x{1F191}-\x{1F251}]|[\x{2B50}]|[\x{1F004}-\x{1F0CF}]|[\x{1F191}-\x{1F251}]|[\x{2B50}]|[\x{1F004}-\x{1F0CF}]|[\x{1F191}-\x{1F251}]|[\x{2B50}]|[\x{1F004}-\x{1F0CF}]|[\x{1F191}-\x{1F251}]|[\x{2B50}]|[\x{1F004}-\x{1F0CF}]|[\x{1F191}-\x{1F251}]|[\x{2B50}]|[\x{1F004}-\x{1F0CF}]|[\x{1F191}-\x{1F251}]|[\x{2B50}]|[\x{1F004}-\x{1F0CF}]|[\x{1F191}-\x{1F251}]|[\x{2B50}]|[\x{1F004}-\x{1F0CF}]|[\x{1F191}-\x{1F251}]|[\x{2B50}]|[\x{1F004}-\x{1F0CF}]|[\x{1F191}-\x{1F251}]|[\x{2B50}]|[\x{1F004}-\x{1F0CF}]|[\x{1F191}-\x{1F251}]|[\x{2B50}]|[\x{1F004}-\x{1F0CF}]|[\x{1F191}-\x{1F251}]|[\x{2B50}]`)
+	result := re.ReplaceAllString(input, "")
+	return result
+}
+
+func CreateAIReq(transcribedText, esn string, gpt3tryagain, isKG bool) openai.ChatCompletionRequest {
 	defaultPrompt := "You are a helpful, animated robot called Vector. Keep the response concise yet informative."
 
 	var nChat []openai.ChatCompletionMessage
@@ -99,7 +128,19 @@ func StreamingKGSim(req interface{}, esn string, transcribedText string) (string
 		smsg.Content = defaultPrompt
 	}
 
-	smsg.Content = CreatePrompt(smsg.Content)
+	var model string
+
+	if gpt3tryagain {
+		model = openai.GPT3Dot5Turbo
+	} else if vars.APIConfig.Knowledge.Provider == "openai" {
+		model = openai.GPT4oMini
+		logger.Println("Using " + model)
+	} else {
+		logger.Println("Using " + vars.APIConfig.Knowledge.Model)
+		model = vars.APIConfig.Knowledge.Model
+	}
+
+	smsg.Content = CreatePrompt(smsg.Content, model, isKG)
 
 	nChat = append(nChat, smsg)
 	if vars.APIConfig.Knowledge.SaveChat {
@@ -113,93 +154,25 @@ func StreamingKGSim(req interface{}, esn string, transcribedText string) (string
 	})
 
 	aireq := openai.ChatCompletionRequest{
-		MaxTokens: 2048,
-		Messages:  nChat,
-		Stream:    true,
+		Model:            model,
+		MaxTokens:        2048,
+		Temperature:      1,
+		TopP:             1,
+		FrequencyPenalty: 0,
+		PresencePenalty:  0,
+		Messages:         nChat,
+		Stream:           true,
 	}
-	if vars.APIConfig.Knowledge.Provider == "openai" {
-		aireq.Model = "gpt-4-turbo"
-		logger.Println("Using " + aireq.Model)
-	} else {
-		logger.Println("Using " + vars.APIConfig.Knowledge.Model)
-		aireq.Model = vars.APIConfig.Knowledge.Model
-	}
-	stream, err := c.CreateChatCompletionStream(ctx, aireq)
-	if err != nil {
-		if strings.Contains(err.Error(), "does not exist") && vars.APIConfig.Knowledge.Provider == "openai" {
-			logger.Println("GPT-4 model cannot be accessed with this API key. You likely need to add more than $5 dollars of funds to your OpenAI account.")
-			logger.LogUI("GPT-4 model cannot be accessed with this API key. You likely need to add more than $5 dollars of funds to your OpenAI account.")
-			aireq.Model = openai.GPT3Dot5Turbo
-			logger.Println("Falling back to " + aireq.Model)
-			logger.LogUI("Falling back to " + aireq.Model)
-			stream, err = c.CreateChatCompletionStream(ctx, aireq)
-			if err != nil {
-				logger.Println("OpenAI still not returning a response even after falling back. Erroring.")
-				return "", err
-			}
-		} else {
-			return "", err
-		}
-	}
-	//defer stream.Close()
+	return aireq
+}
 
-	fmt.Println("LLM stream response: ")
-	go func() {
-		for {
-			response, err := stream.Recv()
-			if errors.Is(err, io.EOF) {
-				isDone = true
-				newStr := fullRespSlice[0]
-				for i, str := range fullRespSlice {
-					if i == 0 {
-						continue
-					}
-					newStr = newStr + " " + str
-				}
-				if vars.APIConfig.Knowledge.SaveChat {
-					Remember(transcribedText, newStr, esn)
-				}
-				logger.LogUI("LLM response for " + esn + ": " + newStr)
-				logger.Println("LLM stream finished")
-				return
-			}
-
-			if err != nil {
-				logger.Println("Stream error: " + err.Error())
-				return
-			}
-
-			fullRespText = fullRespText + response.Choices[0].Delta.Content
-			if strings.Contains(fullRespText, "...") || strings.Contains(fullRespText, ".'") || strings.Contains(fullRespText, ".\"") || strings.Contains(fullRespText, ".") || strings.Contains(fullRespText, "?") || strings.Contains(fullRespText, "!") {
-				var sepStr string
-				if strings.Contains(fullRespText, "...") {
-					sepStr = "..."
-				} else if strings.Contains(fullRespText, ".'") {
-					sepStr = ".'"
-				} else if strings.Contains(fullRespText, ".\"") {
-					sepStr = ".\""
-				} else if strings.Contains(fullRespText, ".") {
-					sepStr = "."
-				} else if strings.Contains(fullRespText, "?") {
-					sepStr = "?"
-				} else if strings.Contains(fullRespText, "!") {
-					sepStr = "!"
-				}
-				splitResp := strings.Split(strings.TrimSpace(fullRespText), sepStr)
-				fullRespSlice = append(fullRespSlice, strings.TrimSpace(splitResp[0])+sepStr)
-				fullRespText = splitResp[1]
-				//fmt.Println("FROM OPENAI: " + splitResp[0])
-				select {
-				case speakReady <- strings.TrimSpace(splitResp[0]) + sepStr:
-				default:
-				}
-			}
-		}
-	}()
-	for range speakReady {
-		IntentPass(req, "intent_greeting_hello", transcribedText, map[string]string{}, false)
-		break
-	}
+func StreamingKGSim(req interface{}, esn string, transcribedText string, isKG bool) (string, error) {
+	start := make(chan bool)
+	stop := make(chan bool)
+	stopStop := make(chan bool)
+	kgReadyToAnswer := make(chan bool)
+	kgStopLooping := false
+	ctx := context.Background()
 	matched := false
 	var robot *vector.Vector
 	var guid string
@@ -219,74 +192,213 @@ func StreamingKGSim(req interface{}, esn string, transcribedText string) (string
 			return err.Error(), err
 		}
 	}
-	controlRequest := &vectorpb.BehaviorControlRequest{
-		RequestType: &vectorpb.BehaviorControlRequest_ControlRequest{
-			ControlRequest: &vectorpb.ControlRequest{
-				Priority: vectorpb.ControlRequest_OVERRIDE_BEHAVIORS,
-			},
-		},
+	_, err := robot.Conn.BatteryState(context.Background(), &vectorpb.BatteryStateRequest{})
+	if err != nil {
+		return "", err
 	}
-	start := make(chan bool)
-	stop := make(chan bool)
-
-	go func() {
-		// * begin - modified from official vector-go-sdk
-		r, err := robot.Conn.BehaviorControl(
-			ctx,
-		)
-		if err != nil {
-			logger.Println(err)
-			return
-		}
-
-		if err := r.Send(controlRequest); err != nil {
-			logger.Println(err)
-			return
-		}
-
-		for {
-			ctrlresp, err := r.Recv()
-			if err != nil {
-				logger.Println(err)
-				return
-			}
-			if ctrlresp.GetControlGrantedResponse() != nil {
-				start <- true
-				break
-			}
-		}
-
-		for {
-			select {
-			case <-stop:
-				logger.Println("KGSim: releasing behavior control (interrupt)")
-				if err := r.Send(
-					&vectorpb.BehaviorControlRequest{
-						RequestType: &vectorpb.BehaviorControlRequest_ControlRelease{
-							ControlRelease: &vectorpb.ControlRelease{},
-						},
-					},
-				); err != nil {
-					logger.Println(err)
-					return
+	if isKG {
+		BControl(robot, ctx, start, stop)
+		go func() {
+			for {
+				if kgStopLooping {
+					kgReadyToAnswer <- true
+					break
 				}
+				robot.Conn.PlayAnimation(ctx, &vectorpb.PlayAnimationRequest{
+					Animation: &vectorpb.Animation{
+						Name: "anim_knowledgegraph_searching_01",
+					},
+					Loops: 1,
+				})
+				time.Sleep(time.Second / 3)
+			}
+		}()
+	}
+	var fullRespText string
+	var fullfullRespText string
+	var fullRespSlice []string
+	var isDone bool
+	var c *openai.Client
+	if vars.APIConfig.Knowledge.Provider == "together" {
+		if vars.APIConfig.Knowledge.Model == "" {
+			vars.APIConfig.Knowledge.Model = "meta-llama/Llama-3-70b-chat-hf"
+			vars.WriteConfigToDisk()
+		}
+		conf := openai.DefaultConfig(vars.APIConfig.Knowledge.Key)
+		conf.BaseURL = "https://api.together.xyz/v1"
+		c = openai.NewClientWithConfig(conf)
+	} else if vars.APIConfig.Knowledge.Provider == "custom" {
+		conf := openai.DefaultConfig(vars.APIConfig.Knowledge.Key)
+		conf.BaseURL = vars.APIConfig.Knowledge.Endpoint
+		c = openai.NewClientWithConfig(conf)
+	} else if vars.APIConfig.Knowledge.Provider == "openai" {
+		c = openai.NewClient(vars.APIConfig.Knowledge.Key)
+	}
+	speakReady := make(chan string)
+	successIntent := make(chan bool)
+
+	aireq := CreateAIReq(transcribedText, esn, false, isKG)
+
+	stream, err := c.CreateChatCompletionStream(ctx, aireq)
+	if err != nil {
+		if strings.Contains(err.Error(), "does not exist") && vars.APIConfig.Knowledge.Provider == "openai" {
+			logger.Println("GPT-4 model cannot be accessed with this API key. You likely need to add more than $5 dollars of funds to your OpenAI account.")
+			logger.LogUI("GPT-4 model cannot be accessed with this API key. You likely need to add more than $5 dollars of funds to your OpenAI account.")
+			aireq := CreateAIReq(transcribedText, esn, true, isKG)
+			logger.Println("Falling back to " + aireq.Model)
+			logger.LogUI("Falling back to " + aireq.Model)
+			stream, err = c.CreateChatCompletionStream(ctx, aireq)
+			if err != nil {
+				logger.Println("OpenAI still not returning a response even after falling back. Erroring.")
+				return "", err
+			}
+		} else {
+			if isKG {
+				kgStopLooping = true
+				for range kgReadyToAnswer {
+					break
+				}
+				stop <- true
+				time.Sleep(time.Second / 3)
+				KGSim(esn, "There was an error getting data from the L. L. M.")
+			}
+			return "", err
+		}
+	}
+	nChat := aireq.Messages
+	nChat = append(nChat, openai.ChatCompletionMessage{
+		Role: openai.ChatMessageRoleAssistant,
+	})
+	fmt.Println("LLM stream response: ")
+	go func() {
+		for {
+			response, err := stream.Recv()
+			if errors.Is(err, io.EOF) {
+				// prevents a crash
+				if len(fullRespSlice) == 0 {
+					logger.Println("LLM returned no response")
+					successIntent <- false
+					if isKG {
+						kgStopLooping = true
+						for range kgReadyToAnswer {
+							break
+						}
+						stop <- true
+						time.Sleep(time.Second / 3)
+						KGSim(esn, "There was an error getting data from the L. L. M.")
+					}
+					break
+				}
+				isDone = true
+				// if fullRespSlice != fullRespText, add that missing bit to fullRespSlice
+				newStr := fullRespSlice[0]
+				for i, str := range fullRespSlice {
+					if i == 0 {
+						continue
+					}
+					newStr = newStr + " " + str
+				}
+				if strings.TrimSpace(newStr) != strings.TrimSpace(fullfullRespText) {
+					logger.Println("LLM debug: there is content after the last punctuation mark")
+					extraBit := strings.TrimPrefix(fullRespText, newStr)
+					fullRespSlice = append(fullRespSlice, extraBit)
+				}
+				if vars.APIConfig.Knowledge.SaveChat {
+					Remember(openai.ChatCompletionMessage{
+						Role:    openai.ChatMessageRoleUser,
+						Content: transcribedText,
+					},
+						openai.ChatCompletionMessage{
+							Role:    openai.ChatMessageRoleAssistant,
+							Content: newStr,
+						},
+						esn)
+				}
+				logger.LogUI("LLM response for " + esn + ": " + newStr)
+				logger.Println("LLM stream finished")
 				return
-			default:
-				continue
+			}
+
+			if err != nil {
+				logger.Println("Stream error: " + err.Error())
+				return
+			}
+
+			fullfullRespText = fullfullRespText + removeSpecialCharacters(response.Choices[0].Delta.Content)
+			fullRespText = fullRespText + removeSpecialCharacters(response.Choices[0].Delta.Content)
+			if strings.Contains(fullRespText, "...") || strings.Contains(fullRespText, ".'") || strings.Contains(fullRespText, ".\"") || strings.Contains(fullRespText, ".") || strings.Contains(fullRespText, "?") || strings.Contains(fullRespText, "!") {
+				var sepStr string
+				if strings.Contains(fullRespText, "...") {
+					sepStr = "..."
+				} else if strings.Contains(fullRespText, ".'") {
+					sepStr = ".'"
+				} else if strings.Contains(fullRespText, ".\"") {
+					sepStr = ".\""
+				} else if strings.Contains(fullRespText, ".") {
+					sepStr = "."
+				} else if strings.Contains(fullRespText, "?") {
+					sepStr = "?"
+				} else if strings.Contains(fullRespText, "!") {
+					sepStr = "!"
+				}
+				splitResp := strings.Split(strings.TrimSpace(fullRespText), sepStr)
+				fullRespSlice = append(fullRespSlice, strings.TrimSpace(splitResp[0])+sepStr)
+				fullRespText = splitResp[1]
+				select {
+				case successIntent <- true:
+				default:
+				}
+				select {
+				case speakReady <- strings.TrimSpace(splitResp[0]) + sepStr:
+				default:
+				}
 			}
 		}
-		// * end - modified from official vector-go-sdk
 	}()
+	for is := range successIntent {
+		if is {
+			if !isKG {
+				IntentPass(req, "intent_greeting_hello", transcribedText, map[string]string{}, false)
+			}
+			break
+		} else {
+			return "", errors.New("llm returned no response")
+		}
+	}
+	time.Sleep(time.Millisecond * 200)
+	if !isKG {
+		BControl(robot, ctx, start, stop)
+	}
+	interrupted := false
+	go func() {
+		interrupted = InterruptKGSimWhenTouchedOrWaked(robot, stop, stopStop)
+	}()
+	var TTSLoopAnimation string
+	var TTSGetinAnimation string
+	if isKG {
+		TTSLoopAnimation = "anim_knowledgegraph_answer_01"
+		TTSGetinAnimation = "anim_knowledgegraph_searching_getout_01"
+	} else {
+		TTSLoopAnimation = "anim_tts_loop_02"
+		TTSGetinAnimation = "anim_getin_tts_01"
+	}
 
 	var stopTTSLoop bool
 	TTSLoopStopped := make(chan bool)
 	for range start {
-		time.Sleep(time.Millisecond * 300)
+		if isKG {
+			kgStopLooping = true
+			for range kgReadyToAnswer {
+				break
+			}
+		} else {
+			time.Sleep(time.Millisecond * 300)
+		}
 		robot.Conn.PlayAnimation(
 			ctx,
 			&vectorpb.PlayAnimationRequest{
 				Animation: &vectorpb.Animation{
-					Name: "anim_getin_tts_01",
+					Name: TTSGetinAnimation,
 				},
 				Loops: 1,
 			},
@@ -302,7 +414,7 @@ func StreamingKGSim(req interface{}, esn string, transcribedText string) (string
 						ctx,
 						&vectorpb.PlayAnimationRequest{
 							Animation: &vectorpb.Animation{
-								Name: "anim_tts_loop_02",
+								Name: TTSLoopAnimation,
 							},
 							Loops: 1,
 						},
@@ -310,6 +422,7 @@ func StreamingKGSim(req interface{}, esn string, transcribedText string) (string
 				}
 			}()
 		}
+		var disconnect bool
 		numInResp := 0
 		for {
 			respSlice := fullRespSlice
@@ -324,9 +437,16 @@ func StreamingKGSim(req interface{}, esn string, transcribedText string) (string
 					break
 				}
 			}
+			if interrupted {
+				break
+			}
 			logger.Println(respSlice[numInResp])
 			acts := GetActionsFromString(respSlice[numInResp])
-			PerformActions(acts, robot)
+			nChat[len(nChat)-1].Content = fullRespText
+			disconnect = PerformActions(nChat, acts, robot, stopStop)
+			if disconnect {
+				break
+			}
 			numInResp = numInResp + 1
 		}
 		if !vars.APIConfig.Knowledge.CommandsEnable {
@@ -336,17 +456,22 @@ func StreamingKGSim(req interface{}, esn string, transcribedText string) (string
 			}
 		}
 		time.Sleep(time.Millisecond * 100)
-		robot.Conn.PlayAnimation(
-			ctx,
-			&vectorpb.PlayAnimationRequest{
-				Animation: &vectorpb.Animation{
-					Name: "anim_knowledgegraph_success_01",
-				},
-				Loops: 1,
-			},
-		)
-		//time.Sleep(time.Millisecond * 3300)
-		stop <- true
+		// if isKG {
+		// 	robot.Conn.PlayAnimation(
+		// 		ctx,
+		// 		&vectorpb.PlayAnimationRequest{
+		// 			Animation: &vectorpb.Animation{
+		// 				Name: "anim_knowledgegraph_success_01",
+		// 			},
+		// 			Loops: 1,
+		// 		},
+		// 	)
+		// 	time.Sleep(time.Millisecond * 3300)
+		// }
+		if !interrupted {
+			stopStop <- true
+			stop <- true
+		}
 	}
 	return "", nil
 }
@@ -487,15 +612,6 @@ func KGSim(esn string, textToSay string) error {
 				}
 			}
 			time.Sleep(time.Millisecond * 100)
-			robot.Conn.PlayAnimation(
-				ctx,
-				&vectorpb.PlayAnimationRequest{
-					Animation: &vectorpb.Animation{
-						Name: "anim_knowledgegraph_success_01",
-					},
-					Loops: 1,
-				},
-			)
 			//time.Sleep(time.Millisecond * 3300)
 			stop <- true
 		}

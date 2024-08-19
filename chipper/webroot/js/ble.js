@@ -1,380 +1,318 @@
-const vectorEpodSetup = "https://wpsetup.keriganc.com"
+const vectorEpodSetup = "https://wpsetup.keriganc.com";
+let authEl = document.getElementById("botAuth");
+let statusP = document.createElement("p");
+let OTAUpdating = false;
 
-var authEl = document.getElementById("botAuth")
-var statusP = document.createElement("p")
-var externalSetup = document.createElement("a")
-externalSetup.href = vectorEpodSetup
-externalSetup.innerHTML = vectorEpodSetup
+const externalSetup = document.createElement("a");
+externalSetup.href = vectorEpodSetup;
+externalSetup.innerHTML = vectorEpodSetup;
 
 function showBotAuth() {
-    GetLog = false
-    document.getElementById("section-intents").style.display = "none";
-    document.getElementById("section-language").style.display = "none";
-    document.getElementById("section-log").style.display = "none";
-    document.getElementById("section-botauth").style.display = "block";
-    updateColor("icon-BotAuth");
-    checkBLECapability()
+  GetLog = false;
+  toggleSections("section-botauth", "icon-BotAuth");
+  checkBLECapability();
+}
 
+function toggleSections(showSection, icon) {
+  const sections = ["section-intents", "section-log", "section-botauth", "section-version", "section-uicustomizer"];
+  sections.forEach((section) => (document.getElementById(section).style.display = "none"));
+  document.getElementById(showSection).style.display = "block";
+  updateColor(icon);
 }
 
 function checkBLECapability() {
-    // fetch("/api-ble/init")
-    //     .then(response => response.text())
-    //     .then((response) => {
-    //         if (response.includes("success")) {
-    //             BeginBLESetup()
-    //         } else if (response.includes("error")) {
-    //             statusP.innerHTML = "Error initializing bluetooth on the device running wire-pod. Use the following site on any machine with Bluetooth for setup:"
-    //             authEl.innerHTML = ""
-    //             authEl.appendChild(statusP)
-    //             authEl.appendChild(document.createElement("br"))
-    //             authEl.appendChild(externalSetup)
-    //         }
-    //     })
-    authEl.innerHTML = ""
-    m1 = document.createElement("p")
-    m2 = document.createElement("a")
-    m3 = document.createElement("small")
-    m1.innerHTML = "Head to the following site on any device with Bluetooth support to set up your Vector."
-    m2.text = vectorEpodSetup
-    m2.href = vectorEpodSetup
-    m2.target = "_blank"
-    m3.innerHTML = "Note: if you have an OSKR/dev-unlocked robot, do NOT use this site. Follow the instructions in the section below this one."
-    m1.class = "center"
-    m2.class = "center"
-    m3.class = "center"
-    authEl.appendChild(m1)
-    //authEl.appendChild(document.createElement("br"))
-    authEl.appendChild(m2)
-    authEl.appendChild(document.createElement("br"))
-    authEl.appendChild(m3)
-}
-
-function BeginBLESetup() {
-    authEl.innerHTML = ""
-    m1 = document.createElement("p")
-    m1.innerHTML = "1. Place Vector on the charger."
-    m2 = document.createElement("p")
-    m2.innerHTML = "2. Double press the button. A key should appear on screen."
-    m3 = document.createElement("p")
-    m3.innerHTML = "3. Click 'Begin Scanning' and pair with your Vector."
-    button = document.createElement("button")
-    button.innerHTML = "Begin Scanning"
-    button.onclick = function(){ScanRobots(false)}
-    authEl.appendChild(m1)
-    authEl.appendChild(m2)
-    authEl.appendChild(m3)
-    authEl.appendChild(button)
-
-}
-
-var Scanning = false
-var IsScanning = false
-
-function ScanRobots(returning) {
-    disconnectButtonDiv = document.getElementById("disconnectButton")
-    disconnectButton = document.createElement("button")
-    disconnectButton.onclick = function(){Disconnect()}
-    disconnectButton.innerHTML = "Disconnect"
-    disconnectButtonDiv.appendChild(disconnectButton)
-    Scanning = true
-    authEl.innerHTML = ""
-    statusDiv = document.createElement("div")
-    buttonsDiv = document.createElement("div")
-    buttonsDiv.class = "center"
-    statusDiv.class = "center"
-    if (returning) {
-        incorrectPin = document.createElement("p")
-        incorrectPin.innerHTML = "Incorrect PIN was entered, scanning again"
-        statusDiv.appendChild(incorrectPin)
-    }
-    scanNotice = document.createElement("small")
-    scanNotice.innerHTML = "Scanning..."
-    statusDiv.appendChild(scanNotice)
-    authEl.appendChild(statusDiv)
-    IsScanning = true
-    let xhr = new XMLHttpRequest();
-    xhr.open("POST", "/api-ble/scan");
-    xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
-    xhr.send();
-    xhr.onload = function() {
-            response = xhr.response
-            IsScanning = false
-            if (!Scanning) {
-                clearInterval(interval)
-                return
-            }
-            console.log(response)
-            parsed = JSON.parse(response)
-            buttonsDiv.innerHTML = ""
-            authEl.innerHTML = ""
-            for (var i = 0; i < parsed.length; i++) {
-                button = document.createElement("button")
-                id = parsed[i]["id"]
-                button.innerHTML = parsed[i]["name"]
-                button.onclick = function(){Scanning = false; ConnectRobot(id);}
-                buttonsDiv.appendChild(button)
-            }
-            authEl.appendChild(buttonsDiv)
-        }
-    interval = setInterval(function(){
-        if (!Scanning) {
-            clearInterval(interval)
-            return
-        }
-        scanNotice.innerHTML = "Scanning..."
-        statusDiv.innerHTML = ""
-        statusDiv.appendChild(scanNotice)
-        IsScanning = true
-        let xhr = new XMLHttpRequest();
-        xhr.open("POST", "/api-ble/scan");
-        xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
-        xhr.send();
-        xhr.onload = function() {
-            response = xhr.response
-            IsScanning = false
-            if (!Scanning) {
-                clearInterval(interval)
-                return
-            }
-            console.log(response)
-            parsed = JSON.parse(response)
-            buttonsDiv.innerHTML = ""
-            authEl.innerHTML = ""
-            for (var i = 0; i < parsed.length; i++) {
-                button = document.createElement("button")
-                id = parsed[i]["id"]
-                button.innerHTML = parsed[i]["name"]
-                button.onclick = (function(id) {
-                    return function() {
-                        Scanning = false;
-                        ConnectRobotBuffer(id);
-                    };
-                  })(id);
-                buttonsDiv.appendChild(button)
-            }
-            authEl.appendChild(buttonsDiv)
-        }
-    }, 5000)
-}
-
-function ConnectRobotBuffer(id) {
-    authEl.innerHTML = ""
-    statusP.innerHTML = "Connecting to robot..."
-    authEl.appendChild(statusP)
-    // if scanning, dont make connection request
-    if (IsScanning) {
-        console.log("Scan request being made, wait to connect robot...")
-        inte = setInterval(function(){
-            if (!IsScanning) {
-                setTimeout(function(){
-                    clearInterval(inte)
-                    console.log("connecting robot...")
-                    ConnectRobot(id)
-                }, 1000)
-            }
-        }, 500)
-    }
-}
-
-function Disconnect() {
-    disconnectButtonDiv = document.getElementById("disconnectButton")
-    disconnectButtonDiv.innerHTML = ""
-    authEl.innerHTML = ""
-    statusP.innerHTML = "Disconnecting..."
-    authEl.appendChild(statusP)
-    fetch("/api-ble/disconnect")
+  updateAuthel("Checking if wire-pod can use BLE directly...");
+  fetch("/api-ble/init")
+    .then((response) => response.text())
     .then((response) => {
-    setTimeout(function(){
-        checkBLECapability();
-    }, 2000)
-})
-}
-
-function ConnectRobot(id) {
-    fetch("/api-ble/connect?id=" + id)
-    .then(response => response.text())
-    .then((response) => {
-        if (response.includes("success")) {
-            statusP.innerHTML = "Connected to robot! Loading pin screen..."
-            authEl.innerHTML = ""
-            authEl.appendChild(statusP)
-            CreatePinEntry()
-            return
-        }
-    })
-}
-
-function validateInput(input) {
-    return input.value.length <= 6 && /^\d+$/.test(input.value);
-  }
-
-function CreatePinEntry() {
-    authEl.innerHTML = ""
-    statusDiv = document.createElement("div")
-    statusP.innerHTML = "Enter the pin shown on Vector's screen."
-    statusDiv.appendChild(statusP)
-    authEl.appendChild(statusDiv)
-    pinEntry = document.createElement("input")
-    pinEntry.type = "text"
-    pinEntry.id = "pinEntry"
-    pinEntry.name = "pinEntry"
-    pinEntry.placeholder = "Enter PIN here"
-    pinEntry.setAttribute("type", "text");
-    pinEntry.setAttribute("maxlength", "6");
-    pinEntry.setAttribute("oninput", "validateInput(this)");
-    button = document.createElement("button")
-    button.onclick = function(){SendPin()}
-    button.innerHTML = "Send PIN"
-    authEl.appendChild(pinEntry)
-    authEl.appendChild(document.createElement("br"))
-    authEl.appendChild(button)
-    return
-}
-
-function SendPin() {
-    pin = document.getElementById("pinEntry").value
-    authEl.innerHTML = ""
-    fetch("/api-ble/send_pin?pin=" + pin)
-    .then(response => response.text())
-    .then((response) => {
-        if (response.includes("incorrect pin")) {
-            ScanRobots(true)
-        } else {
-            // create auth button
-            WifiCheck()
-        }
-        return
-    })
-}
-
-function WifiCheck() {
-    fetch("/api-ble/get_wifi_status")
-    .then(response => response.text())
-    .then((response) => {
-        console.log(response)
-        if (response == "1") {
-            DoAuth()
-        } else {
-            ScanWifi()
-        }
-        return
-    })
-}
-
-//var parsedScan
-
-function ScanWifi() {
-    authEl.innerHTML = ""
-    statusP.innerHTML = "Scanning for Wi-Fi networks..."
-    authEl.appendChild(statusP)
-        var xhr = new XMLHttpRequest();
-        xhr.open("GET", "/api-ble/scan_wifi", true);
-        xhr.onreadystatechange = function() {
-          if (this.readyState === XMLHttpRequest.DONE && this.status === 200) {
-            authEl.innerHTML = ""
-            // create scan again button
-            var scanAgain = document.createElement("button")
-            scanAgain.innerHTML = "Scan Again"
-            scanAgain.onclick = function(){ScanWifi()}
-            authEl.appendChild(scanAgain)
-            authEl.appendChild(document.createElement("br"))
-            // add network buttons
-            var networks = JSON.parse(this.responseText);
-            for (var i = 0; i < networks.length; i++) {
-              var ssid = networks[i].ssid;
-              if (ssid != "") {
-              var authtype = networks[i].authtype;
-              var btn = document.createElement("button");
-              btn.innerHTML = ssid;
-              btn.onclick = (function(ssid, authtype) {
-                return function() {
-                    CreateWiFiPassEntry(ssid, authtype);
-                };
-              })(ssid, authtype);
-              authEl.appendChild(btn);
-            }
-            }
-          }
-        };
-        xhr.send();
+      if (response.includes("success")) {
+        beginBLESetup();
+      } else {
+        showExternalSetupInstructions();
       }
-
-function CreateWiFiPassEntry(ssid, authtype) {
-    console.log(ssid)
-    console.log(authtype)
-    authEl.innerHTML = ""
-    againButton = document.createElement("button")
-    againButton.innerHTML = "Scan Again"
-    againButton.onclick = function(){ScanWifi()}
-    authEl.appendChild
-    statusDiv = document.createElement("div")
-    statusP.innerHTML = "Enter the password for " + ssid
-    statusDiv.appendChild(statusP)
-    authEl.appendChild(statusDiv)
-    pinEntry = document.createElement("input")
-    pinEntry.type = "text"
-    pinEntry.id = "passEntry"
-    pinEntry.name = "passEntry"
-    pinEntry.placeholder = "Password"
-    button = document.createElement("button")
-    button.onclick = function(){ConnectWifi(ssid, authtype)}
-    button.innerHTML = "Connect to Wi-Fi"
-    authEl.appendChild(pinEntry)
-    authEl.appendChild(document.createElement("br"))
-    authEl.appendChild(button)
-    return
+    });
 }
 
-function ConnectWifi(ssid, authtype) {
-    password = document.getElementById("passEntry").value
-    authEl.innerHTML = ""
-    passP = document.createElement("p")
-    passP.innerHTML = "Connecting Vector to Wi-Fi..."
-    authEl.appendChild(passP)
-    fetch("/api-ble/connect_wifi?ssid=" + ssid + "&password=" + password + "&authType=" + authtype)
-    .then(response => response.text())
-    .then((response) => {
-        if (!response.includes("255")) {
-            alert("Error connecting, likely incorrect password")
-            CreateWiFiPassEntry(ssid, authtype)
-        } else {
-            authEl.innerHTML = ""
-            button = document.createElement("button")
-            button.innerHTML = "Click to authenticate"
-            button.onclick = function(){DoAuth()}
-            authEl.appendChild(button)
-        }
-    })
+function showExternalSetupInstructions() {
+  authEl.innerHTML = `
+    <p>Head to the following site on any device with Bluetooth support to set up your Vector.</p>
+    <a href="${vectorEpodSetup}" target="_blank">${vectorEpodSetup}</a>
+    <br>
+    <small class="desc">Note: with OSKR/dev robots, it might give a warning about firmware. This can be ignored.</small>
+  `;
 }
 
-function CheckFirmware() {
-    fetch("/api-ble/get_firmware")
-    .then(response => response.text())
-    .then((response) => {
-        let splitFirmware = response.split("-")
-        console.log(splitFirmware)
-    })
+function beginBLESetup() {
+  authEl.innerHTML = `
+    <p>1. Place Vector on the charger.</p>
+    <p>2. Double press the button. A key should appear on screen.</p>
+    <p>3. Click 'Begin Scanning' and pair with your Vector.</p>
+    <button onclick="scanRobots(false)">Begin Scanning</button>
+  `;
 }
 
-function DoAuth() {
-    authEl.innerHTML = ""
-    authP = document.createElement("p")
-    authP.innerHTML = "Authenticating your Vector..."
-    authEl.appendChild(authP)
-    fetch("/api-ble/do_auth")
-    .then(response => response.text())
+function reInitBLE() {
+  fetch("/api-ble/disconnect").then(() => fetch("/api-ble/init"));
+}
+
+function scanRobots(returning) {
+  const disconnectButtonDiv = document.getElementById("disconnectButton");
+  disconnectButtonDiv.innerHTML = `
+    <button onclick="disconnect()">Disconnect</button>
+  `;
+  updateAuthel("Scanning...");
+  fetch("/api-ble/scan", { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" } })
+    .then((response) => response.json())
+    .then((parsed) => {
+      authEl.innerHTML = returning ? "<p>Incorrect PIN was entered, scanning again...</p>" : "";
+      authEl.innerHTML += "<small>Scanning...</small>";
+
+      const buttonsDiv = document.createElement("div");
+      parsed.forEach((robot) => {
+        const button = document.createElement("button");
+        button.innerHTML = robot.name;
+        button.onclick = () => connectRobot(robot.id);
+        buttonsDiv.appendChild(button);
+      });
+
+      const rescanButton = document.createElement("button");
+      rescanButton.innerHTML = "Re-scan";
+      rescanButton.onclick = () => {
+        updateAuthel("Reiniting BLE then scanning...");
+        reInitBLE().then(() => scanRobots(false));
+      };
+
+      updateAuthel("Click on the robot you would like to pair with.");
+      authEl.appendChild(rescanButton);
+      authEl.appendChild(buttonsDiv);
+    });
+}
+
+function disconnect() {
+  authEl.innerHTML = "Disconnecting...";
+  OTAUpdating = false;
+  fetch("/api-ble/stop_ota").then(() => fetch("/api-ble/disconnect").then(() => checkBLECapability()));
+}
+
+function connectRobot(id) {
+  updateAuthel("Connecting to robot...");
+  fetch(`/api-ble/connect?id=${id}`)
+    .then((response) => response.text())
     .then((response) => {
-        console.log(response)
-        authEl.innerHTML = ""
-        authP.innerHTML = "Authentication complete!"
-        authEl.appendChild(authP)
-        fetch("/api-ble/disconnect")
-        disconnectButtonDiv = document.getElementById("disconnectButton")
-        disconnectButtonDiv.innerHTML = ""
-        disconnectButton = document.createElement("button")
-        disconnectButton.onclick = function(){checkBLECapability()}
-        disconnectButton.innerHTML = "Back to setup"
-        disconnectButtonDiv.appendChild(disconnectButton)
-    })
+      if (response.includes("success")) {
+        createPinEntry();
+      } else {
+        alert("Error connecting. WirePod will restart and this will return to the first screen of setup.");
+        updateAuthel("Waiting for WirePod to restart...");
+        setTimeout(checkBLECapability, 3000);
+      }
+    });
+}
+
+function createPinEntry() {
+  authEl.innerHTML = `
+    <p>Enter the pin shown on Vector's screen.</p>
+    <input type="text" id="pinEntry" placeholder="Enter PIN here" maxlength="6">
+    <br>
+    <button onclick="sendPin()">Send PIN</button>
+  `;
+}
+
+function sendPin() {
+  const pin = document.getElementById("pinEntry").value;
+  updateAuthel("Sending PIN...");
+  fetch(`/api-ble/send_pin?pin=${pin}`)
+    .then((response) => response.text())
+    .then((response) => {
+      if (response.includes("incorrect pin") || response.includes("length of pin")) {
+        updateAuthel("Wrong PIN... Reiniting BLE then scanning...");
+        reInitBLE().then(() => scanRobots(true));
+      } else {
+        wifiCheck();
+      }
+    });
+}
+
+function wifiCheck() {
+  fetch("/api-ble/get_wifi_status")
+    .then((response) => response.text())
+    .then((response) => {
+      if (response === "1") {
+        whatToDo();
+      } else {
+        scanWifi();
+      }
+    });
+}
+
+function scanWifi() {
+  authEl.innerHTML = "Scanning for Wi-Fi networks...";
+  fetch("/api-ble/scan_wifi")
+    .then((response) => response.json())
+    .then((networks) => {
+      authEl.innerHTML = `
+        <p>Select a Wi-Fi network to connect Vector to.</p>
+        <button onclick="scanWifi()">Scan Again</button>
+        <br>
+        ${networks
+          .map(
+            (network) =>
+              network.ssid && `<button onclick="createWiFiPassEntry('${network.ssid}', '${network.authtype}')">${network.ssid}</button>`
+          )
+          .join("")}
+      `;
+    });
+}
+
+function createWiFiPassEntry(ssid, authtype) {
+  authEl.innerHTML = `
+    <button onclick="scanWifi()">Scan Again</button>
+    <p>Enter the password for ${ssid}</p>
+    <input type="text" id="passEntry" placeholder="Password">
+    <br>
+    <button onclick="connectWifi('${ssid}', '${authtype}')">Connect to Wi-Fi</button>
+  `;
+}
+
+function connectWifi(ssid, authtype) {
+  const password = document.getElementById("passEntry").value;
+  authEl.innerHTML = "Connecting Vector to Wi-Fi...";
+  fetch(`/api-ble/connect_wifi?ssid=${ssid}&password=${password}&authType=${authtype}`)
+    .then((response) => response.text())
+    .then((response) => {
+      if (!response.includes("255")) {
+        alert("Error connecting, likely incorrect password");
+        createWiFiPassEntry(ssid, authtype);
+      } else {
+        whatToDo();
+      }
+    });
+}
+
+function checkFirmware() {
+  fetch("/api-ble/get_firmware")
+    .then((response) => response.text())
+    .then((response) => {
+      const splitFirmware = response.split("-");
+      console.log(splitFirmware);
+    });
+}
+
+function whatToDo() {
+  fetch("/api-ble/get_robot_status")
+    .then((response) => response.text())
+    .then((response) => {
+      switch (response) {
+        case "in_recovery_prod":
+          doOTA("local");
+          break;
+        case "in_recovery_dev":
+          doOTA("http://wpsetup.keriganc.com:81/1.6.0.3331.ota");
+          break;
+        case "in_firmware_nonep":
+          showRecoveryInstructions();
+          break;
+        case "in_firmware_dev":
+          showDevWarning();
+          break;
+        case "in_firmware_ep":
+          showAuthButton();
+          break;
+      }
+    });
+}
+
+function showRecoveryInstructions() {
+  authEl.innerHTML = `
+    <p>1. Place Vector on the charger.</p>
+    <p>2. Hold the button for 15 seconds. He will turn off - keep holding it until he turns back on.</p>
+    <p>3. Click 'Begin Scanning' and pair with your Vector.</p>
+    <button onclick="scanRobots(false)">Begin Scanning</button>
+  `;
+  alert("Your bot is not on the correct firmware for wire-pod. Follow the directions to put him in recovery mode.");
+}
+
+function showDevWarning() {
+  alert("Your bot is a dev robot. Make sure you have done the 'Configure an OSKR/dev-unlocked robot' section before authentication. If you did already, you can ignore this warning.");
+  showAuthButton();
+}
+
+function showAuthButton() {
+  authEl.innerHTML = `<button onclick="doAuth()">AUTHENTICATE</button>`;
+}
+
+function doOTA(url) {
+  updateAuthel("Starting OTA update...");
+  fetch(`/api-ble/start_ota?url=${url}`)
+    .then((response) => response.text())
+    .then((response) => {
+      if (response.includes("success")) {
+        OTAUpdating = true;
+        const interval = setInterval(() => {
+          fetch("/api-ble/get_ota_status")
+            .then((otaResponse) => otaResponse.text())
+            .then((otaResponse) => {
+              updateAuthel(otaResponse);
+              if (otaResponse.includes("complete")) {
+                alert("The OTA update is complete. When the bot reboots, follow the steps to re-pair the bot with wire-pod. wire-pod will then authenticate the robot and setup will be complete.");
+                OTAUpdating = false;
+                clearInterval(interval);
+                checkBLECapability();
+              } else if (otaResponse.includes("stopped") || !OTAUpdating) {
+                clearInterval(interval);
+              }
+            });
+        }, 2000);
+      } else {
+        whatToDo();
+      }
+    });
+}
+
+function updateAuthel(update) {
+  authEl.innerHTML = `<p>${update}</p>`;
+}
+
+function doAuth() {
+  updateAuthel("Authenticating your Vector...");
+  fetch("/api-ble/do_auth")
+    .then((response) => response.text())
+    .then((response) => {
+      if (response.includes("error")) {
+        showAuthError();
+      } else {
+        showWakeOptions();
+      }
+    });
+}
+
+function showAuthError() {
+  updateAuthel("Authentication failure. Try again in ~15 seconds. If it happens again, check the troubleshooting guide:");
+  const troubleshootingLink = document.createElement("a");
+  troubleshootingLink.href = "https://github.com/kercre123/wire-pod/wiki/Troubleshooting#error-logging-in-the-bot-is-likely-unable-to-communicate-with-your-wire-pod-instance";
+  troubleshootingLink.target = "_blank";
+  troubleshootingLink.innerText = "https://github.com/kercre123/wire-pod/wiki/Troubleshooting";
+  authEl.appendChild(document.createElement("br"));
+  authEl.appendChild(troubleshootingLink);
+}
+
+function showWakeOptions() {
+  updateAuthel("Authentication was successful! How would you like to wake Vector up?");
+  authEl.innerHTML += `
+    <button onclick="doOnboard(true)">Wake with wake-up animation (recommended)</button>
+    <br>
+    <button onclick="doOnboard(false)">Wake immediately, without wake-up animation</button>
+  `;
+}
+
+function doOnboard(withAnim) {
+  updateAuthel("Onboarding robot...");
+  fetch(`/api-ble/onboard?with_anim=${withAnim}`).then(() => {
+    fetch("/api-ble/disconnect");
+    updateAuthel("Vector is now fully set up! Use the Bot Settings tab to further configure your bot.");
+    const disconnectButtonDiv = document.getElementById("disconnectButton");
+    disconnectButtonDiv.innerHTML = `
+      <button onclick="checkBLECapability()">Return to pair instructions</button>
+    `;
+  });
 }

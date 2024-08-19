@@ -8,6 +8,7 @@ package localization
 
 import (
 	"archive/zip"
+	"crypto/tls"
 	"fmt"
 	"io"
 	"log"
@@ -24,9 +25,9 @@ import (
 	"github.com/wangergou2023/xiao_wan/chipper/pkg/vars"
 )
 
-// var URLPrefix string = "https://github.com/kercre123/vosk-models/raw/main/"
+var URLPrefix string = "https://github.com/kercre123/vosk-models/raw/main/"
 
-var URLPrefix string = "https://alphacephei.com/vosk/models/"
+//var URLPrefix string = "https://alphacephei.com/vosk/models/"
 
 var DownloadStatus string = "not downloading"
 
@@ -52,6 +53,10 @@ func DownloadVoskModel(language string) {
 		filename = filename + "tr-0.3.zip"
 	} else if language == "ru-RU" {
 		filename = filename + "ru-0.22.zip"
+	} else if language == "nt-NL" {
+		filename = filename + "nl-0.22.zip"
+	} else if language == "uk-UA" {
+		filename = filename + "uk-v3-small.zip"
 	} else {
 		logger.Println("Language not valid? " + language)
 		return
@@ -112,6 +117,7 @@ func PrintDownloadPercent(done chan int64, path string, total int64) {
 
 func DownloadFile(url string, dest string) {
 	if strings.Contains(DownloadStatus, "success") || strings.Contains(DownloadStatus, "error") || strings.Contains(DownloadStatus, "not downloading") {
+		http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
 		logger.Println("Downloading " + url + " to " + dest)
 		out, _ := os.Create(dest)
 		defer out.Close()

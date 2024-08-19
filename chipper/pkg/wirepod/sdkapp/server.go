@@ -17,8 +17,8 @@ import (
 
 	"github.com/fforchino/vector-go-sdk/pkg/vectorpb"
 	"github.com/wangergou2023/xiao_wan/chipper/pkg/logger"
+	"github.com/wangergou2023/xiao_wan/chipper/pkg/scripting"
 	"github.com/wangergou2023/xiao_wan/chipper/pkg/vars"
-	botsetup "github.com/wangergou2023/xiao_wan/chipper/pkg/wirepod/setup"
 )
 
 var serverFiles string = "./webroot/sdkapp"
@@ -510,7 +510,17 @@ func camStreamHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func DisableCachingAndSniffing(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Cache-Control", "no-cache, no-store, must-revalidate;")
+		w.Header().Set("pragma", "no-cache")
+		w.Header().Set("X-Content-Type-Options", "nosniff")
+		next.ServeHTTP(w, r)
+	})
+}
+
 func BeginServer() {
+	scripting.RegisterScriptingAPI()
 	if os.Getenv("JDOCS_PINGER_ENABLED") == "false" {
 		PingerEnabled = false
 		logger.Println("Jdocs pinger has been disabled")
@@ -520,7 +530,7 @@ func BeginServer() {
 		serverFiles = filepath.Join(vars.AndroidPath, "/static/webroot")
 	}
 	fileServer := http.FileServer(http.Dir(serverFiles))
-	http.Handle("/sdk-app", fileServer)
+	http.Handle("/sdk-app", DisableCachingAndSniffing(fileServer))
 	// in jdocspinger.go
 	http.HandleFunc("/ok:80", connCheck)
 	http.HandleFunc("/ok", connCheck)
@@ -529,7 +539,7 @@ func BeginServer() {
 	http.HandleFunc("/cam-stream", camStreamHandler)
 	logger.Println("Starting SDK app")
 	fmt.Printf("Starting server at port 80 for connCheck\n")
-	ipAddr := botsetup.GetOutboundIP().String()
+	ipAddr := vars.GetOutboundIP().String()
 	logger.Println("\033[1;36mConfiguration page: http://" + ipAddr + ":" + vars.WebPort + "\033[0m")
 	if runtime.GOOS != "android" {
 		if err := http.ListenAndServe(":80", nil); err != nil {
