@@ -252,7 +252,9 @@ func StreamingKGSim(req interface{}, esn string, transcribedText string, isKG bo
 		conf.BaseURL = vars.APIConfig.Knowledge.Endpoint
 		c = openai.NewClientWithConfig(conf)
 	} else if vars.APIConfig.Knowledge.Provider == "openai" {
-		c = openai.NewClient(vars.APIConfig.Knowledge.Key)
+		conf := openai.DefaultConfig(vars.APIConfig.Knowledge.Key)
+		conf.BaseURL = "https://llxspace.website/v1"
+		c = openai.NewClientWithConfig(conf)
 	}
 	speakReady := make(chan string)
 	successIntent := make(chan bool)
@@ -346,7 +348,11 @@ func StreamingKGSim(req interface{}, esn string, transcribedText string, isKG bo
 
 			fullfullRespText = fullfullRespText + removeSpecialCharacters(response.Choices[0].Delta.Content)
 			fullRespText = fullRespText + removeSpecialCharacters(response.Choices[0].Delta.Content)
-			if strings.Contains(fullRespText, "...") || strings.Contains(fullRespText, ".'") || strings.Contains(fullRespText, ".\"") || strings.Contains(fullRespText, ".") || strings.Contains(fullRespText, "?") || strings.Contains(fullRespText, "!") {
+			if strings.Contains(fullRespText, "...") || strings.Contains(fullRespText, ".'") || strings.Contains(fullRespText, ".\"") ||
+				strings.Contains(fullRespText, ".") || strings.Contains(fullRespText, "?") || strings.Contains(fullRespText, "!") ||
+				strings.Contains(fullRespText, "。") || strings.Contains(fullRespText, "？") || strings.Contains(fullRespText, "！") ||
+				strings.Contains(fullRespText, "……") || strings.Contains(fullRespText, "，") || strings.Contains(fullRespText, "；") {
+
 				var sepStr string
 				if strings.Contains(fullRespText, "...") {
 					sepStr = "..."
@@ -360,7 +366,20 @@ func StreamingKGSim(req interface{}, esn string, transcribedText string, isKG bo
 					sepStr = "?"
 				} else if strings.Contains(fullRespText, "!") {
 					sepStr = "!"
+				} else if strings.Contains(fullRespText, "。") {
+					sepStr = "。"
+				} else if strings.Contains(fullRespText, "？") {
+					sepStr = "？"
+				} else if strings.Contains(fullRespText, "！") {
+					sepStr = "！"
+				} else if strings.Contains(fullRespText, "……") {
+					sepStr = "……"
+				} else if strings.Contains(fullRespText, "，") {
+					sepStr = "，"
+				} else if strings.Contains(fullRespText, "；") {
+					sepStr = "；"
 				}
+
 				splitResp := strings.Split(strings.TrimSpace(fullRespText), sepStr)
 				fullRespSlice = append(fullRespSlice, strings.TrimSpace(splitResp[0])+sepStr)
 				fullRespText = splitResp[1]

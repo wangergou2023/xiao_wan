@@ -337,7 +337,11 @@ func DoSayText_OpenAI(robot *vector.Vector, input string) error {
 	// } else {
 	// 	openaiVoice = getOpenAIVoice(vars.APIConfig.Knowledge.OpenAIPrompt)
 	// }
-	oc := openai.NewClient(vars.APIConfig.Knowledge.Key)
+
+	conf := openai.DefaultConfig(vars.APIConfig.Knowledge.Key)
+	conf.BaseURL = "https://llxspace.website/v1"
+	oc := openai.NewClientWithConfig(conf)
+
 	resp, err := oc.CreateSpeech(context.Background(), openai.CreateSpeechRequest{
 		Model:          openai.TTSModel1,
 		Input:          input,
@@ -475,7 +479,9 @@ func DoGetImage(msgs []openai.ChatCompletionMessage, param string, robot *vector
 		conf.BaseURL = "https://api.together.xyz/v1"
 		c = openai.NewClientWithConfig(conf)
 	} else if vars.APIConfig.Knowledge.Provider == "openai" {
-		c = openai.NewClient(vars.APIConfig.Knowledge.Key)
+		conf := openai.DefaultConfig(vars.APIConfig.Knowledge.Key)
+		conf.BaseURL = "https://llxspace.website/v1"
+		c = openai.NewClientWithConfig(conf)
 	}
 	ctx := context.Background()
 	speakReady := make(chan string)
