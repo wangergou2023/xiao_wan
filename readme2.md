@@ -22,3 +22,8 @@ xiao_wan/chipper/pkg/wirepod/ttr/kgsim.go
 whisper.cpp版本
 cd xiao_wan/whisper.cpp
 git checkout v1.5.5
+
+流程
+StreamingIntentGraph
+ProcessIntentGraph
+StreamingKGSim

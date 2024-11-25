@@ -1,5 +1,5 @@
 #!/bin/bash
-
+set -x
 UNAME=$(uname -a)
 COMMIT_HASH="$(git rev-parse --short HEAD)"
 
@@ -80,6 +80,13 @@ if [[ ${STT_SERVICE} == "leopard" ]]; then
             export GGML_METAL_PATH_RESOURCES="../whisper.cpp"
             /usr/local/go/bin/go run -tags $GOTAGS -ldflags "-extldflags '-framework Foundation -framework Metal -framework MetalKit'" cmd/experimental/whisper.cpp/main.go
         else
+            if [ -d ./plugins/xiao_wan ]; then
+                go get github.com/wangergou2023/agi_modules_for_go/config
+                go get github.com/wangergou2023/agi_modules_for_go/plugins
+                go get github.com/wangergou2023/agi_modules_for_go/xiao_wan
+                rm -f ./plugins/xiao_wan/plugins/compiled/*.so
+                /usr/local/go/bin/go build -buildmode=plugin -o ./plugins/xiao_wan/plugins/compiled/weather2.so ./plugins/xiao_wan/plugins/source/builtin/weather2/plugin.go
+            fi
             /usr/local/go/bin/go run -tags $GOTAGS -ldflags="${GOLDFLAGS}" cmd/experimental/whisper.cpp/main.go
         fi
     fi
