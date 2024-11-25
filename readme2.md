@@ -24,6 +24,9 @@ cd xiao_wan/whisper.cpp
 git checkout v1.5.5
 
 流程
+xiao_wan/chipper/cmd/experimental/whisper.cpp/main.go
+StartFromProgramInit
+...
 StreamingIntentGraph
 ProcessIntentGraph
 StreamingKGSim

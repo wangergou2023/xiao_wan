@@ -81,11 +81,10 @@ if [[ ${STT_SERVICE} == "leopard" ]]; then
             /usr/local/go/bin/go run -tags $GOTAGS -ldflags "-extldflags '-framework Foundation -framework Metal -framework MetalKit'" cmd/experimental/whisper.cpp/main.go
         else
             if [ -d ./plugins/xiao_wan ]; then
-                go get github.com/wangergou2023/agi_modules_for_go/config
-                go get github.com/wangergou2023/agi_modules_for_go/plugins
-                go get github.com/wangergou2023/agi_modules_for_go/xiao_wan
-                rm -f ./plugins/xiao_wan/plugins/compiled/*.so
-                /usr/local/go/bin/go build -buildmode=plugin -o ./plugins/xiao_wan/plugins/compiled/weather2.so ./plugins/xiao_wan/plugins/source/builtin/weather2/plugin.go
+                rm -f ./plugins/for_chat/*.so
+                rm -f ./plugins/for_after_chat/*.so
+                /usr/local/go/bin/go build -buildmode=plugin -o ./plugins/for_chat/weather2.so ./plugins/xiao_wan/plugins/source/builtin/weather2/plugin.go
+                /usr/local/go/bin/go build -buildmode=plugin -o ./plugins/for_after_chat/command.so ./plugins/xiao_wan/plugins/source/builtin/command/plugin.go
             fi
             /usr/local/go/bin/go run -tags $GOTAGS -ldflags="${GOLDFLAGS}" cmd/experimental/whisper.cpp/main.go
         fi
