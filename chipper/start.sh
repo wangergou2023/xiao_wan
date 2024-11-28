@@ -82,9 +82,9 @@ if [[ ${STT_SERVICE} == "leopard" ]]; then
         else
             if [ -d ./plugins/xiao_wan ]; then
                 rm -f ./plugins/for_chat/*.so
-                rm -f ./plugins/for_after_chat/*.so
+                rm -f ./plugins/for_before_chat/*.so
                 /usr/local/go/bin/go build -buildmode=plugin -o ./plugins/for_chat/weather2.so ./plugins/xiao_wan/plugins/source/builtin/weather2/plugin.go
-                /usr/local/go/bin/go build -buildmode=plugin -o ./plugins/for_after_chat/command.so ./plugins/xiao_wan/plugins/source/builtin/command/plugin.go
+                /usr/local/go/bin/go build -buildmode=plugin -o ./plugins/for_before_chat/command.so ./plugins/xiao_wan/plugins/source/builtin/command/plugin.go
             fi
             /usr/local/go/bin/go run -tags $GOTAGS -ldflags="${GOLDFLAGS}" cmd/experimental/whisper.cpp/main.go
         fi

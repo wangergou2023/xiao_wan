@@ -555,8 +555,8 @@ github.com/twitchtv/twirp v7.1.0+incompatible/go.mod h1:RRJoFSAmTEh2weEqWtpPE3vF
 github.com/urfave/cli v0.0.0-20171014202726-7bc6a0acffa5/go.mod h1:70zkFmudgCuE/ngEzBv17Jvp/497gISqfk5gWijbERA=
 github.com/vadv/gopher-lua-libs v0.5.0 h1:m0hhWia1A1U3PIRmtdHWBj88ogzuIjm6HUBmtUa0Tz4=
 github.com/vadv/gopher-lua-libs v0.5.0/go.mod h1:mlSOxmrjug7DwisiH7xBFnBellHobPbvAIhVeI/4SYY=
-github.com/wangergou2023/agi_modules_for_go v0.0.0 h1:OvJqYxcAKlWTbm13V8vcVEy2kCN7wtrkAW2DDWP7lX0=
-github.com/wangergou2023/agi_modules_for_go v0.0.0/go.mod h1:F0OMVAAXSt/w/TGdKNAFcdEow2pTRrQ3v/gO1XHlhyk=
+github.com/wangergou2023/agi_modules_for_go v0.0.1 h1:scfwknuKIWNm6OwV9+XqSTiYsXqZvC6gcNNT4PHjdD4=
+github.com/wangergou2023/agi_modules_for_go v0.0.1/go.mod h1:F0OMVAAXSt/w/TGdKNAFcdEow2pTRrQ3v/gO1XHlhyk=
 github.com/wlynxg/anet v0.0.1 h1:VbkEEgHxPSrRQSiyRd0pmrbcEQAEU2TTb8fb4DmSYoQ=
 github.com/wlynxg/anet v0.0.1/go.mod h1:eay5PRQr7fIVAMbTbchTnO9gG65Hg/uYGdc7mguHxoA=
 github.com/xdg/scram v0.0.0-20180814205039-7eeb5667e42c/go.mod h1:lB8K/P019DLNhemzwFU4jHLhdvlE6uDZjXFejJXr49I=
