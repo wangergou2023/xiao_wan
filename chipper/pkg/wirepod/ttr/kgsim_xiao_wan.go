@@ -15,6 +15,8 @@ import (
 
 var cfg = config.New()
 
+const enableTTS = true
+
 func Xiao_wan_start(transcribedText string) (string, error) {
 
 	targets := map[string]string{
@@ -39,6 +41,14 @@ func Xiao_wan_start(transcribedText string) (string, error) {
 	xiao_wan_chat := xiao_wan.Start(cfg, openaiClient, xiao_wan.SystemPrompt, "plugins/for_chat")
 	xiao_wan_friend_fengjian := xiao_wan.Start(cfg, openaiClient_friend_fengjian, xiao_wan.FengjianPrompt, "plugins/for_before_chat")
 	xiao_wan_friend_duolaameng := xiao_wan.Start(cfg, openaiClient_friend_duolaameng, xiao_wan.DuolaamengPrompt, "plugins/for_before_chat")
+
+
+	var xiao_wan_chat_tts xiao_wan.Xiao_wan
+
+	if enableTTS {
+		openaiClient_tts := openai.NewClientWithConfig(config)
+		xiao_wan_chat_tts = xiao_wan.StartTts(cfg, openaiClient_tts)
+	}
 
 	reader := bufio.NewReader(os.Stdin)
 	fmt.Println("Conversation")
@@ -97,18 +107,27 @@ func Xiao_wan_start(transcribedText string) (string, error) {
 				// fmt.Printf("xiao wan:%s\r\n", response)
 				fmt.Printf("xiao wan:%s\r\n", result)
 				xiao_wan.SaveConversationToJSON(response)
+				if enableTTS {
+					go xiao_wan_chat_tts.Tts(result.Message, openai.VoiceAlloy)
+				}
 
 			} else if res == "风间" {
 				response, result, _ = xiao_wan_friend_fengjian.Message(response)
 				// fmt.Printf("feng jian:%s\r\n", response)
 				fmt.Printf("feng jian:%s\r\n", result)
 				xiao_wan.SaveConversationToJSON(response)
+				if enableTTS {
+					go xiao_wan_chat_tts.Tts(result.Message, openai.VoiceOnyx)
+				}
 
 			} else if res == "哆啦A梦" {
 				response, result, _ = xiao_wan_friend_duolaameng.Message(response)
 				// fmt.Printf("duolaameng:%s\r\n", response)
 				fmt.Printf("duolaameng:%s\r\n", result)
 				xiao_wan.SaveConversationToJSON(response)
+				if enableTTS {
+					go xiao_wan_chat_tts.Tts(result.Message, openai.VoiceFable)
+				}
 			}
 		}
 	}

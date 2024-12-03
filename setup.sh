@@ -243,6 +243,7 @@ function getSTT() {
             mkdir whisper.cpp
             cd whisper.cpp
             git clone https://github.com/ggerganov/whisper.cpp.git .
+            git checkout v1.5.5
         else
             cd whisper.cpp
         fi
