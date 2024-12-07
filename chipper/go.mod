@@ -110,6 +110,7 @@ require (
 	github.com/subosito/gotenv v1.2.0 // indirect
 	github.com/technoweenie/multipartstreamer v1.0.1 // indirect
 	github.com/wangergou2023/agi_modules_for_go v0.0.1 // indirect
+	github.com/wangergou2023/xiao_wan/chipper v0.0.0-20240819145457-f4a0efd61650 // indirect
 	github.com/yuin/gluamapper v0.0.0-20150323120927-d836955830e7 // indirect
 	golang.org/x/image v0.10.0 // indirect
 	golang.org/x/net v0.22.0 // indirect
