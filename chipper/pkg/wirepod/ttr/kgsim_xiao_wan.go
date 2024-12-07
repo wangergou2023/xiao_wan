@@ -140,7 +140,7 @@ func Xiao_wan_start(robot *vector.Vector) {
 	}
 }
 
-func StreamingKGSim_xiao_wan(req interface{}, esn string, transcribedText string) (string, error) {
+func StreamingKGSim_xiao_wan(req interface{}, esn string, transcribedText string, isKG bool) (string, error) {
 
 	sdk_wrapper.InitSDKForWirepod(esn)
 
@@ -176,7 +176,70 @@ func StreamingKGSim_xiao_wan(req interface{}, esn string, transcribedText string
 		return "", err
 	}
 
-	Xiao_wan_start(robot)
+	cfg = cfg.SetOpenAibaseURL("https://llxspace.website/v1")
+	cfg = cfg.SetOpenAiAPIKey(vars.APIConfig.Knowledge.Key)
 
-	return "", nil
+	config := openai.DefaultConfig(cfg.OpenAiAPIKey())
+	//need"/v1"
+	config.BaseURL = cfg.OpenAibaseURL()
+	openaiClient := openai.NewClientWithConfig(config)
+
+	xiao_wan_chat := xiao_wan.Start(cfg, openaiClient, xiao_wan.SystemPrompt, "plugins/for_chat")
+	xiao_wan_chat_tts := xiao_wan.StartTts(cfg, openaiClient)
+
+	// 构建Result
+	result := xiao_wan.Result{
+		TargetNames: []string{"小丸"},
+		Message:     transcribedText,
+		OwnName:     "主人",
+	}
+
+	// 将 Result 转换为 JSON 字符串
+	resultJSON, err := json.Marshal(result)
+	if err != nil {
+		fmt.Println("转换为 JSON 失败:", err)
+		return "", err
+	}
+	response := string(resultJSON)
+	// fmt.Printf("zhu ren:%s\r\n", response)
+	fmt.Printf("zhu ren:%s\r\n", result)
+	xiao_wan.SaveConversationToJSON(response)
+
+	response, result, _ = xiao_wan_chat.Message(response)
+	// fmt.Printf("xiao wan:%s\r\n", response)
+	fmt.Printf("xiao wan:%s\r\n", result)
+	xiao_wan.SaveConversationToJSON(response)
+
+	voiceMap := map[string]openai.SpeechVoice{
+		"alloy":   openai.VoiceAlloy,
+		"onyx":    openai.VoiceOnyx,
+		"fable":   openai.VoiceFable,
+		"shimmer": openai.VoiceShimmer,
+		"nova":    openai.VoiceNova,
+		"echo":    openai.VoiceEcho,
+		"":        openai.VoiceFable,
+	}
+
+	openaiVoice := voiceMap[vars.APIConfig.Knowledge.OpenAIVoice]
+
+	xiao_wan_chat_tts.Tts(result.Message, openaiVoice)
+
+	ctx := context.Background()
+	start := make(chan bool)
+	stop := make(chan bool)
+
+	go func() {
+		_ = sdk_wrapper.Robot.BehaviorControl(ctx, start, stop)
+	}()
+
+	for {
+		select {
+		case <-start:
+			// 播放调整音量后的 mp3
+			file_name := fmt.Sprintf("%s_speech.mp3", vars.APIConfig.Knowledge.OpenAIVoice)
+			sdk_wrapper.PlaySound(file_name)
+			stop <- true
+			return "", nil
+		}
+	}
 }
