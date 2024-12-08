@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
 
 	sdk_wrapper "github.com/fforchino/vector-go-sdk/pkg/sdk-wrapper"
@@ -153,6 +154,26 @@ func Xiao_wan_start(robot *vector.Vector) {
 	}
 }
 
+func clearMP3Files() error {
+	// 使用当前目录
+	dir := "."
+
+	return filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+		// 检查文件扩展名是否为 .mp3
+		if !info.IsDir() && filepath.Ext(path) == ".mp3" {
+			err = os.Remove(path)
+			if err != nil {
+				return fmt.Errorf("failed to delete file %s: %w", path, err)
+			}
+			fmt.Printf("Deleted file: %s\n", path)
+		}
+		return nil
+	})
+}
+
 func StreamingKGSim_xiao_wan(req interface{}, esn string, transcribedText string, isKG bool) (string, error) {
 
 	sdk_wrapper.InitSDKForWirepod(esn)
@@ -239,6 +260,15 @@ func StreamingKGSim_xiao_wan(req interface{}, esn string, transcribedText string
 
 	openaiVoice := voiceMap[vars.APIConfig.Knowledge.OpenAIVoice]
 
+	// 清理当前目录下的 MP3 文件
+	if err := clearMP3Files(); err != nil {
+		fmt.Printf("Error clearing MP3 files: %v\n", err)
+		return "", err
+	}
+
+	// 继续主逻辑
+	fmt.Println("MP3 files cleared successfully.")
+
 	for i, sentence := range result.Sentences {
 		// 将每句话传递给 TTS 接口
 		xiao_wan_chat_tts.Tts(i, sentence.Message, openaiVoice)
@@ -270,7 +300,6 @@ func StreamingKGSim_xiao_wan(req interface{}, esn string, transcribedText string
 				return "", fmt.Errorf("TTS file not ready")
 			}
 
-			// 播放调整音量后的 mp3
 			sdk_wrapper.PlaySound(fileName)
 
 			// 停止 BehaviorControl
