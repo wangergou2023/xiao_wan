@@ -629,6 +629,8 @@ github.com/vadv/gopher-lua-libs v0.5.0 h1:m0hhWia1A1U3PIRmtdHWBj88ogzuIjm6HUBmtU
 github.com/vadv/gopher-lua-libs v0.5.0/go.mod h1:mlSOxmrjug7DwisiH7xBFnBellHobPbvAIhVeI/4SYY=
 github.com/wangergou2023/agi_modules_for_go v0.0.1 h1:scfwknuKIWNm6OwV9+XqSTiYsXqZvC6gcNNT4PHjdD4=
 github.com/wangergou2023/agi_modules_for_go v0.0.1/go.mod h1:F0OMVAAXSt/w/TGdKNAFcdEow2pTRrQ3v/gO1XHlhyk=
+github.com/wangergou2023/agi_modules_for_go v0.0.2 h1:N34eWhgbhKBAgOe7uo1gI5S4Nd9Hg+0h0M0V/ZSC6o8=
+github.com/wangergou2023/agi_modules_for_go v0.0.2/go.mod h1:F0OMVAAXSt/w/TGdKNAFcdEow2pTRrQ3v/gO1XHlhyk=
 github.com/wangergou2023/xiao_wan/chipper v0.0.0-20240819145457-f4a0efd61650 h1:L4mqZrEuywKZ86hgeLNFgUsbcw8BFi7k/yjsxZwVHFk=
 github.com/wangergou2023/xiao_wan/chipper v0.0.0-20240819145457-f4a0efd61650/go.mod h1:q1gx1qfbnyiR1FARaIX4yEg/+M7Xcgv3V1k20Url9ZQ=
 github.com/wlynxg/anet v0.0.1 h1:VbkEEgHxPSrRQSiyRd0pmrbcEQAEU2TTb8fb4DmSYoQ=

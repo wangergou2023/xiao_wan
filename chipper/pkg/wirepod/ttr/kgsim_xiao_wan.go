@@ -91,8 +91,12 @@ func Xiao_wan_start(robot *vector.Vector) {
 			// 构建Result
 			result = xiao_wan.Result{
 				TargetNames: []string{targetName},
-				Message:     text,
-				OwnName:     "主人",
+				Sentences: []xiao_wan.Sentence{
+					{
+						Message: text, // 单句消息内容
+					},
+				},
+				OwnName: "主人",
 			}
 
 			// 将 Result 转换为 JSON 字符串
@@ -115,7 +119,10 @@ func Xiao_wan_start(robot *vector.Vector) {
 				fmt.Printf("xiao wan:%s\r\n", result)
 				xiao_wan.SaveConversationToJSON(response)
 				if enableTTS {
-					go xiao_wan_chat_tts.Tts(result.Message, openai.VoiceAlloy)
+					for i, sentence := range result.Sentences {
+						// 将每句话传递给 TTS 接口
+						go xiao_wan_chat_tts.Tts(i, sentence.Message, openai.VoiceAlloy)
+					}
 				}
 
 			} else if res == "风间" {
@@ -124,7 +131,10 @@ func Xiao_wan_start(robot *vector.Vector) {
 				fmt.Printf("feng jian:%s\r\n", result)
 				xiao_wan.SaveConversationToJSON(response)
 				if enableTTS {
-					go xiao_wan_chat_tts.Tts(result.Message, openai.VoiceOnyx)
+					for i, sentence := range result.Sentences {
+						// 将每句话传递给 TTS 接口
+						go xiao_wan_chat_tts.Tts(i, sentence.Message, openai.VoiceOnyx)
+					}
 				}
 
 			} else if res == "哆啦A梦" {
@@ -133,7 +143,10 @@ func Xiao_wan_start(robot *vector.Vector) {
 				fmt.Printf("duolaameng:%s\r\n", result)
 				xiao_wan.SaveConversationToJSON(response)
 				if enableTTS {
-					go xiao_wan_chat_tts.Tts(result.Message, openai.VoiceFable)
+					for i, sentence := range result.Sentences {
+						// 将每句话传递给 TTS 接口
+						go xiao_wan_chat_tts.Tts(i, sentence.Message, openai.VoiceFable)
+					}
 				}
 			}
 		}
@@ -190,8 +203,12 @@ func StreamingKGSim_xiao_wan(req interface{}, esn string, transcribedText string
 	// 构建Result
 	result := xiao_wan.Result{
 		TargetNames: []string{"小丸"},
-		Message:     transcribedText,
-		OwnName:     "主人",
+		Sentences: []xiao_wan.Sentence{
+			{
+				Message: transcribedText,
+			},
+		},
+		OwnName: "主人",
 	}
 
 	// 将 Result 转换为 JSON 字符串
@@ -222,24 +239,46 @@ func StreamingKGSim_xiao_wan(req interface{}, esn string, transcribedText string
 
 	openaiVoice := voiceMap[vars.APIConfig.Knowledge.OpenAIVoice]
 
-	xiao_wan_chat_tts.Tts(result.Message, openaiVoice)
+	for i, sentence := range result.Sentences {
+		// 将每句话传递给 TTS 接口
+		xiao_wan_chat_tts.Tts(i, sentence.Message, openaiVoice)
 
-	ctx := context.Background()
-	start := make(chan bool)
-	stop := make(chan bool)
+		ctx, cancel := context.WithCancel(context.Background())
+		defer cancel()
 
-	go func() {
-		_ = sdk_wrapper.Robot.BehaviorControl(ctx, start, stop)
-	}()
+		start := make(chan bool)
+		stop := make(chan bool)
 
-	for {
+		// BehaviorControl Goroutine
+		go func() {
+			defer close(start)
+			defer close(stop)
+			err := sdk_wrapper.Robot.BehaviorControl(ctx, start, stop)
+			if err != nil {
+				fmt.Println("BehaviorControl error:", err)
+			}
+		}()
+
+		// 等待 BehaviorControl 启动
 		select {
 		case <-start:
+			fileName := fmt.Sprintf("%s_speech_%d.mp3", vars.APIConfig.Knowledge.OpenAIVoice, i)
+
+			// 确保文件存在
+			if _, err := os.Stat(fileName); os.IsNotExist(err) {
+				fmt.Printf("File not found: %s\n", fileName)
+				return "", fmt.Errorf("TTS file not ready")
+			}
+
 			// 播放调整音量后的 mp3
-			file_name := fmt.Sprintf("%s_speech.mp3", vars.APIConfig.Knowledge.OpenAIVoice)
-			sdk_wrapper.PlaySound(file_name)
+			sdk_wrapper.PlaySound(fileName)
+
+			// 停止 BehaviorControl
 			stop <- true
-			return "", nil
+		case <-ctx.Done():
+			return "", fmt.Errorf("context canceled")
 		}
 	}
+
+	return "", nil
 }
