@@ -37,6 +37,16 @@ fi
 
 export GOLDFLAGS="-X 'github.com/kercre123/wire-pod/chipper/pkg/vars.CommitSHA=${COMMIT_HASH}'"
 
+if [ -d ./plugins/xiao_wan ]; then
+    rm -f ./plugins/for_chat/*.so
+    rm -f ./plugins/for_before_chat/*.so
+    /usr/local/go/bin/go build -buildmode=plugin -o ./plugins/for_chat/arm.so ./plugins/xiao_wan/plugins/source/vector/arm/plugin.go
+    /usr/local/go/bin/go build -buildmode=plugin -o ./plugins/for_chat/head.so ./plugins/xiao_wan/plugins/source/vector/head/plugin.go
+    /usr/local/go/bin/go build -buildmode=plugin -o ./plugins/for_chat/home.so ./plugins/xiao_wan/plugins/source/vector/home/plugin.go
+    /usr/local/go/bin/go build -buildmode=plugin -o ./plugins/for_chat/weather2.so ./plugins/xiao_wan/plugins/source/builtin/weather2/plugin.go
+    /usr/local/go/bin/go build -buildmode=plugin -o ./plugins/for_before_chat/command.so ./plugins/xiao_wan/plugins/source/builtin/command/plugin.go
+fi
+
 #./chipper
 if [[ ${STT_SERVICE} == "leopard" ]]; then
     if [[ -f ./chipper ]]; then
@@ -80,12 +90,6 @@ if [[ ${STT_SERVICE} == "leopard" ]]; then
             export GGML_METAL_PATH_RESOURCES="../whisper.cpp"
             /usr/local/go/bin/go run -tags $GOTAGS -ldflags "-extldflags '-framework Foundation -framework Metal -framework MetalKit'" cmd/experimental/whisper.cpp/main.go
         else
-            if [ -d ./plugins/xiao_wan ]; then
-                rm -f ./plugins/for_chat/*.so
-                rm -f ./plugins/for_before_chat/*.so
-                /usr/local/go/bin/go build -buildmode=plugin -o ./plugins/for_chat/weather2.so ./plugins/xiao_wan/plugins/source/builtin/weather2/plugin.go
-                /usr/local/go/bin/go build -buildmode=plugin -o ./plugins/for_before_chat/command.so ./plugins/xiao_wan/plugins/source/builtin/command/plugin.go
-            fi
             /usr/local/go/bin/go run -tags $GOTAGS -ldflags="${GOLDFLAGS}" cmd/experimental/whisper.cpp/main.go
         fi
     fi
