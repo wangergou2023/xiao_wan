@@ -41,6 +41,7 @@ if [ -d ./plugins/xiao_wan ]; then
     rm -f ./plugins/for_chat/*.so
     rm -f ./plugins/for_before_chat/*.so
     /usr/local/go/bin/go build -buildmode=plugin -o ./plugins/for_chat/arm.so ./plugins/xiao_wan/plugins/source/vector/arm/plugin.go
+    /usr/local/go/bin/go build -buildmode=plugin -o ./plugins/for_chat/eye.so ./plugins/xiao_wan/plugins/source/vector/eye/plugin.go
     /usr/local/go/bin/go build -buildmode=plugin -o ./plugins/for_chat/head.so ./plugins/xiao_wan/plugins/source/vector/head/plugin.go
     /usr/local/go/bin/go build -buildmode=plugin -o ./plugins/for_chat/home.so ./plugins/xiao_wan/plugins/source/vector/home/plugin.go
     /usr/local/go/bin/go build -buildmode=plugin -o ./plugins/for_chat/weather2.so ./plugins/xiao_wan/plugins/source/builtin/weather2/plugin.go

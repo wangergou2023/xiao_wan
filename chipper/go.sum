@@ -567,6 +567,8 @@ github.com/sashabaranov/go-openai v1.27.1 h1:7Nx6db5NXbcoutNmAUQulEQZEpHG/Skzfex
 github.com/sashabaranov/go-openai v1.27.1/go.mod h1:lj5b/K+zjTSFxVLijLSTDZuP7adOgerWeFyZLUhAKRg=
 github.com/sashabaranov/go-openai v1.29.0 h1:eBH6LSjtX4md5ImDCX8hNhHQvaRf22zujiERoQpsvLo=
 github.com/sashabaranov/go-openai v1.29.0/go.mod h1:lj5b/K+zjTSFxVLijLSTDZuP7adOgerWeFyZLUhAKRg=
+github.com/sashabaranov/go-openai v1.36.0 h1:fcSrn8uGuorzPWCBp8L0aCR95Zjb/Dd+ZSML0YZy9EI=
+github.com/sashabaranov/go-openai v1.36.0/go.mod h1:lj5b/K+zjTSFxVLijLSTDZuP7adOgerWeFyZLUhAKRg=
 github.com/schollz/progressbar/v3 v3.7.4/go.mod h1:1H8m5kMPW6q5fyjpDqtBHW1JT22mu2NwHQ1ApuCPh/8=
 github.com/sean-/seed v0.0.0-20170313163322-e2103e2c3529/go.mod h1:DxrIzT+xaE7yg65j358z/aeFdxmN0P9QXhEzd20vsDc=
 github.com/shogo82148/go-shuffle v0.0.0-20180218125048-27e6095f230d/go.mod h1:2htx6lmL0NGLHlO8ZCf+lQBGBHIbEujyywxJArf+2Yc=
@@ -631,6 +633,10 @@ github.com/wangergou2023/agi_modules_for_go v0.0.1 h1:scfwknuKIWNm6OwV9+XqSTiYsX
 github.com/wangergou2023/agi_modules_for_go v0.0.1/go.mod h1:F0OMVAAXSt/w/TGdKNAFcdEow2pTRrQ3v/gO1XHlhyk=
 github.com/wangergou2023/agi_modules_for_go v0.0.2 h1:N34eWhgbhKBAgOe7uo1gI5S4Nd9Hg+0h0M0V/ZSC6o8=
 github.com/wangergou2023/agi_modules_for_go v0.0.2/go.mod h1:F0OMVAAXSt/w/TGdKNAFcdEow2pTRrQ3v/gO1XHlhyk=
+github.com/wangergou2023/agi_modules_for_go v0.0.4 h1:iKUdo95M2NITHJe/95eNj+pkPv8vSw+fe/X+Ot8rWk8=
+github.com/wangergou2023/agi_modules_for_go v0.0.4/go.mod h1:F0OMVAAXSt/w/TGdKNAFcdEow2pTRrQ3v/gO1XHlhyk=
+github.com/wangergou2023/agi_modules_for_go v0.0.5 h1:voPOFGF09Tns39WtOARrsL+6HzOH9gkGUUdhlZvxSmI=
+github.com/wangergou2023/agi_modules_for_go v0.0.5/go.mod h1:cgZLFwiRb7TxoP3E4WMrsqpc5aOID8/q/HeKYDO4cBI=
 github.com/wangergou2023/xiao_wan/chipper v0.0.0-20240819145457-f4a0efd61650 h1:L4mqZrEuywKZ86hgeLNFgUsbcw8BFi7k/yjsxZwVHFk=
 github.com/wangergou2023/xiao_wan/chipper v0.0.0-20240819145457-f4a0efd61650/go.mod h1:q1gx1qfbnyiR1FARaIX4yEg/+M7Xcgv3V1k20Url9ZQ=
 github.com/wlynxg/anet v0.0.1 h1:VbkEEgHxPSrRQSiyRd0pmrbcEQAEU2TTb8fb4DmSYoQ=

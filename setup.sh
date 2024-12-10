@@ -87,6 +87,14 @@ echo "Checks have passed!"
 echo
 
 function getPackages() {
+    if [[ ! -d ./chipper/plugins/xiao_wan ]]; then
+        mkdir chipper/plugins/xiao_wan
+        cd ./chipper/plugins/xiao_wan
+        git clone https://github.com/wangergou2023/agi_modules_for_go.git .
+        git checkout new 
+        cd ../../../
+    fi
+
     echo "Installing required packages"
     if [[ ${TARGET} == "debian" ]]; then
         apt update -y
@@ -233,13 +241,6 @@ function getSTT() {
         echo "export STT_SERVICE=whisper.cpp" >> ./chipper/source.sh
         origDir="$(pwd)"
         echo "Getting Whisper assets"
-        if [[ ! -d ./chipper/plugins/xiao_wan ]]; then
-            mkdir chipper/plugins/xiao_wan
-            cd ./chipper/plugins/xiao_wan
-            git clone https://github.com/wangergou2023/agi_modules_for_go.git .
-            git checkout new 
-            cd ../../../
-        fi
         if [[ ! -d ./whisper.cpp ]]; then
             mkdir whisper.cpp
             cd whisper.cpp

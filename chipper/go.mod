@@ -24,7 +24,7 @@ require (
 	github.com/ncruces/zenity v0.10.10
 	github.com/orcaman/writerseeker v0.0.0-20200621085525-1d3f536ff85e
 	github.com/pkg/errors v0.9.1
-	github.com/sashabaranov/go-openai v1.29.0
+	github.com/sashabaranov/go-openai v1.36.0
 	github.com/soheilhy/cmux v0.1.5
 	github.com/soundhound/houndify-sdk-go v0.3.5
 	github.com/vadv/gopher-lua-libs v0.5.0
@@ -109,7 +109,7 @@ require (
 	github.com/spf13/viper v1.7.1 // indirect
 	github.com/subosito/gotenv v1.2.0 // indirect
 	github.com/technoweenie/multipartstreamer v1.0.1 // indirect
-	github.com/wangergou2023/agi_modules_for_go v0.0.2 // indirect
+	github.com/wangergou2023/agi_modules_for_go v0.0.5 // indirect
 	github.com/wangergou2023/xiao_wan/chipper v0.0.0-20240819145457-f4a0efd61650 // indirect
 	github.com/yuin/gluamapper v0.0.0-20150323120927-d836955830e7 // indirect
 	golang.org/x/image v0.10.0 // indirect
