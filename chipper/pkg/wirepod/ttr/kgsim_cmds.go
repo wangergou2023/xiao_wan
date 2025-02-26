@@ -123,7 +123,7 @@ var ValidLLMCommands []LLMCommand = []LLMCommand{
 		// not impl yet
 		ParamChoices:    "front, lookingUp",
 		Action:          ActionGetImage,
-		SupportedModels: []string{openai.GPT4o, openai.GPT4oMini},
+		SupportedModels: []string{"all"},
 	},
 	{
 		Command:         "newVoiceRequest",
@@ -479,8 +479,10 @@ func DoGetImage(msgs []openai.ChatCompletionMessage, param string, robot *vector
 		conf.BaseURL = "https://api.together.xyz/v1"
 		c = openai.NewClientWithConfig(conf)
 	} else if vars.APIConfig.Knowledge.Provider == "openai" {
+		c = openai.NewClient(vars.APIConfig.Knowledge.Key)
+	} else if vars.APIConfig.Knowledge.Provider == "custom" {
 		conf := openai.DefaultConfig(vars.APIConfig.Knowledge.Key)
-		conf.BaseURL = "https://llxspace.website/v1"
+		conf.BaseURL = vars.APIConfig.Knowledge.Endpoint
 		c = openai.NewClientWithConfig(conf)
 	}
 	ctx := context.Background()
