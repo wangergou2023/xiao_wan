@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"io"
 
-	sr "github.com/kercre123/wire-pod/chipper/pkg/wirepod/speechrequest"
 	"github.com/soundhound/houndify-sdk-go"
+	sr "github.com/wangergou2023/wire-pod/chipper/pkg/wirepod/speechrequest"
 )
 
 func StreamAudioToHoundify(sreq sr.SpeechRequest, client houndify.Client) string {

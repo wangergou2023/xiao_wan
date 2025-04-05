@@ -8,10 +8,10 @@ import (
 	"strings"
 
 	pb "github.com/digital-dream-labs/api/go/chipperpb"
-	"github.com/kercre123/wire-pod/chipper/pkg/logger"
-	"github.com/kercre123/wire-pod/chipper/pkg/scripting"
-	"github.com/kercre123/wire-pod/chipper/pkg/vars"
-	"github.com/kercre123/wire-pod/chipper/pkg/vtt"
+	"github.com/wangergou2023/wire-pod/chipper/pkg/logger"
+	"github.com/wangergou2023/wire-pod/chipper/pkg/scripting"
+	"github.com/wangergou2023/wire-pod/chipper/pkg/vars"
+	"github.com/wangergou2023/wire-pod/chipper/pkg/vtt"
 )
 
 type systemIntentResponseStruct struct {

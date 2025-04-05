@@ -11,8 +11,8 @@ import (
 	"github.com/digital-dream-labs/hugh/grpc/client"
 	"github.com/fforchino/vector-go-sdk/pkg/vector"
 	"github.com/fforchino/vector-go-sdk/pkg/vectorpb"
-	"github.com/kercre123/wire-pod/chipper/pkg/logger"
-	"github.com/kercre123/wire-pod/chipper/pkg/vars"
+	"github.com/wangergou2023/wire-pod/chipper/pkg/logger"
+	"github.com/wangergou2023/wire-pod/chipper/pkg/vars"
 )
 
 var robots []Robot
@@ -155,7 +155,7 @@ func connTimer(ind int) {
 			logger.Println("Closing SDK connection for " + robots[ind].ESN + ", source: connTimer")
 			removeRobot(robots[ind].ESN, "connTimer")
 			return
-		}  
+		}
 		robots[ind].ConnTimer = robots[ind].ConnTimer + 1
 	}
 }

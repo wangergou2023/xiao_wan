@@ -5,10 +5,10 @@ import (
 	"io"
 	"os"
 
-	"github.com/kercre123/wire-pod/chipper/pkg/logger"
-	preqs "github.com/kercre123/wire-pod/chipper/pkg/wirepod/preqs"
-	sr "github.com/kercre123/wire-pod/chipper/pkg/wirepod/speechrequest"
 	"github.com/soundhound/houndify-sdk-go"
+	"github.com/wangergou2023/wire-pod/chipper/pkg/logger"
+	preqs "github.com/wangergou2023/wire-pod/chipper/pkg/wirepod/preqs"
+	sr "github.com/wangergou2023/wire-pod/chipper/pkg/wirepod/speechrequest"
 )
 
 // to use, you must create a Houndify client with the only domain enabled being "Speech to text only"

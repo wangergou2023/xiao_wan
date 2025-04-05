@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"os"
 
-	"github.com/kercre123/wire-pod/chipper/pkg/logger"
+	"github.com/wangergou2023/wire-pod/chipper/pkg/logger"
 )
 
 // a way to create a JSON configuration for wire-pod, rather than the use of env vars

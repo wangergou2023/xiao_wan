@@ -11,9 +11,9 @@ import (
 	"time"
 
 	vosk "github.com/kercre123/vosk-api/go"
-	"github.com/kercre123/wire-pod/chipper/pkg/logger"
-	"github.com/kercre123/wire-pod/chipper/pkg/vars"
-	sr "github.com/kercre123/wire-pod/chipper/pkg/wirepod/speechrequest"
+	"github.com/wangergou2023/wire-pod/chipper/pkg/logger"
+	"github.com/wangergou2023/wire-pod/chipper/pkg/vars"
+	sr "github.com/wangergou2023/wire-pod/chipper/pkg/wirepod/speechrequest"
 )
 
 var GrammerEnable bool = false
