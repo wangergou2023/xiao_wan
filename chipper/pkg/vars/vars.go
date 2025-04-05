@@ -13,9 +13,9 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/fforchino/vector-go-sdk/pkg/vector"
 	"github.com/sashabaranov/go-openai"
 	"github.com/wangergou2023/wire-pod/chipper/pkg/logger"
+	"github.com/wangergou2023/wire-pod/chipper/pkg/vector"
 	"github.com/wlynxg/anet"
 )
 

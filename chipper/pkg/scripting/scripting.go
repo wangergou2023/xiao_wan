@@ -8,11 +8,11 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/fforchino/vector-go-sdk/pkg/vector"
-	"github.com/fforchino/vector-go-sdk/pkg/vectorpb"
 	lualibs "github.com/vadv/gopher-lua-libs"
 	"github.com/wangergou2023/wire-pod/chipper/pkg/logger"
 	"github.com/wangergou2023/wire-pod/chipper/pkg/vars"
+	"github.com/wangergou2023/wire-pod/chipper/pkg/vector"
+	"github.com/wangergou2023/wire-pod/chipper/pkg/vectorpb"
 	lua "github.com/yuin/gopher-lua"
 )
 

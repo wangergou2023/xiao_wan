@@ -9,10 +9,10 @@ import (
 	"time"
 
 	"github.com/digital-dream-labs/hugh/grpc/client"
-	"github.com/fforchino/vector-go-sdk/pkg/vector"
-	"github.com/fforchino/vector-go-sdk/pkg/vectorpb"
 	"github.com/wangergou2023/wire-pod/chipper/pkg/logger"
 	"github.com/wangergou2023/wire-pod/chipper/pkg/vars"
+	"github.com/wangergou2023/wire-pod/chipper/pkg/vector"
+	"github.com/wangergou2023/wire-pod/chipper/pkg/vectorpb"
 )
 
 var robots []Robot

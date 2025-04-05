@@ -3,8 +3,8 @@ package scripting
 import (
 	"context"
 
-	"github.com/fforchino/vector-go-sdk/pkg/vectorpb"
 	"github.com/wangergou2023/wire-pod/chipper/pkg/logger"
+	"github.com/wangergou2023/wire-pod/chipper/pkg/vectorpb"
 	lua "github.com/yuin/gopher-lua"
 )
 
