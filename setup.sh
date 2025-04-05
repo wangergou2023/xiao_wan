@@ -143,9 +143,10 @@ function getSTT() {
         echo "1: Coqui (local, no usage collection, less accurate, a little slower)"
         echo "2: Picovoice Leopard (local, usage collected, accurate, account signup required)"
         echo "3: VOSK (local, accurate, multilanguage, fast, recommended)"
-        # echo "4: Whisper (local, accurate, multilanguage, a little slower, recommended for more powerful hardware)"
+        echo "4: Whisper.cpp (local, accurate, multilanguage, a little slower, recommended for more powerful hardware)"
+        echo "5: openai online Whisper "
         echo
-        read -p "Enter a number (3): " sttServiceNum
+        read -p "Enter a number (5): " sttServiceNum
         if [[ ! -n ${sttServiceNum} ]]; then
             sttService="vosk"
             elif [[ ${sttServiceNum} == "1" ]]; then
@@ -160,6 +161,8 @@ function getSTT() {
             elif [[ ${sttServiceNum} == "3" ]]; then
             sttService="vosk"
             elif [[ ${sttServiceNum} == "4" ]]; then
+            sttService="whisper.cpp"
+            elif [[ ${sttServiceNum} == "5" ]]; then
             sttService="whisper"
         else
             echo
@@ -225,6 +228,8 @@ function getSTT() {
             cd ${origDir}
         fi
         elif [[ ${sttService} == "whisper" ]]; then
+        echo "export STT_SERVICE=whisper" >> ./chipper/source.sh
+        elif [[ ${sttService} == "whisper.cpp" ]]; then
         echo "export STT_SERVICE=whisper.cpp" >> ./chipper/source.sh
         origDir="$(pwd)"
         echo "Getting Whisper assets"
@@ -232,6 +237,7 @@ function getSTT() {
             mkdir whisper.cpp
             cd whisper.cpp
             git clone https://github.com/ggerganov/whisper.cpp.git .
+            git checkout v1.5.5
         else
             cd whisper.cpp
         fi
