@@ -111,7 +111,7 @@ func makeOpenAIReq(in []byte) string {
 
 	// 使用 OpenAI 客户端发起语音转文本请求
 	conf := openai.DefaultConfig(vars.APIConfig.Knowledge.Key)
-	conf.BaseURL = "https://llxspace.shop/v1" // 配置 OpenAI API 的自定义 URL
+	conf.BaseURL = vars.APIConfig.Knowledge.Endpoint
 	client := openai.NewClientWithConfig(conf)
 	ctx := context.Background()
 
