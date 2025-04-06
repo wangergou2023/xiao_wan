@@ -337,7 +337,10 @@ func DoSayText_OpenAI(robot *vector.Vector, input string) error {
 	// } else {
 	// 	openaiVoice = getOpenAIVoice(vars.APIConfig.Knowledge.OpenAIPrompt)
 	// }
-	oc := openai.NewClient(vars.APIConfig.Knowledge.Key)
+	conf := openai.DefaultConfig(vars.APIConfig.Knowledge.Key)
+	conf.BaseURL = vars.APIConfig.Knowledge.Endpoint
+	oc := openai.NewClientWithConfig(conf)
+
 	resp, err := oc.CreateSpeech(context.Background(), openai.CreateSpeechRequest{
 		Model:          openai.TTSModel1,
 		Input:          input,
@@ -475,7 +478,9 @@ func DoGetImage(msgs []openai.ChatCompletionMessage, param string, robot *vector
 		conf.BaseURL = "https://api.together.xyz/v1"
 		c = openai.NewClientWithConfig(conf)
 	} else if vars.APIConfig.Knowledge.Provider == "openai" {
-		c = openai.NewClient(vars.APIConfig.Knowledge.Key)
+		conf := openai.DefaultConfig(vars.APIConfig.Knowledge.Key)
+		conf.BaseURL = vars.APIConfig.Knowledge.Endpoint
+		c = openai.NewClientWithConfig(conf)
 	} else if vars.APIConfig.Knowledge.Provider == "custom" {
 		conf := openai.DefaultConfig(vars.APIConfig.Knowledge.Key)
 		conf.BaseURL = vars.APIConfig.Knowledge.Endpoint
@@ -494,7 +499,7 @@ func DoGetImage(msgs []openai.ChatCompletionMessage, param string, robot *vector
 		Stream:           true,
 	}
 	if vars.APIConfig.Knowledge.Provider == "openai" {
-		aireq.Model = openai.GPT4oMini
+		aireq.Model = vars.APIConfig.Knowledge.Model
 		logger.Println("Using " + aireq.Model)
 	} else {
 		logger.Println("Using " + vars.APIConfig.Knowledge.Model)
