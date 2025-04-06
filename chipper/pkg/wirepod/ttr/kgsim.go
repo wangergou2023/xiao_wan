@@ -354,7 +354,11 @@ func StreamingKGSim(req interface{}, esn string, transcribedText string, isKG bo
 
 			fullfullRespText = fullfullRespText + removeSpecialCharacters(response.Choices[0].Delta.Content)
 			fullRespText = fullRespText + removeSpecialCharacters(response.Choices[0].Delta.Content)
-			if strings.Contains(fullRespText, "...") || strings.Contains(fullRespText, ".'") || strings.Contains(fullRespText, ".\"") || strings.Contains(fullRespText, ".") || strings.Contains(fullRespText, "?") || strings.Contains(fullRespText, "!") {
+			if strings.Contains(fullRespText, "...") || strings.Contains(fullRespText, ".'") || strings.Contains(fullRespText, ".\"") ||
+				strings.Contains(fullRespText, ".") || strings.Contains(fullRespText, "?") || strings.Contains(fullRespText, "!") ||
+				strings.Contains(fullRespText, "。") || strings.Contains(fullRespText, "？") || strings.Contains(fullRespText, "！") ||
+				strings.Contains(fullRespText, "……") || strings.Contains(fullRespText, "，") || strings.Contains(fullRespText, "；") {
+
 				var sepStr string
 				if strings.Contains(fullRespText, "...") {
 					sepStr = "..."
@@ -368,7 +372,20 @@ func StreamingKGSim(req interface{}, esn string, transcribedText string, isKG bo
 					sepStr = "?"
 				} else if strings.Contains(fullRespText, "!") {
 					sepStr = "!"
+				} else if strings.Contains(fullRespText, "。") {
+					sepStr = "。"
+				} else if strings.Contains(fullRespText, "？") {
+					sepStr = "？"
+				} else if strings.Contains(fullRespText, "！") {
+					sepStr = "！"
+				} else if strings.Contains(fullRespText, "……") {
+					sepStr = "……"
+				} else if strings.Contains(fullRespText, "，") {
+					sepStr = "，"
+				} else if strings.Contains(fullRespText, "；") {
+					sepStr = "；"
 				}
+
 				splitResp := strings.Split(strings.TrimSpace(fullRespText), sepStr)
 				fullRespSlice = append(fullRespSlice, strings.TrimSpace(splitResp[0])+sepStr)
 				fullRespText = splitResp[1]
