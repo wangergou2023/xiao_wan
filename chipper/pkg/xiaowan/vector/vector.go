@@ -3,13 +3,17 @@ package vector
 import (
 	"context"
 
+	"github.com/wangergou2023/wire-pod/chipper/pkg/logger"
 	sdk_wrapper "github.com/wangergou2023/wire-pod/chipper/pkg/sdk-wrapper"
 	"github.com/wangergou2023/wire-pod/chipper/pkg/vars"
 	"github.com/wangergou2023/wire-pod/chipper/pkg/vector"
 	"github.com/wangergou2023/wire-pod/chipper/pkg/vectorpb"
+	"github.com/wangergou2023/wire-pod/chipper/pkg/xiaowan/chat"
 )
 
 func StreamingKGSim(req interface{}, esn string, transcribedText string, isKG bool) (string, error) {
+
+	logger.Println("StreamingKGSim: ", transcribedText)
 
 	sdk_wrapper.InitSDKForWirepod(esn)
 
@@ -44,6 +48,8 @@ func StreamingKGSim(req interface{}, esn string, transcribedText string, isKG bo
 	if err != nil {
 		return "", err
 	}
+
+	chat.OpenAIchat(transcribedText)
 
 	return "", nil
 }
