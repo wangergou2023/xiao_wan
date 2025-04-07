@@ -2,6 +2,8 @@ package vector
 
 import (
 	"context"
+	"fmt"
+	"os"
 
 	"github.com/wangergou2023/wire-pod/chipper/pkg/logger"
 	sdk_wrapper "github.com/wangergou2023/wire-pod/chipper/pkg/sdk-wrapper"
@@ -56,6 +58,42 @@ func StreamingKGSim(req interface{}, esn string, transcribedText string, isKG bo
 	}
 
 	tts.TtsChat(resp)
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	start := make(chan bool)
+	stop := make(chan bool)
+
+	// BehaviorControl Goroutine
+	go func() {
+		defer close(start)
+		defer close(stop)
+		err := sdk_wrapper.Robot.BehaviorControl(ctx, start, stop)
+		if err != nil {
+			logger.Println("BehaviorControl error:", err)
+		}
+	}()
+
+	// 等待 BehaviorControl 启动
+	select {
+	case <-start:
+		fileName := fmt.Sprintf("%s_speech.mp3", vars.APIConfig.Knowledge.OpenAIVoice)
+
+		// 确保文件存在
+		if _, err := os.Stat(fileName); os.IsNotExist(err) {
+			logger.Printf("File not found: %s\n", fileName)
+			return "", err
+		}
+
+		sdk_wrapper.SetMasterVolume(4)
+		sdk_wrapper.PlaySound(fileName)
+
+		// 停止 BehaviorControl
+		stop <- true
+	case <-ctx.Done():
+		return "", err
+	}
 
 	return "", nil
 }
