@@ -8,6 +8,7 @@ import (
 	"github.com/wangergou2023/wire-pod/chipper/pkg/vtt"
 	sr "github.com/wangergou2023/wire-pod/chipper/pkg/wirepod/speechrequest"
 	ttr "github.com/wangergou2023/wire-pod/chipper/pkg/wirepod/ttr"
+	vector "github.com/wangergou2023/wire-pod/chipper/pkg/xiaowan/vector"
 )
 
 func (s *Server) ProcessIntentGraph(req *vtt.IntentGraphRequest) (*vtt.IntentGraphResponse, error) {
@@ -62,7 +63,7 @@ func (s *Server) ProcessIntentGraph(req *vtt.IntentGraphRequest) (*vtt.IntentGra
 	if !successMatched {
 		if vars.APIConfig.Knowledge.IntentGraph && vars.APIConfig.Knowledge.Enable {
 			logger.Println("Making LLM request for device " + req.Device + "...")
-			_, err := ttr.StreamingKGSim(req, req.Device, transcribedText, false)
+			_, err := vector.StreamingKGSim(req, req.Device, transcribedText, false)
 			if err != nil {
 				logger.Println("LLM error: " + err.Error())
 				logger.LogUI("LLM error: " + err.Error())

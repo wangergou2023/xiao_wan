@@ -15,12 +15,6 @@ Options: tiny, base, small, medium, large-v3, large-v3-q5_0
 
 Enter preferred model: small
 
-
-文件
-xiao_wan/chipper/pkg/wirepod/preqs/intent_graph.go
-xiao_wan/chipper/pkg/wirepod/ttr/kgsim_cmds.go
-xiao_wan/chipper/pkg/wirepod/ttr/kgsim.go
-
 whisper.cpp版本
 cd xiao_wan/whisper.cpp
 git checkout v1.5.5
@@ -29,9 +23,15 @@ git checkout v1.5.5
 xiao_wan/chipper/cmd/experimental/whisper.cpp/main.go
 StartFromProgramInit
 ...
+chipper/pkg/servers/chipper/intent_graph.go
 StreamingIntentGraph
+xiao_wan/chipper/pkg/wirepod/preqs/intent_graph.go
 ProcessIntentGraph
+xiao_wan/chipper/pkg/wirepod/ttr/kgsim.go
 StreamingKGSim
+CreateAIReq
+xiao_wan/chipper/pkg/wirepod/ttr/kgsim_cmds.go
+CreatePrompt
 
 语音转文本
 https://github.com/ahmetoner/whisper-asr-webservice
