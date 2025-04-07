@@ -12,7 +12,6 @@ require (
 	github.com/digital-dream-labs/hugh v0.0.0-20210210154335-f4159b9fcd5f
 	github.com/digital-dream-labs/opus-go v0.0.0-20201230195736-934a8a9e0a1e
 	github.com/digital-dream-labs/vector-bluetooth v0.0.0-20210604051118-1c511122d877
-	github.com/fforchino/vector-go-sdk v0.0.0-20231108155304-62168f3595d6
 	github.com/fogleman/gg v1.3.0
 	github.com/ggerganov/whisper.cpp/bindings/go v0.0.0-20240917125632-5b1ce40fa882
 	github.com/go-audio/audio v1.0.0
@@ -28,7 +27,7 @@ require (
 	github.com/nfnt/resize v0.0.0-20180221191011-83c6a9932646
 	github.com/orcaman/writerseeker v0.0.0-20200621085525-1d3f536ff85e
 	github.com/pkg/errors v0.9.1
-	github.com/sashabaranov/go-openai v1.27.1
+	github.com/sashabaranov/go-openai v1.38.1
 	github.com/soheilhy/cmux v0.1.5
 	github.com/soundhound/houndify-sdk-go v0.3.5
 	github.com/vadv/gopher-lua-libs v0.5.0
@@ -49,7 +48,6 @@ require (
 	github.com/alecthomas/template v0.0.0-20190718012654-fb15b899a751 // indirect
 	github.com/alecthomas/units v0.0.0-20190924025748-f65c72e2690d // indirect
 	github.com/alessio/shellescape v1.4.1 // indirect
-	github.com/alphacep/vosk-api/go v0.3.50 // indirect
 	github.com/aws/aws-sdk-go v1.34.28 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/cbroglie/mustache v1.0.1 // indirect
@@ -79,8 +77,6 @@ require (
 	github.com/jdkato/prose v1.2.1 // indirect
 	github.com/jmespath/go-jmespath v0.4.0 // indirect
 	github.com/josephspurrier/goversioninfo v1.4.0 // indirect
-	github.com/kercre123/vosk-api v1.0.1 // indirect
-	github.com/kr/text v0.2.0 // indirect
 	github.com/lib/pq v1.10.4 // indirect
 	github.com/magiconair/properties v1.8.1 // indirect
 	github.com/mattn/go-colorable v0.1.12 // indirect
