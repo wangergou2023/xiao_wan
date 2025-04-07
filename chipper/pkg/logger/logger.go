@@ -34,6 +34,13 @@ func Println(a ...any) {
 	}
 }
 
+func Printf(format string, a ...any) {
+	LogTray(a...)
+	if debugLogging {
+		fmt.Printf(format, a...)
+	}
+}
+
 func LogUI(a ...any) {
 	LogArray = append(LogArray, time.Now().Format("2006.01.02 15:04:05")+": "+fmt.Sprint(a...)+"\n")
 	if len(LogArray) >= 50 {

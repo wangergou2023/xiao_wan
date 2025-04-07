@@ -7,10 +7,9 @@ import (
 	"github.com/wangergou2023/wire-pod/chipper/pkg/logger"
 	"github.com/wangergou2023/wire-pod/chipper/pkg/vars"
 	"github.com/wangergou2023/wire-pod/chipper/pkg/xiaowan/config"
-	"github.com/wangergou2023/wire-pod/chipper/pkg/xiaowan/structured_outputs"
 )
 
-var SystemPrompt = `
+var systemPrompt = `
 你是一个名为“小丸”的多才多艺的猫娘，
 以下是需要你输出的JSON格式：
 {
@@ -56,16 +55,16 @@ func OpenAIchat(userText string) (string, error) {
 		openai.ChatCompletionRequest{
 			Model: openai.GPT4o,
 			Messages: []openai.ChatCompletionMessage{
-				{
-					Role:    openai.ChatMessageRoleSystem,
-					Content: SystemPrompt,
-				},
+				// {
+				// 	Role:    openai.ChatMessageRoleSystem,
+				// 	Content: systemPrompt,
+				// },
 				{
 					Role:    openai.ChatMessageRoleUser,
 					Content: "主人:" + userText,
 				},
 			},
-			ResponseFormat: structured_outputs.GetChatCompletionResponseFormat(),
+			// ResponseFormat: structured_outputs.GetChatCompletionResponseFormat(),
 		},
 	)
 
@@ -76,5 +75,5 @@ func OpenAIchat(userText string) (string, error) {
 
 	logger.Println(resp.Choices[0].Message.Content)
 
-	return "", nil
+	return resp.Choices[0].Message.Content, err
 }

@@ -9,6 +9,7 @@ import (
 	"github.com/wangergou2023/wire-pod/chipper/pkg/vector"
 	"github.com/wangergou2023/wire-pod/chipper/pkg/vectorpb"
 	"github.com/wangergou2023/wire-pod/chipper/pkg/xiaowan/chat"
+	"github.com/wangergou2023/wire-pod/chipper/pkg/xiaowan/tts"
 )
 
 func StreamingKGSim(req interface{}, esn string, transcribedText string, isKG bool) (string, error) {
@@ -49,7 +50,12 @@ func StreamingKGSim(req interface{}, esn string, transcribedText string, isKG bo
 		return "", err
 	}
 
-	chat.OpenAIchat(transcribedText)
+	resp, err := chat.OpenAIchat(transcribedText)
+	if err != nil {
+		return "", err
+	}
+
+	tts.TtsChat(resp)
 
 	return "", nil
 }
