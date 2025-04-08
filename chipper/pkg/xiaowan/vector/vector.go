@@ -2,6 +2,7 @@ package vector
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"os"
 
@@ -11,6 +12,7 @@ import (
 	"github.com/wangergou2023/wire-pod/chipper/pkg/vector"
 	"github.com/wangergou2023/wire-pod/chipper/pkg/vectorpb"
 	"github.com/wangergou2023/wire-pod/chipper/pkg/xiaowan/chat"
+	"github.com/wangergou2023/wire-pod/chipper/pkg/xiaowan/structured_outputs"
 	"github.com/wangergou2023/wire-pod/chipper/pkg/xiaowan/tts"
 )
 
@@ -57,7 +59,17 @@ func StreamingKGSim(req interface{}, esn string, transcribedText string, isKG bo
 		return "", err
 	}
 
-	tts.TtsChat(resp)
+	var result structured_outputs.Result
+
+	err = json.Unmarshal([]byte(resp), &result)
+	if err != nil {
+		return "", err
+	}
+
+	for i, sentence := range result.Sentences {
+		logger.Println(i, sentence.Message)
+		tts.TtsChat(i, resp)
+	}
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()

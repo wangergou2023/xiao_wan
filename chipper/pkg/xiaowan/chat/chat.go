@@ -7,6 +7,7 @@ import (
 	"github.com/wangergou2023/wire-pod/chipper/pkg/logger"
 	"github.com/wangergou2023/wire-pod/chipper/pkg/vars"
 	"github.com/wangergou2023/wire-pod/chipper/pkg/xiaowan/config"
+	"github.com/wangergou2023/wire-pod/chipper/pkg/xiaowan/structured_outputs"
 )
 
 var systemPrompt = `
@@ -53,18 +54,18 @@ func OpenAIchat(userText string) (string, error) {
 	resp, err := client.CreateChatCompletion(
 		context.Background(),
 		openai.ChatCompletionRequest{
-			Model: openai.GPT4o,
+			Model: vars.APIConfig.Knowledge.Model,
 			Messages: []openai.ChatCompletionMessage{
-				// {
-				// 	Role:    openai.ChatMessageRoleSystem,
-				// 	Content: systemPrompt,
-				// },
+				{
+					Role:    openai.ChatMessageRoleSystem,
+					Content: systemPrompt,
+				},
 				{
 					Role:    openai.ChatMessageRoleUser,
 					Content: "主人:" + userText,
 				},
 			},
-			// ResponseFormat: structured_outputs.GetChatCompletionResponseFormat(),
+			ResponseFormat: structured_outputs.GetChatCompletionResponseFormat(),
 		},
 	)
 

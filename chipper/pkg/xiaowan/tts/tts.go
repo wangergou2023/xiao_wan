@@ -41,7 +41,7 @@ func clearMP3Files() error {
 	})
 }
 
-func TtsChat(aiText string) {
+func TtsChat(index int, aiText string) {
 
 	var cfg = config.New()
 	var err error
@@ -65,10 +65,12 @@ func TtsChat(aiText string) {
 
 	openaiVoice := voiceMap[vars.APIConfig.Knowledge.OpenAIVoice]
 
-	// 清理当前目录下的 MP3 文件
-	if err := clearMP3Files(); err != nil {
-		logger.Println("Error:", err)
-		return
+	if index == 0 {
+		// 清理当前目录下的 MP3 文件
+		if err := clearMP3Files(); err != nil {
+			logger.Println("Error:", err)
+			return
+		}
 	}
 
 	client := openai.NewClientWithConfig(config)
@@ -92,7 +94,7 @@ func TtsChat(aiText string) {
 	}
 
 	// 生成文件路径，使用 speechVoice 来动态生成文件名
-	outputFile := fmt.Sprintf("%s_speech.mp3", openaiVoice)
+	outputFile := fmt.Sprintf("%s_speech_%d.mp3", openaiVoice, index)
 
 	// 检查文件是否存在
 	if _, err = os.Stat(outputFile); err == nil {
