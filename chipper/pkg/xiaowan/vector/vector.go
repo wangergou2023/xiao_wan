@@ -5,6 +5,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"os/exec"
+	"path/filepath"
+	"time"
 
 	"github.com/wangergou2023/wire-pod/chipper/pkg/logger"
 	sdk_wrapper "github.com/wangergou2023/wire-pod/chipper/pkg/sdk-wrapper"
@@ -15,6 +18,70 @@ import (
 	"github.com/wangergou2023/wire-pod/chipper/pkg/xiaowan/structured_outputs"
 	"github.com/wangergou2023/wire-pod/chipper/pkg/xiaowan/tts"
 )
+
+func clearMP3Files() error {
+	// 使用当前目录
+	dir := "."
+
+	return filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+		// 检查文件扩展名是否为 .mp3
+		if !info.IsDir() && filepath.Ext(path) == ".mp3" {
+			err = os.Remove(path)
+			if err != nil {
+				return fmt.Errorf("failed to delete file %s: %w", path, err)
+			}
+			fmt.Printf("Deleted file: %s\n", path)
+		}
+		// 检查文件扩展名是否为 .wav
+		if !info.IsDir() && filepath.Ext(path) == ".wav" {
+			err = os.Remove(path)
+			if err != nil {
+				return fmt.Errorf("failed to delete file %s: %w", path, err)
+			}
+			fmt.Printf("Deleted file: %s\n", path)
+		}
+		// 检查文件扩展名是否为 .pcm
+		if !info.IsDir() && filepath.Ext(path) == ".pcm" {
+			err = os.Remove(path)
+			if err != nil {
+				return fmt.Errorf("failed to delete file %s: %w", path, err)
+			}
+			fmt.Printf("Deleted file: %s\n", path)
+		}
+		return nil
+	})
+}
+func playSound(fileName string) (string, error) {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	start := make(chan bool)
+	stop := make(chan bool)
+
+	// BehaviorControl Goroutine
+	go func() {
+		defer close(start)
+		defer close(stop)
+		err := sdk_wrapper.Robot.BehaviorControl(ctx, start, stop)
+		if err != nil {
+			logger.Println("BehaviorControl error:", err)
+		}
+	}()
+
+	// 等待 BehaviorControl 启动
+	select {
+	case <-start:
+		sdk_wrapper.PlaySound(fileName)
+		// 停止 BehaviorControl
+		stop <- true
+	case <-ctx.Done():
+		return "", fmt.Errorf("context canceled")
+	}
+	return "", nil
+}
 
 func StreamingKGSim(req interface{}, esn string, transcribedText string, isKG bool) (string, error) {
 
@@ -66,45 +133,72 @@ func StreamingKGSim(req interface{}, esn string, transcribedText string, isKG bo
 		return "", err
 	}
 
-	for i, sentence := range result.Sentences {
-		logger.Println(i, sentence.Message)
-		tts.TtsChat(i, resp)
+	// 清理当前目录下的 MP3 文件
+	if err := clearMP3Files(); err != nil {
+		logger.Println("Error:", err)
+		return "", err
 	}
 
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
+	// 处理每个句子
+	for i, sentence := range result.Sentences {
+		// 使用 goroutine 异步处理每个句子
+		go func(i int, message string) {
+			// 生成音频文件名
+			fileName := fmt.Sprintf("%s_speech%d.mp3", vars.APIConfig.Knowledge.OpenAIVoice, i)
+			// 使用 OpenAI TTS 生成音频文件
+			tts.OpenAItts(fileName, message)
+			// 确保文件存在
+			if _, err := os.Stat(fileName); os.IsNotExist(err) {
+				logger.Printf("File not found: %s\n", fileName)
+				return
+			}
+			// 使用 ffmpeg 转换音频文件格式
+			tmpFileName := fmt.Sprintf("%s_speech%d.pcm", vars.APIConfig.Knowledge.OpenAIVoice, i)
+			_, err := exec.Command("ffmpeg", "-y", "-i", fileName, "-af", "volume=3", "-f", "s16le", "-acodec", "pcm_s16le", "-ar", "16000", "-ac", "1", tmpFileName).Output()
+			if err != nil {
+				logger.Println("Error:", err)
+				return
+			}
 
-	start := make(chan bool)
-	stop := make(chan bool)
+			// 检查前面的文件是否存在,存在则等待前面的文件播放完成
+			if i != 0 {
+				allFilesPlayed := false
+				for !allFilesPlayed {
+					allFilesPlayed = true // 假设所有文件都已经播放完
 
-	// BehaviorControl Goroutine
-	go func() {
-		defer close(start)
-		defer close(stop)
-		err := sdk_wrapper.Robot.BehaviorControl(ctx, start, stop)
-		if err != nil {
-			logger.Println("BehaviorControl error:", err)
-		}
-	}()
+					// 检查前面的所有文件
+					for j := 0; j < i; j++ {
+						fileNameBefore := fmt.Sprintf("%s_speech%d.mp3", vars.APIConfig.Knowledge.OpenAIVoice, j)
+						// 检查文件是否存在
+						if _, err := os.Stat(fileNameBefore); err == nil {
+							// 文件存在
+							allFilesPlayed = false
+							logger.Printf("等待文件 %s 播放完成...\n", fileNameBefore)
+							time.Sleep(1 * time.Second) // 等待 1 秒后再次检查
+							break                       // 只要找到一个文件存在，暂停检查
+						}
+					}
+				}
+			}
 
-	// 等待 BehaviorControl 启动
-	select {
-	case <-start:
-		fileName := fmt.Sprintf("%s_speech.mp3", vars.APIConfig.Knowledge.OpenAIVoice)
-
-		// 确保文件存在
-		if _, err := os.Stat(fileName); os.IsNotExist(err) {
-			logger.Printf("File not found: %s\n", fileName)
-			return "", err
-		}
-
-		sdk_wrapper.SetMasterVolume(4)
-		sdk_wrapper.PlaySound(fileName)
-
-		// 停止 BehaviorControl
-		stop <- true
-	case <-ctx.Done():
-		return "", err
+			logger.Printf("当前正在播放%d ” %s “\n", i, message)
+			// 播放音频文件
+			if _, err := playSound(tmpFileName); err != nil {
+				logger.Printf("Error playing sound: %s\n", err)
+				return
+			}
+			// 播放完成后，删除文件
+			if err := os.Remove(fileName); err != nil {
+				logger.Printf("Error deleting file: %s\n", err)
+				return
+			}
+			if err := os.Remove(tmpFileName); err != nil {
+				logger.Printf("Error deleting file: %s\n", err)
+				return
+			}
+		}(i, sentence.Message)
+		// 等待 1 秒
+		time.Sleep(1 * time.Second)
 	}
 
 	return "", nil

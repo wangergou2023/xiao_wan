@@ -2,10 +2,8 @@ package tts
 
 import (
 	"context"
-	"fmt"
 	"io"
 	"os"
-	"path/filepath"
 
 	openai "github.com/sashabaranov/go-openai"
 	"github.com/wangergou2023/wire-pod/chipper/pkg/logger"
@@ -13,35 +11,7 @@ import (
 	"github.com/wangergou2023/wire-pod/chipper/pkg/xiaowan/config"
 )
 
-func clearMP3Files() error {
-	// 使用当前目录
-	dir := "."
-
-	return filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
-		if err != nil {
-			return err
-		}
-		// 检查文件扩展名是否为 .mp3
-		if !info.IsDir() && filepath.Ext(path) == ".mp3" {
-			err = os.Remove(path)
-			if err != nil {
-				return fmt.Errorf("failed to delete file %s: %w", path, err)
-			}
-			fmt.Printf("Deleted file: %s\n", path)
-		}
-		// 检查文件扩展名是否为 .wav
-		if !info.IsDir() && filepath.Ext(path) == ".wav" {
-			err = os.Remove(path)
-			if err != nil {
-				return fmt.Errorf("failed to delete file %s: %w", path, err)
-			}
-			fmt.Printf("Deleted file: %s\n", path)
-		}
-		return nil
-	})
-}
-
-func TtsChat(index int, aiText string) {
+func OpenAItts(outputFile string, aiText string) {
 
 	var cfg = config.New()
 	var err error
@@ -65,14 +35,6 @@ func TtsChat(index int, aiText string) {
 
 	openaiVoice := voiceMap[vars.APIConfig.Knowledge.OpenAIVoice]
 
-	if index == 0 {
-		// 清理当前目录下的 MP3 文件
-		if err := clearMP3Files(); err != nil {
-			logger.Println("Error:", err)
-			return
-		}
-	}
-
 	client := openai.NewClientWithConfig(config)
 	res, err := client.CreateSpeech(context.Background(), openai.CreateSpeechRequest{
 		Model: openai.TTSModel1,
@@ -92,9 +54,6 @@ func TtsChat(index int, aiText string) {
 		logger.Println("Error:", err)
 		return
 	}
-
-	// 生成文件路径，使用 speechVoice 来动态生成文件名
-	outputFile := fmt.Sprintf("%s_speech_%d.mp3", openaiVoice, index)
 
 	// 检查文件是否存在
 	if _, err = os.Stat(outputFile); err == nil {
