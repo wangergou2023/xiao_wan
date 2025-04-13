@@ -187,6 +187,8 @@ func StreamingKGSim(req interface{}, esn string, transcribedText string, isKG bo
 				logger.Printf("Error playing sound: %s\n", err)
 				return
 			}
+			// 等待 1 秒
+			time.Sleep(1 * time.Second)
 			// 播放完成后，删除文件
 			if err := os.Remove(fileName); err != nil {
 				logger.Printf("Error deleting file: %s\n", err)
