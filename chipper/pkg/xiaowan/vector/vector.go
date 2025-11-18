@@ -16,7 +16,7 @@ import (
 	"github.com/wangergou2023/wire-pod/chipper/pkg/vectorpb"
 	"github.com/wangergou2023/wire-pod/chipper/pkg/xiaowan/chat"
 	"github.com/wangergou2023/wire-pod/chipper/pkg/xiaowan/structured_outputs"
-	"github.com/wangergou2023/wire-pod/chipper/pkg/xiaowan/tts"
+	"github.com/wangergou2023/wire-pod/chipper/pkg/xiaowan/tts3"
 )
 
 func clearMP3Files() error {
@@ -146,7 +146,8 @@ func StreamingKGSim(req interface{}, esn string, transcribedText string, isKG bo
 			// 生成音频文件名
 			fileName := fmt.Sprintf("%s_speech%d.mp3", vars.APIConfig.Knowledge.OpenAIVoice, i)
 			// 使用 OpenAI TTS 生成音频文件
-			tts.OpenAItts(fileName, message)
+			// tts.OpenAItts(fileName, message)
+			tts3.StreamAliyunTTS(fileName, message)
 			// 确保文件存在
 			if _, err := os.Stat(fileName); os.IsNotExist(err) {
 				logger.Printf("File not found: %s\n", fileName)
@@ -154,7 +155,21 @@ func StreamingKGSim(req interface{}, esn string, transcribedText string, isKG bo
 			}
 			// 使用 ffmpeg 转换音频文件格式
 			tmpFileName := fmt.Sprintf("%s_speech%d.pcm", vars.APIConfig.Knowledge.OpenAIVoice, i)
-			_, err := exec.Command("ffmpeg", "-y", "-i", fileName, "-af", "volume=3", "-f", "s16le", "-acodec", "pcm_s16le", "-ar", "16000", "-ac", "1", tmpFileName).Output()
+			// openai的mp3文件转换pcm
+			// _, err := exec.Command("ffmpeg", "-y", "-i", fileName, "-af", "volume=3", "-f", "s16le", "-acodec", "pcm_s16le", "-ar", "16000", "-ac", "1", tmpFileName).Output()
+			// 阿里的24000 pcm 转 16000 pcm
+			_, err := exec.Command("ffmpeg",
+				"-y",          // 覆盖输出文件
+				"-f", "s16le", // 输入格式
+				"-ar", "24000", // 输入采样率（根据你的源文件调整）
+				"-ac", "1", // 输入声道数
+				"-i", fileName, // 输入文件
+				"-af", "volume=3", // 音量调整
+				"-ar", "16000", // 输出采样率
+				"-ac", "1", // 输出声道数
+				"-f", "wav", // 输出格式
+				tmpFileName, // 输出文件
+			).Output()
 			if err != nil {
 				logger.Println("Error:", err)
 				return
