@@ -20,7 +20,7 @@ import (
 )
 
 var Name string = "whisper"
-var useLocalModel bool = false // 默认使用 OpenAI Whisper API，设为 true 使用本地模型
+var useLocalModel bool = true // 默认使用 OpenAI Whisper API，设为 true 使用本地模型
 
 // 初始化函数
 func Init() error {
@@ -153,7 +153,7 @@ func makeLocalRequest(in []byte) (string, error) {
 	logger.Println("Temporary MP3 file created at:", tmpFile.Name())
 
 	// 使用 curl 请求本地 ASR 服务
-	url := "http://127.0.0.1:9000/asr?encode=true&task=transcribe&word_timestamps=false&output=txt"
+	url := "http://192.168.1.102:9000/asr?encode=true&task=transcribe&word_timestamps=false&output=txt"
 	cmd := exec.Command("curl", "-s", "-X", "POST", url,
 		"-H", "accept: application/json",
 		"-H", "Content-Type: multipart/form-data",

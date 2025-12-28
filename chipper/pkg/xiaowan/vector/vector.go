@@ -16,7 +16,7 @@ import (
 	"github.com/wangergou2023/wire-pod/chipper/pkg/vectorpb"
 	"github.com/wangergou2023/wire-pod/chipper/pkg/xiaowan/chat"
 	"github.com/wangergou2023/wire-pod/chipper/pkg/xiaowan/structured_outputs"
-	"github.com/wangergou2023/wire-pod/chipper/pkg/xiaowan/tts3"
+	"github.com/wangergou2023/wire-pod/chipper/pkg/xiaowan/tts4"
 )
 
 func clearMP3Files() error {
@@ -147,7 +147,8 @@ func StreamingKGSim(req interface{}, esn string, transcribedText string, isKG bo
 			fileName := fmt.Sprintf("%s_speech%d.mp3", vars.APIConfig.Knowledge.OpenAIVoice, i)
 			// 使用 OpenAI TTS 生成音频文件
 			// tts.OpenAItts(fileName, message)
-			tts3.StreamAliyunTTS(fileName, message)
+			// tts3.StreamAliyunTTS(fileName, message)
+			tts4.LocalTTS(fileName, message)
 			// 确保文件存在
 			if _, err := os.Stat(fileName); os.IsNotExist(err) {
 				logger.Printf("File not found: %s\n", fileName)
