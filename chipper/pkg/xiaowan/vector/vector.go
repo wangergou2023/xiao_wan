@@ -197,7 +197,7 @@ func StreamingKGSim(req interface{}, esn string, transcribedText string, isKG bo
 				}
 			}
 
-			logger.Printf("当前正在播放%d ” %s “\n", i, message)
+			logger.Printf("当前正在播放%d “ %s ”\n", i, message)
 			// 播放音频文件
 			if _, err := playSound(tmpFileName); err != nil {
 				logger.Printf("Error playing sound: %s\n", err)

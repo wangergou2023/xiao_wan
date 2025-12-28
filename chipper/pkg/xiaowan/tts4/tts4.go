@@ -23,7 +23,7 @@ type LocalTTSConfig struct {
 // 全局配置（可改成 vars）
 var localTTSConfig = LocalTTSConfig{
 	BaseURL: "http://192.168.1.102:9966",
-	Voice:   "3333",
+	Voice:   "2",
 }
 
 // =======================
@@ -92,12 +92,11 @@ func callLocalTTS(text string) (*LocalTTSResponse, error) {
 	form := url.Values{}
 	form.Set("text", text)
 	form.Set("prompt", "")
-	form.Set("voice", localTTSConfig.Voice)
 	form.Set("temperature", "0.3")
 	form.Set("top_p", "0.7")
 	form.Set("top_k", "20")
 	form.Set("skip_refine", "0")
-	form.Set("custom_voice", "0")
+	form.Set("custom_voice", localTTSConfig.Voice)
 
 	req, err := http.NewRequest(
 		"POST",
