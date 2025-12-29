@@ -82,6 +82,24 @@ func playSound(fileName string) (string, error) {
 	return "", nil
 }
 
+// ---------- 工具函数 ----------
+func wavToPCM(wavName, pcmName string) error {
+	cmd := exec.Command(
+		"ffmpeg",
+		"-y",
+		"-i", wavName,
+		"-af", "volume=3",
+		"-ar", "16000",
+		"-ac", "1",
+		"-f", "s16le",
+		pcmName,
+	)
+	if out, err := cmd.CombinedOutput(); err != nil {
+		return fmt.Errorf("ffmpeg error: %w, output=%s", err, string(out))
+	}
+	return nil
+}
+
 // StreamingKGSim 处理流式知识图谱模拟请求，包括连接机器人、拍照、LLM聊天、生成音频并播放
 // req: 请求接口（当前未使用）
 // esn: 机器人序列号，用于匹配机器人信息
@@ -148,88 +166,91 @@ func StreamingKGSim(req interface{}, esn string, transcribedText string, isKG bo
 	if len(result.Sentences) == 0 {
 		return "", fmt.Errorf("LLM 未返回 sentences")
 	}
-
 	// =========================
-	// ✅ 核心优化：并发生成 + 串行按序播放
+	// Pipeline: 串行 TTS → 并行 ffmpeg → 顺序播放
 	// =========================
 
-	taskCh := make(chan AudioTask, len(result.Sentences))
+	// 任务结构
+	type TTSTask struct {
+		Index   int
+		Message string
+		WavFile string
+		PcmFile string
+		Err     error
+	}
+
+	// ---------- Stage 1: TTS 串行 ----------
+	ttsCh := make(chan TTSTask)
+	wavCh := make(chan TTSTask)
+
+	// ⚠️ 只有这个 goroutine 会调用 tts4.LocalTTS
+	go func() {
+		for task := range ttsCh {
+			wav := fmt.Sprintf("%s_speech%d.wav",
+				vars.APIConfig.Knowledge.OpenAIVoice, task.Index)
+
+			if err := tts4.LocalTTS(wav, task.Message); err != nil {
+				task.Err = fmt.Errorf("TTS error: %w", err)
+			} else {
+				task.WavFile = wav
+			}
+			wavCh <- task
+		}
+		close(wavCh)
+	}()
+
+	// ---------- Stage 2: ffmpeg 并行 ----------
+	pcmCh := make(chan TTSTask)
 	var wg sync.WaitGroup
 
-	// 生产者：并发生成 wav + pcm
-	for i, sentence := range result.Sentences {
-		i := i
-		msg := sentence.Message
+	workerNum := 3 // ffmpeg 并发数，可调
+	wg.Add(workerNum)
 
-		wg.Add(1)
+	for i := 0; i < workerNum; i++ {
 		go func() {
 			defer wg.Done()
-
-			// 1) TTS 输出建议用 .wav（LocalTTS 多数返回 wav）
-			wavName := fmt.Sprintf("%s_speech%d.wav", vars.APIConfig.Knowledge.OpenAIVoice, i)
-			if err := tts4.LocalTTS(wavName, msg); err != nil {
-				taskCh <- AudioTask{Index: i, Message: msg, Err: fmt.Errorf("TTS error: %w", err)}
-				return
-			}
-			if _, err := os.Stat(wavName); err != nil {
-				taskCh <- AudioTask{Index: i, Message: msg, Err: fmt.Errorf("TTS output missing: %s", wavName)}
-				return
-			}
-
-			// 2) ffmpeg：WAV -> 16kHz mono s16le PCM（给 Vector 播放最常见）
-			pcmName := fmt.Sprintf("%s_speech%d.pcm", vars.APIConfig.Knowledge.OpenAIVoice, i)
-
-			// 你的 volume=3 保留
-			// 注意：这里输出是 raw pcm，所以用 -f s16le
-			cmd := exec.Command(
-				"ffmpeg",
-				"-y",
-				"-i", wavName,
-				"-af", "volume=3",
-				"-ar", "16000",
-				"-ac", "1",
-				"-f", "s16le",
-				pcmName,
-			)
-
-			if out, err := cmd.CombinedOutput(); err != nil {
-				taskCh <- AudioTask{
-					Index:   i,
-					Message: msg,
-					WavFile: wavName,
-					Err:     fmt.Errorf("ffmpeg error: %w, output=%s", err, string(out)),
+			for task := range wavCh {
+				if task.Err != nil {
+					pcmCh <- task
+					continue
 				}
-				return
-			}
 
-			taskCh <- AudioTask{
-				Index:   i,
-				Message: msg,
-				WavFile: wavName,
-				PcmFile: pcmName,
-				Err:     nil,
+				pcm := fmt.Sprintf("%s_speech%d.pcm",
+					vars.APIConfig.Knowledge.OpenAIVoice, task.Index)
+
+				if err := wavToPCM(task.WavFile, pcm); err != nil {
+					task.Err = err
+				} else {
+					task.PcmFile = pcm
+				}
+				pcmCh <- task
 			}
 		}()
 	}
 
-	// 关闭通道：所有生产者结束后关闭
 	go func() {
 		wg.Wait()
-		close(taskCh)
+		close(pcmCh)
 	}()
 
-	// 消费者：严格按 Index 顺序播放
+	// ---------- Stage 3: 顺序播放 ----------
 	next := 0
-	buffer := make(map[int]AudioTask, len(result.Sentences))
+	buffer := make(map[int]TTSTask)
 
-	// 用于统计：避免某一句失败后死等
-	failed := make(map[int]bool, len(result.Sentences))
+	go func() {
+		for i, s := range result.Sentences {
+			ttsCh <- TTSTask{
+				Index:   i,
+				Message: s.Message,
+			}
+		}
+		close(ttsCh)
+	}()
 
-	for task := range taskCh {
+	for task := range pcmCh {
 		buffer[task.Index] = task
 
-		// 尝试连续播放 next、next+1...
-		for next < len(result.Sentences) {
+		for {
 			t, ok := buffer[next]
 			if !ok {
 				break
@@ -237,9 +258,7 @@ func StreamingKGSim(req interface{}, esn string, transcribedText string, isKG bo
 			delete(buffer, next)
 
 			if t.Err != nil {
-				logger.Printf("❌ 句子 %d 生成失败：%v\n", t.Index, t.Err)
-				failed[next] = true
-				// 清理可能残留的 wav
+				logger.Printf("❌ 句子 %d 失败: %v\n", t.Index, t.Err)
 				if t.WavFile != "" {
 					_ = os.Remove(t.WavFile)
 				}
@@ -247,26 +266,19 @@ func StreamingKGSim(req interface{}, esn string, transcribedText string, isKG bo
 				continue
 			}
 
-			logger.Printf("▶️ 当前正在播放 %d “%s”\n", t.Index, t.Message)
+			logger.Printf("▶️ 播放 %d: %s\n", t.Index, t.Message)
 
 			if _, err := playSound(t.PcmFile); err != nil {
-				logger.Printf("Error playing sound: %s\n", err)
-				// 播放失败也继续推进，避免整个链路卡死
+				logger.Printf("播放失败: %v\n", err)
 			}
 
 			time.Sleep(1 * time.Second)
 
-			// 清理文件
 			_ = os.Remove(t.WavFile)
 			_ = os.Remove(t.PcmFile)
 
 			next++
 		}
-	}
-
-	// 如果有未播放的（极少见：比如某些任务从未投递），给个日志
-	if next < len(result.Sentences) {
-		logger.Printf("⚠️ 播放未完成：期望 %d 句，实际推进到 %d\n", len(result.Sentences), next)
 	}
 
 	return "", nil
