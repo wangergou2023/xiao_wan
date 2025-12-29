@@ -4,9 +4,11 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io/fs"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"sync"
 	"time"
 
 	"github.com/wangergou2023/wire-pod/chipper/pkg/logger"
@@ -19,41 +21,41 @@ import (
 	"github.com/wangergou2023/wire-pod/chipper/pkg/xiaowan/tts4"
 )
 
-func clearMP3Files() error {
-	// 使用当前目录
-	dir := "."
+// AudioTask 表示音频任务结构体，包含索引、消息、WAV文件、PCM文件和错误信息
+type AudioTask struct {
+	Index   int
+	Message string
+	WavFile string
+	PcmFile string
+	Err     error
+}
 
-	return filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
+// clearAudioFiles 清理当前目录下的 mp3、wav 和 pcm 文件
+// 返回: 清理过程中的错误，如果有的话
+func clearAudioFiles() error {
+	dir := "."
+	exts := map[string]bool{".mp3": true, ".wav": true, ".pcm": true}
+
+	return filepath.WalkDir(dir, func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
 			return err
 		}
-		// 检查文件扩展名是否为 .mp3
-		if !info.IsDir() && filepath.Ext(path) == ".mp3" {
-			err = os.Remove(path)
-			if err != nil {
-				return fmt.Errorf("failed to delete file %s: %w", path, err)
-			}
-			fmt.Printf("Deleted file: %s\n", path)
+		if d.IsDir() {
+			return nil
 		}
-		// 检查文件扩展名是否为 .wav
-		if !info.IsDir() && filepath.Ext(path) == ".wav" {
-			err = os.Remove(path)
-			if err != nil {
-				return fmt.Errorf("failed to delete file %s: %w", path, err)
-			}
-			fmt.Printf("Deleted file: %s\n", path)
-		}
-		// 检查文件扩展名是否为 .pcm
-		if !info.IsDir() && filepath.Ext(path) == ".pcm" {
-			err = os.Remove(path)
-			if err != nil {
-				return fmt.Errorf("failed to delete file %s: %w", path, err)
+		if exts[filepath.Ext(path)] {
+			if rmErr := os.Remove(path); rmErr != nil {
+				return fmt.Errorf("failed to delete file %s: %w", path, rmErr)
 			}
 			fmt.Printf("Deleted file: %s\n", path)
 		}
 		return nil
 	})
 }
+
+// playSound 播放指定的音频文件
+// fileName: 要播放的音频文件路径
+// 返回: 播放结果字符串和可能的错误
 func playSound(fileName string) (string, error) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -61,7 +63,6 @@ func playSound(fileName string) (string, error) {
 	start := make(chan bool)
 	stop := make(chan bool)
 
-	// BehaviorControl Goroutine
 	go func() {
 		defer close(start)
 		defer close(stop)
@@ -71,11 +72,9 @@ func playSound(fileName string) (string, error) {
 		}
 	}()
 
-	// 等待 BehaviorControl 启动
 	select {
 	case <-start:
 		sdk_wrapper.PlaySound(fileName)
-		// 停止 BehaviorControl
 		stop <- true
 	case <-ctx.Done():
 		return "", fmt.Errorf("context canceled")
@@ -83,141 +82,221 @@ func playSound(fileName string) (string, error) {
 	return "", nil
 }
 
+// StreamingKGSim 处理流式知识图谱模拟请求，包括连接机器人、拍照、LLM聊天、生成音频并播放
+// req: 请求接口（当前未使用）
+// esn: 机器人序列号，用于匹配机器人信息
+// transcribedText: 转录的文本内容，用于LLM处理
+// isKG: 是否为知识图谱模式（当前未使用）
+// 返回: 处理结果字符串和可能的错误
 func StreamingKGSim(req interface{}, esn string, transcribedText string, isKG bool) (string, error) {
-
 	logger.Println("StreamingKGSim: ", transcribedText)
 
 	sdk_wrapper.InitSDKForWirepod(esn)
 
-	// 初始化匹配标志为假
+	// 找机器人
 	matched := false
-	var robot *vector.Vector // 声明一个向量机器人类型的指针变量
-	var guid string          // 机器人的全局唯一标识符
-	var target string        // 机器人的目标IP和端口字符串
+	var robot *vector.Vector
+	var guid string
+	var target string
 
-	// 遍历所有已知的机器人信息
 	for _, bot := range vars.BotInfo.Robots {
-		if esn == bot.Esn { // 如果找到与提供的ESN匹配的机器人
-			guid = bot.GUID                 // 获取该机器人的GUID
-			target = bot.IPAddress + ":443" // 设置目标IP和端口，端口固定为443
-			matched = true                  // 设置匹配标志为真
-			break                           // 找到匹配项后退出循环
+		if esn == bot.Esn {
+			guid = bot.GUID
+			target = bot.IPAddress + ":443"
+			matched = true
+			break
 		}
 	}
 
-	// 如果成功匹配到机器人
 	if matched {
 		var err error
-		// 尝试创建一个新的机器人连接实例
 		robot, err = vector.New(vector.WithSerialNo(esn), vector.WithToken(guid), vector.WithTarget(target))
 		if err != nil {
-			return err.Error(), err // 如果创建失败，返回错误
+			return err.Error(), err
 		}
+	} else {
+		return "", fmt.Errorf("未找到匹配的机器人 ESN: %s", esn)
 	}
 
-	// 获取电池状态，以确保连接成功
-	_, err := robot.Conn.BatteryState(context.Background(), &vectorpb.BatteryStateRequest{})
-	if err != nil {
+	// 确认连接
+	if _, err := robot.Conn.BatteryState(context.Background(), &vectorpb.BatteryStateRequest{}); err != nil {
 		return "", err
 	}
 
+	// 拍照（你的实现保留）
+	if _, err := takePhoto(); err != nil {
+		return "", err
+	}
+
+	// LLM
 	resp, err := chat.OpenAIchat(transcribedText)
 	if err != nil {
 		return "", err
 	}
 
 	var result structured_outputs.Result
-
-	err = json.Unmarshal([]byte(resp), &result)
-	if err != nil {
+	if err := json.Unmarshal([]byte(resp), &result); err != nil {
 		return "", err
 	}
 
-	// 清理当前目录下的 MP3 文件
-	if err := clearMP3Files(); err != nil {
+	// 清理旧音频
+	if err := clearAudioFiles(); err != nil {
 		logger.Println("Error:", err)
 		return "", err
 	}
 
-	// 处理每个句子
+	if len(result.Sentences) == 0 {
+		return "", fmt.Errorf("LLM 未返回 sentences")
+	}
+
+	// =========================
+	// ✅ 核心优化：并发生成 + 串行按序播放
+	// =========================
+
+	taskCh := make(chan AudioTask, len(result.Sentences))
+	var wg sync.WaitGroup
+
+	// 生产者：并发生成 wav + pcm
 	for i, sentence := range result.Sentences {
-		// 使用 goroutine 异步处理每个句子
-		go func(i int, message string) {
-			// 生成音频文件名
-			fileName := fmt.Sprintf("%s_speech%d.mp3", vars.APIConfig.Knowledge.OpenAIVoice, i)
-			// 使用 OpenAI TTS 生成音频文件
-			// tts.OpenAItts(fileName, message)
-			// tts3.StreamAliyunTTS(fileName, message)
-			tts4.LocalTTS(fileName, message)
-			// 确保文件存在
-			if _, err := os.Stat(fileName); os.IsNotExist(err) {
-				logger.Printf("File not found: %s\n", fileName)
+		i := i
+		msg := sentence.Message
+
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+
+			// 1) TTS 输出建议用 .wav（LocalTTS 多数返回 wav）
+			wavName := fmt.Sprintf("%s_speech%d.wav", vars.APIConfig.Knowledge.OpenAIVoice, i)
+			if err := tts4.LocalTTS(wavName, msg); err != nil {
+				taskCh <- AudioTask{Index: i, Message: msg, Err: fmt.Errorf("TTS error: %w", err)}
 				return
 			}
-			// 使用 ffmpeg 转换音频文件格式
-			tmpFileName := fmt.Sprintf("%s_speech%d.pcm", vars.APIConfig.Knowledge.OpenAIVoice, i)
-			// openai的mp3文件转换pcm
-			// _, err := exec.Command("ffmpeg", "-y", "-i", fileName, "-af", "volume=3", "-f", "s16le", "-acodec", "pcm_s16le", "-ar", "16000", "-ac", "1", tmpFileName).Output()
-			// 阿里的24000 pcm 转 16000 pcm
-			_, err := exec.Command("ffmpeg",
-				"-y",          // 覆盖输出文件
-				"-f", "s16le", // 输入格式
-				"-ar", "24000", // 输入采样率（根据你的源文件调整）
-				"-ac", "1", // 输入声道数
-				"-i", fileName, // 输入文件
-				"-af", "volume=3", // 音量调整
-				"-ar", "16000", // 输出采样率
-				"-ac", "1", // 输出声道数
-				"-f", "wav", // 输出格式
-				tmpFileName, // 输出文件
-			).Output()
-			if err != nil {
-				logger.Println("Error:", err)
+			if _, err := os.Stat(wavName); err != nil {
+				taskCh <- AudioTask{Index: i, Message: msg, Err: fmt.Errorf("TTS output missing: %s", wavName)}
 				return
 			}
 
-			// 检查前面的文件是否存在,存在则等待前面的文件播放完成
-			if i != 0 {
-				allFilesPlayed := false
-				for !allFilesPlayed {
-					allFilesPlayed = true // 假设所有文件都已经播放完
+			// 2) ffmpeg：WAV -> 16kHz mono s16le PCM（给 Vector 播放最常见）
+			pcmName := fmt.Sprintf("%s_speech%d.pcm", vars.APIConfig.Knowledge.OpenAIVoice, i)
 
-					// 检查前面的所有文件
-					for j := 0; j < i; j++ {
-						fileNameBefore := fmt.Sprintf("%s_speech%d.mp3", vars.APIConfig.Knowledge.OpenAIVoice, j)
-						// 检查文件是否存在
-						if _, err := os.Stat(fileNameBefore); err == nil {
-							// 文件存在
-							allFilesPlayed = false
-							logger.Printf("等待文件 %s 播放完成...\n", fileNameBefore)
-							time.Sleep(1 * time.Second) // 等待 1 秒后再次检查
-							break                       // 只要找到一个文件存在，暂停检查
-						}
-					}
+			// 你的 volume=3 保留
+			// 注意：这里输出是 raw pcm，所以用 -f s16le
+			cmd := exec.Command(
+				"ffmpeg",
+				"-y",
+				"-i", wavName,
+				"-af", "volume=3",
+				"-ar", "16000",
+				"-ac", "1",
+				"-f", "s16le",
+				pcmName,
+			)
+
+			if out, err := cmd.CombinedOutput(); err != nil {
+				taskCh <- AudioTask{
+					Index:   i,
+					Message: msg,
+					WavFile: wavName,
+					Err:     fmt.Errorf("ffmpeg error: %w, output=%s", err, string(out)),
 				}
+				return
 			}
 
-			logger.Printf("当前正在播放%d “ %s ”\n", i, message)
-			// 播放音频文件
-			if _, err := playSound(tmpFileName); err != nil {
+			taskCh <- AudioTask{
+				Index:   i,
+				Message: msg,
+				WavFile: wavName,
+				PcmFile: pcmName,
+				Err:     nil,
+			}
+		}()
+	}
+
+	// 关闭通道：所有生产者结束后关闭
+	go func() {
+		wg.Wait()
+		close(taskCh)
+	}()
+
+	// 消费者：严格按 Index 顺序播放
+	next := 0
+	buffer := make(map[int]AudioTask, len(result.Sentences))
+
+	// 用于统计：避免某一句失败后死等
+	failed := make(map[int]bool, len(result.Sentences))
+
+	for task := range taskCh {
+		buffer[task.Index] = task
+
+		// 尝试连续播放 next、next+1...
+		for next < len(result.Sentences) {
+			t, ok := buffer[next]
+			if !ok {
+				break
+			}
+			delete(buffer, next)
+
+			if t.Err != nil {
+				logger.Printf("❌ 句子 %d 生成失败：%v\n", t.Index, t.Err)
+				failed[next] = true
+				// 清理可能残留的 wav
+				if t.WavFile != "" {
+					_ = os.Remove(t.WavFile)
+				}
+				next++
+				continue
+			}
+
+			logger.Printf("▶️ 当前正在播放 %d “%s”\n", t.Index, t.Message)
+
+			if _, err := playSound(t.PcmFile); err != nil {
 				logger.Printf("Error playing sound: %s\n", err)
-				return
+				// 播放失败也继续推进，避免整个链路卡死
 			}
-			// 等待 1 秒
+
 			time.Sleep(1 * time.Second)
-			// 播放完成后，删除文件
-			if err := os.Remove(fileName); err != nil {
-				logger.Printf("Error deleting file: %s\n", err)
-				return
-			}
-			if err := os.Remove(tmpFileName); err != nil {
-				logger.Printf("Error deleting file: %s\n", err)
-				return
-			}
-		}(i, sentence.Message)
-		// 等待 1 秒
-		time.Sleep(1 * time.Second)
+
+			// 清理文件
+			_ = os.Remove(t.WavFile)
+			_ = os.Remove(t.PcmFile)
+
+			next++
+		}
+	}
+
+	// 如果有未播放的（极少见：比如某些任务从未投递），给个日志
+	if next < len(result.Sentences) {
+		logger.Printf("⚠️ 播放未完成：期望 %d 句，实际推进到 %d\n", len(result.Sentences), next)
 	}
 
 	return "", nil
+}
+
+// takePhoto 让机器人拍照并保存为 camera.jpg
+// 返回: 拍照结果字符串和可能的错误
+func takePhoto() (string, error) {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	start := make(chan bool)
+	stop := make(chan bool)
+
+	go func() {
+		defer close(start)
+		defer close(stop)
+		err := sdk_wrapper.Robot.BehaviorControl(ctx, start, stop)
+		if err != nil {
+			logger.Println("BehaviorControl error:", err)
+		}
+	}()
+
+	select {
+	case <-start:
+		sdk_wrapper.SaveHiResCameraPicture("camera.jpg")
+		stop <- true
+		fmt.Println("拍照成功")
+		return "", nil
+	case <-ctx.Done():
+		return "", fmt.Errorf("context canceled")
+	}
 }
