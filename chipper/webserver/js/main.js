@@ -44,7 +44,7 @@ function checkInited() {
   fetch("/api/is_api_v3").then((response) => {
     if (!response.ok) {
       alert(
-        "This webroot does not match with the wire-pod binary. Some functionality will be broken. There was either an error during the last update, or you did not precisely follow the update guide. https://github.com/kercre123/wire-pod/wiki/Things-to-Know#updating-wire-pod"
+        "This webserver directory does not match with the wire-pod binary. Some functionality will be broken. There was either an error during the last update, or you did not precisely follow the update guide. https://github.com/kercre123/wire-pod/wiki/Things-to-Know#updating-wire-pod"
       );
     }
   });

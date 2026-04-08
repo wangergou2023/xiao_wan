@@ -29,7 +29,6 @@ require (
 	github.com/pkg/errors v0.9.1
 	github.com/sashabaranov/go-openai v1.38.1
 	github.com/soheilhy/cmux v0.1.5
-	github.com/soundhound/houndify-sdk-go v0.3.5
 	github.com/vadv/gopher-lua-libs v0.5.0
 	github.com/wlynxg/anet v0.0.1
 	github.com/yuin/gopher-lua v1.1.1

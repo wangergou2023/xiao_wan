@@ -19,9 +19,9 @@ import (
 	jdocsserver "github.com/wangergou2023/wire-pod/chipper/pkg/servers/jdocs"
 	tokenserver "github.com/wangergou2023/wire-pod/chipper/pkg/servers/token"
 	"github.com/wangergou2023/wire-pod/chipper/pkg/vars"
-	wpweb "github.com/wangergou2023/wire-pod/chipper/pkg/wirepod/config-ws"
+	wpweb "github.com/wangergou2023/wire-pod/chipper/webserver/backend/config-ws"
 	wp "github.com/wangergou2023/wire-pod/chipper/pkg/wirepod/preqs"
-	sdkWeb "github.com/wangergou2023/wire-pod/chipper/pkg/wirepod/sdkapp"
+	sdkWeb "github.com/wangergou2023/wire-pod/chipper/webserver/backend/sdkapp"
 
 	//	grpclog "github.com/digital-dream-labs/hugh/grpc/interceptors/logger"
 
@@ -99,7 +99,6 @@ func BeginWirepodSpecific(sttInitFunc func() error, sttHandlerFunc interface{}, 
 func StartFromProgramInit(sttInitFunc func() error, sttHandlerFunc interface{}, voiceProcessorName string) {
 	if runtime.GOOS == "android" || runtime.GOOS == "ios" {
 		os.Setenv("DEBUG_LOGGING", "true")
-		os.Setenv("STT_SERVICE", "vosk")
 	}
 	err := BeginWirepodSpecific(sttInitFunc, sttHandlerFunc, voiceProcessorName)
 	if err != nil {

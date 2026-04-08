@@ -6,7 +6,6 @@ import (
 	"github.com/wangergou2023/wire-pod/chipper/pkg/logger"
 	"github.com/wangergou2023/wire-pod/chipper/pkg/vars"
 	sr "github.com/wangergou2023/wire-pod/chipper/pkg/wirepod/speechrequest"
-	ttr "github.com/wangergou2023/wire-pod/chipper/pkg/wirepod/ttr"
 )
 
 // Server stores the config
@@ -31,10 +30,7 @@ var stiHandler func(sr.SpeechRequest) (string, map[string]string, error)
 var isSti bool = false
 
 func ReloadVosk() {
-	if vars.APIConfig.STT.Service == "vosk" || vars.APIConfig.STT.Service == "whisper.cpp" {
-		vars.SttInitFunc()
-		vars.IntentList, _ = vars.LoadIntents()
-	}
+	vars.SttInitFunc()
 }
 
 // New returns a new server
@@ -45,7 +41,6 @@ func New(InitFunc func() error, SttHandler interface{}, voiceProcessor string) (
 		vars.APIConfig.STT.Language = "en-US"
 	}
 	sttLanguage = vars.APIConfig.STT.Language
-	vars.IntentList, _ = vars.LoadIntents()
 	logger.Println("Initiating " + voiceProcessor + " voice processor with language " + sttLanguage)
 	vars.SttInitFunc = InitFunc
 	err := InitFunc()
@@ -68,9 +63,6 @@ func New(InitFunc func() error, SttHandler interface{}, voiceProcessor string) (
 
 	// Initiating the chosen voice processor and load intents from json
 	VoiceProcessor = voiceProcessor
-
-	// Load plugins
-	ttr.LoadPlugins()
 
 	return &Server{}, err
 }

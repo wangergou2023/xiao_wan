@@ -69,9 +69,6 @@ func CreateConfigFromEnv() {
 	if os.Getenv("KNOWLEDGE_ENABLED") == "true" {
 		APIConfig.Knowledge.Enable = true
 		APIConfig.Knowledge.Provider = os.Getenv("KNOWLEDGE_PROVIDER")
-		if os.Getenv("KNOWLEDGE_PROVIDER") == "houndify" {
-			APIConfig.Knowledge.ID = os.Getenv("KNOWLEDGE_ID")
-		}
 		APIConfig.Knowledge.Key = os.Getenv("KNOWLEDGE_KEY")
 	} else {
 		APIConfig.Knowledge.Enable = false
@@ -83,11 +80,9 @@ func CreateConfigFromEnv() {
 }
 
 func WriteSTT() {
-	// was not part of the original code, so this is its own function
-	// launched if stt not found in config
-	APIConfig.STT.Service = os.Getenv("STT_SERVICE")
-	if os.Getenv("STT_SERVICE") == "vosk" || os.Getenv("STT_SERVICE") == "whisper.cpp" {
-		APIConfig.STT.Language = os.Getenv("STT_LANGUAGE")
+	// Set default STT when not provided by config.
+	if APIConfig.STT.Service == "" {
+		APIConfig.STT.Service = "whisper"
 	}
 }
 
@@ -113,8 +108,7 @@ func ReadConfig() {
 			logger.Println(err)
 			return
 		}
-		// stt service is the only thing controlled by shell
-		if APIConfig.STT.Service != os.Getenv("STT_SERVICE") {
+		if APIConfig.STT.Service == "" {
 			WriteSTT()
 		}
 		if !APIConfig.HasReadFromEnv {

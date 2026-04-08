@@ -22,7 +22,7 @@ import (
 	"github.com/wangergou2023/wire-pod/chipper/pkg/vectorpb"
 )
 
-var serverFiles string = "./webroot/sdkapp"
+var serverFiles string = "./webserver/sdkapp"
 
 func SdkapiHandler(w http.ResponseWriter, r *http.Request) {
 	robotObj, robotIndex, err := getRobot(r.FormValue("serial"))
@@ -603,7 +603,7 @@ func BeginServer() {
 	}
 	http.HandleFunc("/api-sdk/", SdkapiHandler)
 	if runtime.GOOS == "android" || runtime.GOOS == "ios" {
-		serverFiles = filepath.Join(vars.AndroidPath, "/static/webroot")
+		serverFiles = filepath.Join(vars.AndroidPath, "/static/webserver")
 	}
 	fileServer := http.FileServer(http.Dir(serverFiles))
 	http.Handle("/sdk-app", DisableCachingAndSniffing(fileServer))

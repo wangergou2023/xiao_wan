@@ -7,26 +7,7 @@ echo
 UNAME=$(uname -a)
 ROOT="/root"
 
-if [[ ${UNAME} == *"Darwin"* ]]; then
-    if [[ -f /usr/local/Homebrew/bin/brew ]] || [[ -f /opt/Homebrew/bin/brew ]]; then
-        TARGET="darwin"
-        ROOT="$HOME"
-        echo "macOS detected."
-        if [[ ! -f /usr/local/go/bin/go ]]; then
-            if [[ -f /usr/local/bin/go ]]; then
-                mkdir -p /usr/local/go/bin
-                ln -s /usr/local/bin/go /usr/local/go/bin/go
-            else
-                echo "Go was not found. You must download it from https://go.dev/dl/ for your macOS."
-                exit 1
-            fi
-        fi
-    else
-        echo "macOS detected, but 'brew' was not found. Install it with the following command and try running setup.sh again:"
-        echo '/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"'
-        exit 1
-    fi
-    elif [[ -f /usr/bin/apt ]]; then
+if [[ -f /usr/bin/apt ]]; then
     TARGET="debian"
     echo "Debian-based Linux detected."
     elif [[ -f /usr/bin/pacman ]]; then
@@ -52,8 +33,7 @@ if [[ "${UNAME}" == *"x86_64"* ]]; then
     echo "aarch64 architecture confirmed."
     elif [[ "${UNAME}" == *"armv7l"* ]]; then
     ARCH="armv7l"
-    echo "armv7l (32-bit) WARN: The Coqui and VOSK bindings are broken for this platform at the moment, so please choose Picovoice when the script asks. wire-pod is designed for 64-bit systems."
-    STT=""
+    echo "armv7l (32-bit) WARN: wire-pod is designed for 64-bit systems."
 else
     echo "Your CPU architecture not supported. This script currently supports x86_64, aarch64, and armv7l."
     exit 1
@@ -70,7 +50,7 @@ if [[ ! -d ./chipper ]]; then
 fi
 
 if [[ $1 != "-f" ]]; then
-    if [[ ${ARCH} == "x86_64" ]] && [[ ${TARGET} != "darwin" ]]; then
+    if [[ ${ARCH} == "x86_64" ]]; then
         CPUINFO=$(cat /proc/cpuinfo)
         if [[ "${CPUINFO}" == *"avx"* ]]; then
             echo "AVX support confirmed."
@@ -97,16 +77,17 @@ function getPackages() {
         elif [[ ${TARGET} == "fedora" ]]; then
         dnf update
         dnf install -y ffmpeg wget openssl net-tools sox opus make opusfile curl unzip avahi git libsodium-devel
-        elif [[ ${TARGET} == "darwin" ]]; then
-        sudo -u $SUDO_USER brew update
-        sudo -u $SUDO_USER brew install wget pkg-config opus opusfile
     fi
-    touch ./vector-cloud/packagesGotten
+    if [[ -d ./vector-cloud ]]; then
+        touch ./vector-cloud/packagesGotten
+    else
+        touch ./chipper/packagesGotten
+    fi
     echo
     echo "Installing golang binary package"
     mkdir golang
     cd golang
-    if [[ ${TARGET} != "darwin" ]] && [[ ${TARGET} != "arch" ]]; then
+    if [[ ${TARGET} != "arch" ]]; then
         if [[ ! -f /usr/local/go/bin/go ]]; then
             if [[ ${ARCH} == "x86_64" ]]; then
                 wget -q --show-progress --no-check-certificate https://go.dev/dl/go1.22.4.linux-amd64.tar.gz
@@ -123,8 +104,8 @@ function getPackages() {
 	    fi
         fi
     else
-        echo "This is a macOS or arch target, assuming Go is installed already"
-        if [[ ${TARGET} == "arch" ]] && [[ ! -d /usr/local/go/bin ]]; then
+        echo "This is an arch target, assuming Go is installed already"
+        if [[ ! -d /usr/local/go/bin ]]; then
             mkdir -p /usr/local/go/bin
             ln -s /usr/bin/go /usr/local/go/bin/go
         fi
@@ -137,217 +118,11 @@ function getPackages() {
 function getSTT() {
     echo "export DEBUG_LOGGING=true" > ./chipper/source.sh
     echo "export WIREPOD_HOME=$PWD/" >> ./chipper/source.sh
-    rm -f ./chipper/pico.key
-    function sttServicePrompt() {
-        echo
-        echo "Which speech-to-text service would you like to use?"
-        echo "1: Coqui (local, no usage collection, less accurate, a little slower)"
-        echo "2: Picovoice Leopard (local, usage collected, accurate, account signup required)"
-        echo "3: VOSK (local, accurate, multilanguage, fast, recommended)"
-        echo "4: Whisper.cpp (local, accurate, multilanguage, a little slower, recommended for more powerful hardware)"
-        echo "5: openai online Whisper "
-        echo
-        read -p "Enter a number (5): " sttServiceNum
-        if [[ ! -n ${sttServiceNum} ]]; then
-            sttService="vosk"
-            elif [[ ${sttServiceNum} == "1" ]]; then
-            if [[ ${TARGET} == "darwin" ]]; then
-                echo "Coqui is not supported for macOS. Please select another option."
-                sttServicePrompt
-            else
-                sttService="coqui"
-            fi
-            elif [[ ${sttServiceNum} == "2" ]]; then
-            sttService="leopard"
-            elif [[ ${sttServiceNum} == "3" ]]; then
-            sttService="vosk"
-            elif [[ ${sttServiceNum} == "4" ]]; then
-            sttService="whisper.cpp"
-            elif [[ ${sttServiceNum} == "5" ]]; then
-            sttService="whisper"
-        else
-            echo
-            echo "Choose a valid number, or just press enter to use the default number."
-            sttServicePrompt
-        fi
-    }
-    if [[ "$STT" == "vosk" ]]; then
-        echo "Vosk config"
-        sttService="vosk"
+    if [[ -d ./chipper/pkg/xiaowan/stt ]] && [[ -f ./chipper/pkg/xiaowan/stt/stt.go ]]; then
+        echo "Whisper STT detected."
     else
-        sttServicePrompt
-    fi
-    if [[ ${sttService} == "leopard" ]]; then
-        function picoApiPrompt() {
-            echo
-            echo "Create an account at https://console.picovoice.ai/ and enter the Access Key it gives you."
-            echo
-            read -p "Enter your Access Key: " picoKey
-            if [[ ! -n ${picoKey} ]]; then
-                echo
-                echo "You must enter a key."
-                picoApiPrompt
-            fi
-        }
-        picoApiPrompt
-        echo "export STT_SERVICE=leopard" >> ./chipper/source.sh
-        echo "export PICOVOICE_APIKEY=${picoKey}" >> ./chipper/source.sh
-        echo "export PICOVOICE_APIKEY=${picoKey}" > ./chipper/pico.key
-        elif [[ ${sttService} == "vosk" ]]; then
-        echo "export STT_SERVICE=vosk" >> ./chipper/source.sh
-        origDir="$(pwd)"
-        if [[ ! -f ./vosk/completed ]]; then
-            echo "Getting VOSK assets"
-            rm -fr ${ROOT}/.vosk
-            mkdir ${ROOT}/.vosk
-            cd ${ROOT}/.vosk
-            VOSK_VER="0.3.45"
-            if [[ ${TARGET} == "darwin" ]]; then
-                VOSK_VER="0.3.42"
-                VOSK_DIR="vosk-osx-${VOSK_VER}"
-                elif [[ ${ARCH} == "x86_64" ]]; then
-                VOSK_DIR="vosk-linux-x86_64-${VOSK_VER}"
-                elif [[ ${ARCH} == "aarch64" ]]; then
-                VOSK_DIR="vosk-linux-aarch64-${VOSK_VER}"
-                elif [[ ${ARCH} == "armv7l" ]]; then
-                VOSK_DIR="vosk-linux-armv7l-${VOSK_VER}"
-            fi
-            VOSK_ARCHIVE="$VOSK_DIR.zip"
-            wget -q --show-progress --no-check-certificate "https://github.com/alphacep/vosk-api/releases/download/v${VOSK_VER}/${VOSK_ARCHIVE}"
-            unzip "$VOSK_ARCHIVE"
-            mv "$VOSK_DIR" libvosk
-            rm -fr "$VOSK_ARCHIVE"
-            
-            cd ${origDir}/chipper
-            export CGO_ENABLED=1
-            export CGO_CFLAGS="-I${ROOT}/.vosk/libvosk"
-            export CGO_LDFLAGS="-L ${ROOT}/.vosk/libvosk -lvosk -ldl -lpthread"
-            export LD_LIBRARY_PATH="${ROOT}/.vosk/libvosk:$LD_LIBRARY_PATH"
-            /usr/local/go/bin/go get -u github.com/kercre123/vosk-api/go/...
-            /usr/local/go/bin/go get github.com/kercre123/vosk-api
-            /usr/local/go/bin/go install github.com/kercre123/vosk-api/go
-            cd ${origDir}
-        fi
-        elif [[ ${sttService} == "whisper" ]]; then
-        echo "export STT_SERVICE=whisper" >> ./chipper/source.sh
-        elif [[ ${sttService} == "whisper.cpp" ]]; then
-        echo "export STT_SERVICE=whisper.cpp" >> ./chipper/source.sh
-        origDir="$(pwd)"
-        echo "Getting Whisper assets"
-        if [[ ! -d ./whisper.cpp ]]; then
-            mkdir whisper.cpp
-            cd whisper.cpp
-            git clone https://github.com/ggerganov/whisper.cpp.git .
-            git checkout v1.5.5
-        else
-            cd whisper.cpp
-        fi
-        function whichWhisperModel() {
-            availableModels="tiny, base, small, medium, large-v3, large-v3-q5_0"
-            echo
-            echo "Which Whisper model would you like to use?"
-            echo "Options: $availableModels"
-            echo '(tiny is recommended)'
-            echo
-            read -p "Enter preferred model: " whispermodel
-            if [[ ! -n ${whispermodel} ]]; then
-                echo
-                echo "You must enter a key."
-                whichWhisperModel
-            fi
-            if [[ ! ${availableModels} == *"${whispermodel}"* ]]; then
-                echo
-                echo "Invalid model."
-                whichWhisperModel
-            fi
-        }
-        whichWhisperModel
-        ./models/download-ggml-model.sh $whispermodel
-        cd bindings/go
-        make whisper
-        cd ${origDir}
-        echo "export WHISPER_MODEL=$whispermodel" >> ./chipper/source.sh
-    else
-        echo "export STT_SERVICE=coqui" >> ./chipper/source.sh
-        if [[ ! -f ./stt/completed ]]; then
-            echo "Getting STT assets"
-            if [[ -d /root/.coqui ]]; then
-                rm -rf /root/.coqui
-            fi
-            origDir=$(pwd)
-            mkdir /root/.coqui
-            cd /root/.coqui
-            if [[ ${ARCH} == "x86_64" ]]; then
-                if [[ ${AVXSUPPORT} == "noavx" ]]; then
-                    wget -q --show-progress --no-check-certificate https://wire.my.to/noavx-coqui/native_client.tflite.Linux.tar.xz
-                else
-                    wget -q --show-progress --no-check-certificate https://github.com/coqui-ai/STT/releases/download/v1.3.0/native_client.tflite.Linux.tar.xz
-                fi
-                tar -xf native_client.tflite.Linux.tar.xz
-                rm -f ./native_client.tflite.Linux.tar.xz
-                elif [[ ${ARCH} == "aarch64" ]]; then
-                wget -q --show-progress --no-check-certificate https://github.com/coqui-ai/STT/releases/download/v1.3.0/native_client.tflite.linux.aarch64.tar.xz
-                tar -xf native_client.tflite.linux.aarch64.tar.xz
-                rm -f ./native_client.tflite.linux.aarch64.tar.xz
-                elif [[ ${ARCH} == "armv7l" ]]; then
-                wget -q --show-progress --no-check-certificate https://github.com/coqui-ai/STT/releases/download/v1.3.0/native_client.tflite.linux.armv7.tar.xz
-                tar -xf native_client.tflite.linux.armv7.tar.xz
-                rm -f ./native_client.tflite.linux.armv7.tar.xz
-            fi
-            cd ${origDir}/chipper
-            export CGO_LDFLAGS="-L/root/.coqui/"
-            export CGO_CXXFLAGS="-I/root/.coqui/"
-            export LD_LIBRARY_PATH="/root/.coqui/:$LD_LIBRARY_PATH"
-            /usr/local/go/bin/go get -u github.com/asticode/go-asticoqui/...
-            /usr/local/go/bin/go get github.com/asticode/go-asticoqui
-            /usr/local/go/bin/go install github.com/asticode/go-asticoqui
-            cd ${origDir}
-            mkdir -p stt
-            cd stt
-            function sttModelPrompt() {
-                echo
-                echo "Which voice model would you like to use?"
-                echo "1: large_vocabulary (faster, less accurate, ~100MB)"
-                echo "2: huge_vocabulary (slower, more accurate, handles faster speech better, ~900MB)"
-                echo
-                read -p "Enter a number (1): " sttModelNum
-                if [[ ! -n ${sttModelNum} ]]; then
-                    sttModel="large_vocabulary"
-                    elif [[ ${sttModelNum} == "1" ]]; then
-                    sttModel="large_vocabulary"
-                    elif [[ ${sttModelNum} == "2" ]]; then
-                    sttModel="huge_vocabulary"
-                else
-                    echo
-                    echo "Choose a valid number, or just press enter to use the default number."
-                    sttModelPrompt
-                fi
-            }
-            sttModelPrompt
-            if [[ -f model.scorer ]]; then
-                rm -rf ./*
-            fi
-            if [[ ${sttModel} == "large_vocabulary" ]]; then
-                echo "Getting STT model..."
-                wget -O model.tflite -q --show-progress --no-check-certificate https://coqui.gateway.scarf.sh/english/coqui/v1.0.0-large-vocab/model.tflite
-                echo "Getting STT scorer..."
-                wget -O model.scorer -q --show-progress --no-check-certificate https://coqui.gateway.scarf.sh/english/coqui/v1.0.0-large-vocab/large_vocabulary.scorer
-                elif [[ ${sttModel} == "huge_vocabulary" ]]; then
-                echo "Getting STT model..."
-                wget -O model.tflite -q --show-progress --no-check-certificate https://coqui.gateway.scarf.sh/english/coqui/v1.0.0-huge-vocab/model.tflite
-                echo "Getting STT scorer..."
-                wget -O model.scorer -q --show-progress --no-check-certificate https://coqui.gateway.scarf.sh/english/coqui/v1.0.0-huge-vocab/huge-vocabulary.scorer
-            else
-                echo "Invalid model specified"
-                exit 0
-            fi
-            echo
-            touch completed
-            echo "STT assets successfully downloaded!"
-            cd ..
-        else
-            echo "STT assets already there! If you want to redownload, use the 4th option in setup.sh."
-        fi
+        echo "Whisper STT not found at ./chipper/pkg/xiaowan/stt/stt.go"
+        exit 1
     fi
 }
 
@@ -367,11 +142,7 @@ function IPDNSPrompt() {
 }
 
 function IPPrompt() {
-    if [[ ${TARGET} == "darwin" ]]; then
-        IPADDRESS=$(ifconfig | grep "inet " | grep -v 127.0.0.1 | cut -d\  -f2)
-    else
-        IPADDRESS=$(ip -4 addr | grep $(ip addr | awk '/state UP/ {print $2}' | sed 's/://g') | grep -oP '(?<=inet\s)\d+(\.\d+){3}')
-    fi
+    IPADDRESS=$(ip -4 addr | grep $(ip addr | awk '/state UP/ {print $2}' | sed 's/://g') | grep -oP '(?<=inet\s)\d+(\.\d+){3}')
     read -p "Enter the IP address of the machine you are running this script on (${IPADDRESS}): " ipaddress
     if [[ ! -n ${ipaddress} ]]; then
         address=${IPADDRESS}
@@ -541,17 +312,13 @@ function scpToBot() {
 }
 
 function setupSystemd() {
-    if [[ ${TARGET} == "darwin" ]]; then
-        echo "This cannot be done on macOS."
-        exit 1
-    fi
     if [[ ! -f ./chipper/source.sh ]]; then
         echo "You need to make a source.sh file. This can be done with the setup.sh script, option 6."
         exit 1
     fi
     source ./chipper/source.sh
     echo "[Unit]" >wire-pod.service
-    echo "Description=Wire Escape Pod (coqui)" >>wire-pod.service
+    echo "Description=Wire Escape Pod (whisper)" >>wire-pod.service
     echo "StartLimitIntervalSec=500" >>wire-pod.service
     echo "StartLimitBurst=5" >>wire-pod.service
     echo >>wire-pod.service
@@ -573,32 +340,8 @@ function setupSystemd() {
     fi
     COMMIT_HASH="$(git rev-parse --short HEAD)"
     export GOLDFLAGS="-X 'github.com/kercre123/wire-pod/chipper/pkg/vars.CommitSHA=${COMMIT_HASH}'"
-    if [[ ${STT_SERVICE} == "leopard" ]]; then
-        echo "wire-pod.service created, building chipper with Picovoice STT service..."
-        /usr/local/go/bin/go build -tags $GOTAGS -ldflags="${GOLDFLAGS}" cmd/leopard/main.go
-        elif [[ ${STT_SERVICE} == "vosk" ]]; then
-        echo "wire-pod.service created, building chipper with VOSK STT service..."
-        export CGO_ENABLED=1
-        export CGO_CFLAGS="-I/root/.vosk/libvosk"
-        export CGO_LDFLAGS="-L /root/.vosk/libvosk -lvosk -ldl -lpthread"
-        export LD_LIBRARY_PATH="/root/.vosk/libvosk:$LD_LIBRARY_PATH"
-        /usr/local/go/bin/go build -tags $GOTAGS -ldflags="${GOLDFLAGS}" cmd/vosk/main.go
-        elif [[ ${STT_SERVICE} == "whisper.cpp" ]]; then
-        echo "wire-pod.service created, building chipper with Whisper.CPP STT service..."
-        export CGO_ENABLED=1
-        export C_INCLUDE_PATH="../whisper.cpp"
-        export LIBRARY_PATH="../whisper.cpp"
-        export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:$(pwd)/../whisper.cpp"
-        export CGO_LDFLAGS="-L$(pwd)/../whisper.cpp"
-        export CGO_CFLAGS="-I$(pwd)/../whisper.cpp"
-        /usr/local/go/bin/go build -tags $GOTAGS -ldflags="${GOLDFLAGS}" cmd/experimental/whisper.cpp/main.go
-    else
-        echo "wire-pod.service created, building chipper with Coqui STT service..."
-        export CGO_LDFLAGS="-L/root/.coqui/"
-        export CGO_CXXFLAGS="-I/root/.coqui/"
-        export LD_LIBRARY_PATH="/root/.coqui/:$LD_LIBRARY_PATH"
-        /usr/local/go/bin/go build -tags $GOTAGS -ldflags="${GOLDFLAGS}" cmd/coqui/main.go
-    fi
+    echo "wire-pod.service created, building chipper with Whisper STT service..."
+    /usr/local/go/bin/go build -tags $GOTAGS -ldflags="${GOLDFLAGS}" cmd/experimental/whisper/main.go
     sync
     mv main chipper
     echo
@@ -615,10 +358,6 @@ function setupSystemd() {
 }
 
 function disableSystemd() {
-    if [[ ${TARGET} == "darwin" ]]; then
-        echo "This cannot be done on macOS."
-        exit 1
-    fi
     echo
     echo "Disabling wire-pod.service"
     systemctl stop wire-pod.service
@@ -664,10 +403,6 @@ if [[ $1 == "-f" ]] && [[ $2 == "scp" ]]; then
 fi
 
 # echo "What would you like to do?"
-# echo "1: Full Setup (recommended) (builds chipper, gets STT stuff, generates certs, creates source.sh file, and creates server_config.json for your bot"
-# echo "2: Just build vic-cloud"
-# echo "3: Just build chipper"
-# echo "4: Just get STT assets"
 # echo "5: Just generate certs"
 # echo "6: Create wire-pod config file (change/add API keys)"
 # echo "(NOTE: You can just press enter without entering a number to select the default, recommended option)"

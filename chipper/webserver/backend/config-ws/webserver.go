@@ -402,11 +402,11 @@ func StartWebServer() {
 	var webRoot http.Handler
 	if runtime.GOOS == "darwin" && vars.Packaged {
 		appPath, _ := os.Executable()
-		webRoot = http.FileServer(http.Dir(filepath.Dir(appPath) + "/../Frameworks/chipper/webroot"))
+		webRoot = http.FileServer(http.Dir(filepath.Dir(appPath) + "/../Frameworks/chipper/webserver"))
 	} else if runtime.GOOS == "android" || runtime.GOOS == "ios" {
-		webRoot = http.FileServer(http.Dir(vars.AndroidPath + "/static/webroot"))
+		webRoot = http.FileServer(http.Dir(vars.AndroidPath + "/static/webserver"))
 	} else {
-		webRoot = http.FileServer(http.Dir("./webroot"))
+		webRoot = http.FileServer(http.Dir("./webserver"))
 	}
 	http.Handle("/", DisableCachingAndSniffing(webRoot))
 	fmt.Printf("Starting webserver at port " + vars.WebPort + " (http://localhost:" + vars.WebPort + ")\n")
