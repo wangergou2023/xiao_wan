@@ -42,8 +42,6 @@
 - `initwirepod/`：启动与服务装配
 - `wirepod/preqs/`：语音请求处理（STT → LLM → SDK Wrapper）
 - `wirepod/speechrequest/`：语音流封装与解码
-- `wirepod/setup/`：BLE/SSH/证书等初始化
-- `wirepod/localization/`：模型下载与语言设置
 
 ### 3.4 xiaowan 业务扩展
 
@@ -69,6 +67,18 @@
 - 后端：`backend/config-ws/`、`backend/sdkapp/`
 - SDK App 前端：`sdkapp/`
 
+### Webserver 入口与启动
+
+- 主配置 Web：`chipper/webserver/backend/config-ws/webserver.go` 的 `StartWebServer()`  
+  - 由 `initwirepod.StartFromProgramInit()` 调用（`chipper/pkg/initwirepod/startserver.go`）  
+  - 监听 `vars.WebPort`（默认 8080，可通过 `WEBSERVER_PORT` 或 `start.sh -p` 覆盖）  
+  - 静态目录：`./webserver`（非移动端/非打包）
+
+- SDK App 服务：`chipper/webserver/backend/sdkapp/server.go` 的 `BeginServer()`  
+  - 在 `BeginWirepodSpecific()` 内 `go sdkWeb.BeginServer()` 启动  
+  - 监听 80 端口（用于 `/ok` 连接检查与 SDK App 静态页）  
+  - 页面入口：`/sdk-app`
+
 ## 5. 当前语音处理主链路
 
 ```
@@ -78,3 +88,8 @@ cmd/experimental/whisper/main.go
   -> wirepod/preqs/intent_graph.go (STT -> LLM -> SDK Wrapper)
   -> xiaowan/vector/vector.go (StreamingKGSim)
 ```
+
+## 6. 服务端口说明
+
+- 主服务端口：`vars.APIConfig.Server.Port`（默认 443），承载 gRPC/TLS 与 HTTP 复用服务  
+- 兼容端口 8084：已移除

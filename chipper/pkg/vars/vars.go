@@ -415,6 +415,51 @@ func GetOutboundIP() net.IP {
 			}
 		}
 	}
+	if envIP := os.Getenv("OUTBOUND_IP"); envIP != "" {
+		if ip := net.ParseIP(envIP); ip != nil {
+			return ip
+		}
+	}
+	if envIface := os.Getenv("OUTBOUND_IFACE"); envIface != "" {
+		if iface, err := net.InterfaceByName(envIface); err == nil {
+			if addrs, err := iface.Addrs(); err == nil {
+				for _, addr := range addrs {
+					if ipnet, ok := addr.(*net.IPNet); ok {
+						ip := ipnet.IP.To4()
+						if ip != nil && !ip.IsLoopback() {
+							return ip
+						}
+					}
+				}
+			}
+		}
+	}
+	ifaces, err := net.Interfaces()
+	if err == nil {
+		for _, iface := range ifaces {
+			if iface.Flags&net.FlagUp == 0 {
+				continue
+			}
+			if iface.Flags&net.FlagLoopback != 0 || iface.Flags&net.FlagPointToPoint != 0 {
+				continue
+			}
+			addrs, err := iface.Addrs()
+			if err != nil {
+				continue
+			}
+			for _, addr := range addrs {
+				if ipnet, ok := addr.(*net.IPNet); ok {
+					ip := ipnet.IP.To4()
+					if ip == nil || ip.IsLoopback() {
+						continue
+					}
+					if ip.IsPrivate() {
+						return ip
+					}
+				}
+			}
+		}
+	}
 	conn, err := net.Dial("udp", OutboundIPTester)
 	if err != nil {
 		logger.Println("not connected to a network: ", err)

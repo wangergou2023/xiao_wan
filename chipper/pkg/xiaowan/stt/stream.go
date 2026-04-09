@@ -1,4 +1,4 @@
-package speechrequest
+package stt
 
 import (
 	"bytes"
@@ -26,7 +26,7 @@ type SpeechRequest struct {
 	Device          string
 	Session         string
 	FirstReq        []byte
-	Stream          interface{}
+	Stream          pb.ChipperGrpc_StreamingIntentGraphServer
 	MicData         []byte
 	DecodedMicData  []byte
 	FilteredMicData []byte
@@ -69,9 +69,8 @@ func (req *SpeechRequest) OpusDecode(chunk []byte) []byte {
 			logger.Println(err)
 		}
 		return n
-	} else {
-		return chunk
 	}
+	return chunk
 }
 
 func SplitVAD(buf []byte) [][]byte {
@@ -81,26 +80,6 @@ func SplitVAD(buf []byte) [][]byte {
 		buf = buf[320:]
 	}
 	return chunk
-}
-
-func BytesToIntVAD(stream opus.OggStream, data []byte, die bool, isOpus bool) [][]byte {
-	// detect if data is pcm or opus
-	if die {
-		return nil
-	}
-	if isOpus {
-		// opus
-		n, err := stream.Decode(data)
-		if err != nil {
-			logger.Println(err)
-		}
-		byteArray := SplitVAD(n)
-		return byteArray
-	} else {
-		// pcm
-		byteArray := SplitVAD(data)
-		return byteArray
-	}
 }
 
 // Uses VAD to detect when the user stops speaking
@@ -205,8 +184,8 @@ func highPassFilter(data []byte) []byte {
 	return int16ToBytes(gained)
 }
 
-// Converts a vtt.*Request to a SpeechRequest, which allows functions like DetectEndOfSpeech to work
-func ReqToSpeechRequest(req interface{}) SpeechRequest {
+// NewSpeechRequest converts a vtt.IntentGraphRequest to a SpeechRequest.
+func NewSpeechRequest(req *vtt.IntentGraphRequest) SpeechRequest {
 	if debugWriteFile {
 		debugFile, _ = os.Create("/tmp/wirepodtest.ogg")
 	}
@@ -218,19 +197,16 @@ func ReqToSpeechRequest(req interface{}) SpeechRequest {
 	if err != nil {
 		logger.Println(err)
 	}
-	if str, ok := req.(*vtt.IntentGraphRequest); ok {
-		var req1 *vtt.IntentGraphRequest = str
-		request.Device = req1.Device
-		request.Session = req1.Session
-		request.Stream = req1.Stream
-		request.FirstReq = req1.FirstReq.InputAudio
-		if debugWriteFile {
-			debugFile.Write(req1.FirstReq.InputAudio)
-		}
-		request.MicData = append(request.MicData, req1.FirstReq.InputAudio...)
-	} else {
-		logger.Println("reqToSpeechRequest: invalid type")
+
+	request.Device = req.Device
+	request.Session = req.Session
+	request.Stream = req.Stream
+	request.FirstReq = req.FirstReq.InputAudio
+	if debugWriteFile {
+		debugFile.Write(req.FirstReq.InputAudio)
 	}
+	request.MicData = append(request.MicData, req.FirstReq.InputAudio...)
+
 	isOpus := request.OpusDetect()
 	if isOpus {
 		request.OpusStream = &opus.OggStream{}
@@ -245,48 +221,24 @@ func ReqToSpeechRequest(req interface{}) SpeechRequest {
 	return request
 }
 
-// Returns the next chunk in the stream as 16000 Hz PCM
+// GetNextStreamChunk returns the next chunk in the stream as 16000 Hz PCM.
 func (req *SpeechRequest) GetNextStreamChunk() ([]byte, error) {
-	// returns next chunk in voice stream as pcm
-	if str, ok := req.Stream.(pb.ChipperGrpc_StreamingIntentGraphServer); ok {
-		var stream pb.ChipperGrpc_StreamingIntentGraphServer = str
-		chunk, chunkErr := stream.Recv()
-		if chunkErr != nil {
-			logger.Println(chunkErr)
-			return nil, chunkErr
-		}
-		req.MicData = append(req.MicData, chunk.InputAudio...)
-		req.DecodedMicData = append(req.DecodedMicData, req.OpusDecode(chunk.InputAudio)...)
-		req.FilteredMicData = append(req.FilteredMicData, highPassFilter(req.OpusDecode(chunk.InputAudio))...)
-		dataReturn := req.DecodedMicData[req.PrevLen:]
-		req.LastAudioChunk = req.FilteredMicData[req.PrevLen:]
-		req.PrevLen = len(req.DecodedMicData)
-		if debugWriteFile {
-			debugFile.Write(chunk.InputAudio)
-		}
-		return dataReturn, nil
+	chunk, chunkErr := req.Stream.Recv()
+	if chunkErr != nil {
+		logger.Println(chunkErr)
+		return nil, chunkErr
 	}
-	logger.Println("invalid type")
-	return nil, errors.New("invalid type")
+	req.MicData = append(req.MicData, chunk.InputAudio...)
+	decoded := req.OpusDecode(chunk.InputAudio)
+	req.DecodedMicData = append(req.DecodedMicData, decoded...)
+	req.FilteredMicData = append(req.FilteredMicData, highPassFilter(decoded)...)
+	dataReturn := req.DecodedMicData[req.PrevLen:]
+	req.LastAudioChunk = req.FilteredMicData[req.PrevLen:]
+	req.PrevLen = len(req.DecodedMicData)
+	if debugWriteFile {
+		debugFile.Write(chunk.InputAudio)
+	}
+	return dataReturn, nil
 }
 
-// Returns next chunk in the stream as whatever the original format is (OPUS 99% of the time)
-func (req *SpeechRequest) GetNextStreamChunkOpus() ([]byte, error) {
-	if str, ok := req.Stream.(pb.ChipperGrpc_StreamingIntentGraphServer); ok {
-		var stream pb.ChipperGrpc_StreamingIntentGraphServer = str
-		chunk, chunkErr := stream.Recv()
-		if chunkErr != nil {
-			logger.Println(chunkErr)
-			return nil, chunkErr
-		}
-		req.MicData = append(req.MicData, chunk.InputAudio...)
-		req.DecodedMicData = append(req.DecodedMicData, req.OpusDecode(chunk.InputAudio)...)
-		dataReturn := req.MicData[req.PrevLenRaw:]
-		req.LastAudioChunk = req.DecodedMicData[req.PrevLen:]
-		req.PrevLen = len(req.DecodedMicData)
-		req.PrevLenRaw = len(req.MicData)
-		return dataReturn, nil
-	}
-	logger.Println("invalid type")
-	return nil, errors.New("invalid type")
-}
+var _ = errors.New

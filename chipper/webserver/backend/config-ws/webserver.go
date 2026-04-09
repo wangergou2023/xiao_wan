@@ -15,8 +15,6 @@ import (
 	"github.com/wangergou2023/wire-pod/chipper/pkg/logger"
 	"github.com/wangergou2023/wire-pod/chipper/pkg/scripting"
 	"github.com/wangergou2023/wire-pod/chipper/pkg/vars"
-	"github.com/wangergou2023/wire-pod/chipper/pkg/wirepod/localization"
-	botsetup "github.com/wangergou2023/wire-pod/chipper/pkg/wirepod/setup"
 )
 
 var SttInitFunc func() error
@@ -42,10 +40,6 @@ func apiHandler(w http.ResponseWriter, r *http.Request) {
 		handleSetKGAPI(w, r)
 	case "get_kg_api":
 		handleGetKGAPI(w)
-	case "set_stt_info":
-		handleSetSTTInfo(w, r)
-	case "get_download_status":
-		handleGetDownloadStatus(w)
 	case "get_stt_info":
 		handleGetSTTInfo(w)
 	case "get_config":
@@ -62,8 +56,6 @@ func apiHandler(w http.ResponseWriter, r *http.Request) {
 		handleGetOTA(w, r)
 	case "get_version_info":
 		handleGetVersionInfo(w)
-	case "generate_certs":
-		handleGenerateCerts(w)
 	case "is_api_v3":
 		fmt.Fprintf(w, "it is!")
 	default:
@@ -216,54 +208,6 @@ func handleGetKGAPI(w http.ResponseWriter) {
 	json.NewEncoder(w).Encode(vars.APIConfig.Knowledge)
 }
 
-func handleSetSTTInfo(w http.ResponseWriter, r *http.Request) {
-	var request struct {
-		Language string `json:"language"`
-	}
-	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
-		http.Error(w, "invalid request body", http.StatusBadRequest)
-		return
-	}
-	if vars.APIConfig.STT.Service == "vosk" {
-		if !isValidLanguage(request.Language, localization.ValidVoskModels) {
-			http.Error(w, "language not valid", http.StatusBadRequest)
-			return
-		}
-		if !isDownloadedLanguage(request.Language, vars.DownloadedVoskModels) {
-			go localization.DownloadVoskModel(request.Language)
-			fmt.Fprint(w, "downloading language model...")
-			return
-		}
-	} else if vars.APIConfig.STT.Service == "whisper.cpp" {
-		if !isValidLanguage(request.Language, localization.ValidVoskModels) {
-			http.Error(w, "language not valid", http.StatusBadRequest)
-			return
-		}
-	} else {
-		http.Error(w, "service must be vosk or whisper", http.StatusBadRequest)
-		return
-	}
-	vars.APIConfig.STT.Language = request.Language
-	vars.APIConfig.PastInitialSetup = true
-	vars.WriteConfigToDisk()
-	if vars.SttInitFunc != nil {
-		if err := vars.SttInitFunc(); err != nil {
-			logger.Println("Failed to reinit voice processor: " + err.Error())
-			http.Error(w, "failed to reinit voice processor", http.StatusInternalServerError)
-			return
-		}
-	}
-	logger.Println("Reinitialized voice processor successfully")
-	fmt.Fprint(w, "Language switched successfully.")
-}
-
-func handleGetDownloadStatus(w http.ResponseWriter) {
-	w.Header().Set("Content-Type", "text/plain")
-	w.Write([]byte(localization.DownloadStatus))
-	if localization.DownloadStatus == "success" || strings.Contains(localization.DownloadStatus, "error") {
-		localization.DownloadStatus = "not downloading"
-	}
-}
 
 func handleGetSTTInfo(w http.ResponseWriter) {
 	w.Header().Set("Content-Type", "application/json")
@@ -376,13 +320,6 @@ func handleGetVersionInfo(w http.ResponseWriter) {
 	json.NewEncoder(w).Encode(verInfo)
 }
 
-func handleGenerateCerts(w http.ResponseWriter) {
-	if err := botsetup.CreateCertCombo(); err != nil {
-		http.Error(w, "error: "+err.Error(), http.StatusInternalServerError)
-		return
-	}
-	fmt.Fprint(w, "done")
-}
 
 func saveCustomIntents() {
 	customIntentJSONFile, _ := json.Marshal(vars.CustomIntents)
@@ -400,8 +337,6 @@ func DisableCachingAndSniffing(next http.Handler) http.Handler {
 }
 
 func StartWebServer() {
-	botsetup.RegisterSSHAPI()
-	botsetup.RegisterBLEAPI()
 	http.HandleFunc("/api/", apiHandler)
 	http.HandleFunc("/session-certs/", certHandler)
 	var webRoot http.Handler

@@ -5,7 +5,7 @@ import (
 
 	"github.com/wangergou2023/wire-pod/chipper/pkg/logger"
 	"github.com/wangergou2023/wire-pod/chipper/pkg/vars"
-	sr "github.com/wangergou2023/wire-pod/chipper/pkg/wirepod/speechrequest"
+	"github.com/wangergou2023/wire-pod/chipper/pkg/xiaowan/stt"
 )
 
 // Server stores the config
@@ -22,7 +22,7 @@ type JsonIntent struct {
 var sttLanguage string = "en-US"
 
 // speech-to-text
-var sttHandler func(sr.SpeechRequest) (string, error)
+var sttHandler func(stt.SpeechRequest) (string, error)
 
 // New returns a new server
 func New(InitFunc func() error, SttHandler interface{}, voiceProcessor string) (*Server, error) {
@@ -39,8 +39,8 @@ func New(InitFunc func() error, SttHandler interface{}, voiceProcessor string) (
 		return nil, err
 	}
 
-	// SttHandler must be `func(sr.SpeechRequest) (string, error)`
-	if str, is := SttHandler.(func(sr.SpeechRequest) (string, error)); is {
+	// SttHandler must be `func(stt.SpeechRequest) (string, error)`
+	if str, is := SttHandler.(func(stt.SpeechRequest) (string, error)); is {
 		sttHandler = str
 	} else {
 		return nil, fmt.Errorf("stthandler not of correct type")

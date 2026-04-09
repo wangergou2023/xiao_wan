@@ -5,12 +5,12 @@ import (
 
 	"github.com/wangergou2023/wire-pod/chipper/pkg/logger"
 	"github.com/wangergou2023/wire-pod/chipper/pkg/vtt"
-	sr "github.com/wangergou2023/wire-pod/chipper/pkg/wirepod/speechrequest"
+	"github.com/wangergou2023/wire-pod/chipper/pkg/xiaowan/stt"
 	vector "github.com/wangergou2023/wire-pod/chipper/pkg/xiaowan/vector"
 )
 
 func (s *Server) ProcessIntentGraph(req *vtt.IntentGraphRequest) (*vtt.IntentGraphResponse, error) {
-	speechReq := sr.ReqToSpeechRequest(req)
+	speechReq := stt.NewSpeechRequest(req)
 	var transcribedText string
 	var err error
 	transcribedText, err = sttHandler(speechReq)

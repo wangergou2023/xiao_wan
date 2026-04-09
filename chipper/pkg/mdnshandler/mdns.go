@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 
@@ -71,7 +72,13 @@ func PostmDNS() {
 	logger.Println("Registering escapepod.local on network (loop)")
 	for {
 		ipAddr := vars.GetOutboundIP().String()
-		server, _ := zeroconf.RegisterProxy("escapepod", "_app-proto._tcp", "local.", 8084, "escapepod", []string{ipAddr}, []string{"txtv=0", "lo=1", "la=2"}, nil)
+		port := 443
+		if vars.APIConfig.Server.Port != "" {
+			if p, err := strconv.Atoi(vars.APIConfig.Server.Port); err == nil {
+				port = p
+			}
+		}
+		server, _ := zeroconf.RegisterProxy("escapepod", "_app-proto._tcp", "local.", port, "escapepod", []string{ipAddr}, []string{"txtv=0", "lo=1", "la=2"}, nil)
 		if os.Getenv("PRINT_MDNS") == "true" {
 			logger.Println("mDNS broadcasted")
 		}

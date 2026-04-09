@@ -16,7 +16,6 @@ import (
 	openai "github.com/sashabaranov/go-openai"
 	"github.com/wangergou2023/wire-pod/chipper/pkg/logger"
 	"github.com/wangergou2023/wire-pod/chipper/pkg/vars"
-	sr "github.com/wangergou2023/wire-pod/chipper/pkg/wirepod/speechrequest"
 )
 
 var Name string = "whisper"
@@ -177,7 +176,7 @@ func makeLocalRequest(in []byte) (string, error) {
 }
 
 // STT (Speech-to-Text) 函数处理语音请求，返回转录的文本
-func STT(req sr.SpeechRequest) (string, error) {
+func STT(req SpeechRequest) (string, error) {
 	logger.Println("(Bot " + req.Device + ", Whisper) Processing...") // 打印处理日志
 	speechIsDone := false
 	var err error
