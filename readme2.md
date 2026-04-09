@@ -4,7 +4,7 @@
 chipper/cmd/experimental/whisper/main.go
   -> initwirepod.StartFromProgramInit
   -> servers/chipper/intent_graph.go (StreamingIntentGraph 入口)
-  -> wirepod/preqs/intent_graph.go (STT -> LLM -> SDK Wrapper)
+  -> servers/chipper/intent_graph.go (STT -> LLM -> SDK Wrapper)
   -> xiaowan/vector/vector.go (StreamingKGSim)
   -> xiaowan/chat (OpenAIchat 等)
   -> xiaowan/tts4 (LocalTTS)

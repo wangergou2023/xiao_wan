@@ -37,14 +37,13 @@
 - `servers/token/`：token 服务
 - `vtt/`：语音流请求/响应结构（仅保留 IntentGraph）
 
-### 3.3 wire-pod 运行支持
+### 3.3 启动与装配
 
-- `initwirepod/`：启动与服务装配
+- `initwirepod/`：启动与服务装配（使用 `xiaowan/flow` 作为语音处理实现）
 
 ### 3.4 xiaowan 业务扩展
 
 - `xiaowan/stt/`：语音转文本
-- `xiaowan/flow/`：语音流处理（STT → LLM → SDK Wrapper）
 - `xiaowan/chat/`：LLM 请求
 - `xiaowan/tts*`：多种 TTS 实现
 - `xiaowan/vector/`：拍照/播报/动作整合流程
@@ -84,7 +83,7 @@
 cmd/experimental/whisper/main.go
   -> initwirepod.StartFromProgramInit
   -> servers/chipper/intent_graph.go (StreamingIntentGraph)
-  -> wirepod/preqs/intent_graph.go (STT -> LLM -> SDK Wrapper)
+  -> xiaowan/flow/intent_graph.go (STT -> LLM -> SDK Wrapper)
   -> xiaowan/vector/vector.go (StreamingKGSim)
 ```
 

@@ -20,7 +20,6 @@ import (
 	tokenserver "github.com/wangergou2023/wire-pod/chipper/pkg/servers/token"
 	"github.com/wangergou2023/wire-pod/chipper/pkg/vars"
 	wpweb "github.com/wangergou2023/wire-pod/chipper/webserver/backend/config-ws"
-	"github.com/wangergou2023/wire-pod/chipper/pkg/xiaowan/flow"
 	sdkWeb "github.com/wangergou2023/wire-pod/chipper/webserver/backend/sdkapp"
 
 	//	grpclog "github.com/digital-dream-labs/hugh/grpc/interceptors/logger"
@@ -34,8 +33,6 @@ var serverOne cmux.CMux
 var serverTwo cmux.CMux
 var listenerOne net.Listener
 var listenerTwo net.Listener
-var voiceProcessor *flow.Server
-
 // grpcServer *grpc.Servervar
 var chipperServing bool = false
 
@@ -53,7 +50,7 @@ func httpServe(l net.Listener) error {
 	return s.Serve(l)
 }
 
-func grpcServe(l net.Listener, p *flow.Server) error {
+func grpcServe(l net.Listener) error {
 	srv, err := grpcserver.New(
 		grpcserver.WithViper(),
 		grpcserver.WithReflectionService(),
@@ -63,9 +60,7 @@ func grpcServe(l net.Listener, p *flow.Server) error {
 		log.Fatal(err)
 	}
 
-	s, _ := chipperserver.New(
-		chipperserver.WithIntentGraphProcessor(p),
-	)
+	s, _ := chipperserver.New()
 
 	tokenServer := tokenserver.NewTokenServer()
 	jdocsServer := jdocsserver.NewJdocsServer()
@@ -84,7 +79,7 @@ func BeginWirepodSpecific(sttInitFunc func() error, sttHandlerFunc interface{}, 
 	// begin wirepod stuff
 	vars.Init()
 	var err error
-	voiceProcessor, err = flow.New(sttInitFunc, sttHandlerFunc, voiceProcessorName)
+	err = chipperserver.InitVoiceProcessor(sttInitFunc, sttHandlerFunc, voiceProcessorName)
 	wpweb.SttInitFunc = sttInitFunc
 	go sdkWeb.BeginServer()
 	http.HandleFunc("/api-chipper/", ChipperHTTPApi)
@@ -190,7 +185,7 @@ func StartChipper() {
 	serverOne = cmux.New(listenerOne)
 	grpcListenerOne := serverOne.Match(cmux.HTTP2())
 	httpListenerOne := serverOne.Match(cmux.HTTP1Fast())
-	go grpcServe(grpcListenerOne, voiceProcessor)
+	go grpcServe(grpcListenerOne)
 	go httpServe(httpListenerOne)
 
 	fmt.Println("\033[33m\033[1mwire-pod started successfully!\033[0m")

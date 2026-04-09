@@ -2,17 +2,10 @@ package server
 
 import (
 	pb "github.com/digital-dream-labs/api/go/chipperpb"
-	"github.com/wangergou2023/wire-pod/chipper/pkg/vtt"
 )
-
-type intentGraphProcessor interface {
-	ProcessIntentGraph(*vtt.IntentGraphRequest) (*vtt.IntentGraphResponse, error)
-}
 
 // Server defines the service used.
 type Server struct {
-	intentGraph intentGraphProcessor
-
 	pb.UnimplementedChipperGrpcServer
 }
 
@@ -26,10 +19,7 @@ func New(opts ...Option) (*Server, error) {
 		opt(&cfg)
 	}
 
-	s := Server{
-		intentGraph: cfg.intentGraph,
-	}
-
+	s := Server{}
 	return &s, nil
 
 }
