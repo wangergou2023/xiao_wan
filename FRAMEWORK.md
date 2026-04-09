@@ -40,12 +40,11 @@
 ### 3.3 wire-pod 运行支持
 
 - `initwirepod/`：启动与服务装配
-- `wirepod/preqs/`：语音请求处理（STT → LLM → SDK Wrapper）
-- `wirepod/speechrequest/`：语音流封装与解码
 
 ### 3.4 xiaowan 业务扩展
 
 - `xiaowan/stt/`：语音转文本
+- `xiaowan/flow/`：语音流处理（STT → LLM → SDK Wrapper）
 - `xiaowan/chat/`：LLM 请求
 - `xiaowan/tts*`：多种 TTS 实现
 - `xiaowan/vector/`：拍照/播报/动作整合流程

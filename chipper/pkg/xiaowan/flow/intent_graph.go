@@ -1,4 +1,4 @@
-package processreqs
+package flow
 
 import (
 	"strings"
@@ -11,9 +11,7 @@ import (
 
 func (s *Server) ProcessIntentGraph(req *vtt.IntentGraphRequest) (*vtt.IntentGraphResponse, error) {
 	speechReq := stt.NewSpeechRequest(req)
-	var transcribedText string
-	var err error
-	transcribedText, err = sttHandler(speechReq)
+	transcribedText, err := sttHandler(speechReq)
 	if err != nil {
 		logger.Println("STT error: " + err.Error())
 		return nil, nil

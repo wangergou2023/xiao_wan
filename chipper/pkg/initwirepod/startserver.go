@@ -20,7 +20,7 @@ import (
 	tokenserver "github.com/wangergou2023/wire-pod/chipper/pkg/servers/token"
 	"github.com/wangergou2023/wire-pod/chipper/pkg/vars"
 	wpweb "github.com/wangergou2023/wire-pod/chipper/webserver/backend/config-ws"
-	wp "github.com/wangergou2023/wire-pod/chipper/pkg/wirepod/preqs"
+	"github.com/wangergou2023/wire-pod/chipper/pkg/xiaowan/flow"
 	sdkWeb "github.com/wangergou2023/wire-pod/chipper/webserver/backend/sdkapp"
 
 	//	grpclog "github.com/digital-dream-labs/hugh/grpc/interceptors/logger"
@@ -34,7 +34,7 @@ var serverOne cmux.CMux
 var serverTwo cmux.CMux
 var listenerOne net.Listener
 var listenerTwo net.Listener
-var voiceProcessor *wp.Server
+var voiceProcessor *flow.Server
 
 // grpcServer *grpc.Servervar
 var chipperServing bool = false
@@ -53,7 +53,7 @@ func httpServe(l net.Listener) error {
 	return s.Serve(l)
 }
 
-func grpcServe(l net.Listener, p *wp.Server) error {
+func grpcServe(l net.Listener, p *flow.Server) error {
 	srv, err := grpcserver.New(
 		grpcserver.WithViper(),
 		grpcserver.WithReflectionService(),
@@ -84,7 +84,7 @@ func BeginWirepodSpecific(sttInitFunc func() error, sttHandlerFunc interface{}, 
 	// begin wirepod stuff
 	vars.Init()
 	var err error
-	voiceProcessor, err = wp.New(sttInitFunc, sttHandlerFunc, voiceProcessorName)
+	voiceProcessor, err = flow.New(sttInitFunc, sttHandlerFunc, voiceProcessorName)
 	wpweb.SttInitFunc = sttInitFunc
 	go sdkWeb.BeginServer()
 	http.HandleFunc("/api-chipper/", ChipperHTTPApi)
