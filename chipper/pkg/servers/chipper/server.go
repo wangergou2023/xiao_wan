@@ -5,22 +5,12 @@ import (
 	"github.com/wangergou2023/wire-pod/chipper/pkg/vtt"
 )
 
-type intentProcessor interface {
-	ProcessIntent(*vtt.IntentRequest) (*vtt.IntentResponse, error)
-}
-
-type kgProcessor interface {
-	ProcessKnowledgeGraph(*vtt.KnowledgeGraphRequest) (*vtt.KnowledgeGraphResponse, error)
-}
-
 type intentGraphProcessor interface {
 	ProcessIntentGraph(*vtt.IntentGraphRequest) (*vtt.IntentGraphResponse, error)
 }
 
 // Server defines the service used.
 type Server struct {
-	intent      intentProcessor
-	kg          kgProcessor
 	intentGraph intentGraphProcessor
 
 	pb.UnimplementedChipperGrpcServer
@@ -37,8 +27,6 @@ func New(opts ...Option) (*Server, error) {
 	}
 
 	s := Server{
-		intent:      cfg.intent,
-		kg:          cfg.kg,
 		intentGraph: cfg.intentGraph,
 	}
 

@@ -81,8 +81,13 @@ func DownloadVoskModel(language string) {
 	vars.APIConfig.STT.Language = language
 	vars.APIConfig.PastInitialSetup = true
 	vars.WriteConfigToDisk()
-	ReloadVosk()
-	logger.Println("Reloaded voice processor successfully")
+	if vars.SttInitFunc != nil {
+		if err := vars.SttInitFunc(); err != nil {
+			logger.Println("Failed to reinit voice processor: " + err.Error())
+		} else {
+			logger.Println("Reinitialized voice processor successfully")
+		}
+	}
 	DownloadStatus = "success"
 }
 

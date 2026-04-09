@@ -16,7 +16,6 @@ import (
 	"github.com/wangergou2023/wire-pod/chipper/pkg/scripting"
 	"github.com/wangergou2023/wire-pod/chipper/pkg/vars"
 	"github.com/wangergou2023/wire-pod/chipper/pkg/wirepod/localization"
-	processreqs "github.com/wangergou2023/wire-pod/chipper/pkg/wirepod/preqs"
 	botsetup "github.com/wangergou2023/wire-pod/chipper/pkg/wirepod/setup"
 )
 
@@ -247,8 +246,14 @@ func handleSetSTTInfo(w http.ResponseWriter, r *http.Request) {
 	vars.APIConfig.STT.Language = request.Language
 	vars.APIConfig.PastInitialSetup = true
 	vars.WriteConfigToDisk()
-	processreqs.ReloadVosk()
-	logger.Println("Reloaded voice processor successfully")
+	if vars.SttInitFunc != nil {
+		if err := vars.SttInitFunc(); err != nil {
+			logger.Println("Failed to reinit voice processor: " + err.Error())
+			http.Error(w, "failed to reinit voice processor", http.StatusInternalServerError)
+			return
+		}
+	}
+	logger.Println("Reinitialized voice processor successfully")
 	fmt.Fprint(w, "Language switched successfully.")
 }
 

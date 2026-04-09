@@ -5,6 +5,25 @@ go env -w GOPROXY=https://goproxy.cn,direct
 
 COMMIT_HASH="$(git rev-parse --short HEAD)"
 
+# optional args: --web-port/-p <port>
+WEB_PORT_ARG=""
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        -p|--web-port)
+            if [[ -n "$2" ]]; then
+                WEB_PORT_ARG="$2"
+                shift 2
+            else
+                echo "Missing value for $1"
+                exit 1
+            fi
+            ;;
+        *)
+            shift
+            ;;
+    esac
+done
+
 if [[ $EUID -ne 0 ]]; then
     echo "This script must be run as root. sudo ./start.sh"
     exit 1
@@ -29,6 +48,16 @@ if [[ ! -f ./source.sh ]]; then
 fi
 
 source source.sh
+
+# allow override of webserver port
+if [[ -n "${WEB_PORT_ARG}" ]]; then
+    if [[ "${WEB_PORT_ARG}" =~ ^[0-9]+$ ]]; then
+        export WEBSERVER_PORT="${WEB_PORT_ARG}"
+    else
+        echo "Invalid web port: ${WEB_PORT_ARG}"
+        exit 1
+    fi
+fi
 
 # set go tags
 export GOTAGS="nolibopusfile"

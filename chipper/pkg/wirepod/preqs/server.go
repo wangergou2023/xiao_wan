@@ -24,15 +24,6 @@ var sttLanguage string = "en-US"
 // speech-to-text
 var sttHandler func(sr.SpeechRequest) (string, error)
 
-// speech-to-intent (rhino)
-var stiHandler func(sr.SpeechRequest) (string, map[string]string, error)
-
-var isSti bool = false
-
-func ReloadVosk() {
-	vars.SttInitFunc()
-}
-
 // New returns a new server
 func New(InitFunc func() error, SttHandler interface{}, voiceProcessor string) (*Server, error) {
 
@@ -48,15 +39,9 @@ func New(InitFunc func() error, SttHandler interface{}, voiceProcessor string) (
 		return nil, err
 	}
 
-	// SttHandler can either be `func(sr.SpeechRequest) (string, error)` or `func (sr.SpeechRequest) (string, map[string]string, error)`
-	// second one exists to accomodate Rhino
-
-	// check function type
+	// SttHandler must be `func(sr.SpeechRequest) (string, error)`
 	if str, is := SttHandler.(func(sr.SpeechRequest) (string, error)); is {
 		sttHandler = str
-	} else if str, is := SttHandler.(func(sr.SpeechRequest) (string, map[string]string, error)); is {
-		stiHandler = str
-		isSti = true
 	} else {
 		return nil, fmt.Errorf("stthandler not of correct type")
 	}

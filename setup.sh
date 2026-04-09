@@ -375,6 +375,7 @@ function defaultLaunch() {
     getSTT
     echo
     echo "wire-pod is ready to run! You are ready to move to the next step and run sudo ./chipper/start.sh"
+    echo "Tip: default web port is 8080. Override with: sudo ./chipper/start.sh -p 8080"
 }
 
 if [[ $1 == "scp" ]]; then

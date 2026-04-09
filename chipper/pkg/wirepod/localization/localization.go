@@ -146,10 +146,3 @@ func GetText(key string) string {
 	}
 	return data[0]
 }
-
-func ReloadVosk() {
-	if vars.APIConfig.STT.Service == "vosk" || vars.APIConfig.STT.Service == "whisper.cpp" {
-		vars.IntentList, _ = vars.LoadIntents()
-		vars.SttInitFunc()
-	}
-}

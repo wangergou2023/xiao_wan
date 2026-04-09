@@ -16,7 +16,7 @@ import (
 	"github.com/wangergou2023/wire-pod/chipper/pkg/vtt"
 )
 
-// one type and many functions for dealing with intent, intent-graph, and knowledge-graph requests
+// one type and many functions for dealing with intent-graph requests
 // also some functions to help decode the stream bytes into ones friendly for stt engines
 
 var debugWriteFile bool = false
@@ -27,8 +27,6 @@ type SpeechRequest struct {
 	Session         string
 	FirstReq        []byte
 	Stream          interface{}
-	IsKG            bool
-	IsIG            bool
 	MicData         []byte
 	DecodedMicData  []byte
 	FilteredMicData []byte
@@ -220,23 +218,7 @@ func ReqToSpeechRequest(req interface{}) SpeechRequest {
 	if err != nil {
 		logger.Println(err)
 	}
-	if str, ok := req.(*vtt.IntentRequest); ok {
-		var req1 *vtt.IntentRequest = str
-		request.Device = req1.Device
-		request.Session = req1.Session
-		request.Stream = req1.Stream
-		request.FirstReq = req1.FirstReq.InputAudio
-		request.MicData = append(request.MicData, req1.FirstReq.InputAudio...)
-	} else if str, ok := req.(*vtt.KnowledgeGraphRequest); ok {
-		var req1 *vtt.KnowledgeGraphRequest = str
-		request.IsKG = true
-		request.Device = req1.Device
-		request.Session = req1.Session
-		request.Stream = req1.Stream
-		request.FirstReq = req1.FirstReq.InputAudio
-		request.MicData = append(request.MicData, req1.FirstReq.InputAudio...)
-	} else if str, ok := req.(*vtt.IntentGraphRequest); ok {
-		request.IsIG = true
+	if str, ok := req.(*vtt.IntentGraphRequest); ok {
 		var req1 *vtt.IntentGraphRequest = str
 		request.Device = req1.Device
 		request.Session = req1.Session
@@ -266,21 +248,7 @@ func ReqToSpeechRequest(req interface{}) SpeechRequest {
 // Returns the next chunk in the stream as 16000 Hz PCM
 func (req *SpeechRequest) GetNextStreamChunk() ([]byte, error) {
 	// returns next chunk in voice stream as pcm
-	if str, ok := req.Stream.(pb.ChipperGrpc_StreamingIntentServer); ok {
-		var stream pb.ChipperGrpc_StreamingIntentServer = str
-		chunk, chunkErr := stream.Recv()
-		if chunkErr != nil {
-			logger.Println(chunkErr)
-			return nil, chunkErr
-		}
-		req.MicData = append(req.MicData, chunk.InputAudio...)
-		req.DecodedMicData = append(req.DecodedMicData, req.OpusDecode(chunk.InputAudio)...)
-		req.FilteredMicData = append(req.FilteredMicData, highPassFilter(req.OpusDecode(chunk.InputAudio))...)
-		dataReturn := req.DecodedMicData[req.PrevLen:]
-		req.LastAudioChunk = req.FilteredMicData[req.PrevLen:]
-		req.PrevLen = len(req.DecodedMicData)
-		return dataReturn, nil
-	} else if str, ok := req.Stream.(pb.ChipperGrpc_StreamingIntentGraphServer); ok {
+	if str, ok := req.Stream.(pb.ChipperGrpc_StreamingIntentGraphServer); ok {
 		var stream pb.ChipperGrpc_StreamingIntentGraphServer = str
 		chunk, chunkErr := stream.Recv()
 		if chunkErr != nil {
@@ -297,20 +265,6 @@ func (req *SpeechRequest) GetNextStreamChunk() ([]byte, error) {
 			debugFile.Write(chunk.InputAudio)
 		}
 		return dataReturn, nil
-	} else if str, ok := req.Stream.(pb.ChipperGrpc_StreamingKnowledgeGraphServer); ok {
-		var stream pb.ChipperGrpc_StreamingKnowledgeGraphServer = str
-		chunk, chunkErr := stream.Recv()
-		if chunkErr != nil {
-			logger.Println(chunkErr)
-			return nil, chunkErr
-		}
-		req.MicData = append(req.MicData, chunk.InputAudio...)
-		req.DecodedMicData = append(req.DecodedMicData, req.OpusDecode(chunk.InputAudio)...)
-		req.FilteredMicData = append(req.FilteredMicData, highPassFilter(req.OpusDecode(chunk.InputAudio))...)
-		dataReturn := req.DecodedMicData[req.PrevLen:]
-		req.LastAudioChunk = req.FilteredMicData[req.PrevLen:]
-		req.PrevLen = len(req.DecodedMicData)
-		return dataReturn, nil
 	}
 	logger.Println("invalid type")
 	return nil, errors.New("invalid type")
@@ -318,36 +272,8 @@ func (req *SpeechRequest) GetNextStreamChunk() ([]byte, error) {
 
 // Returns next chunk in the stream as whatever the original format is (OPUS 99% of the time)
 func (req *SpeechRequest) GetNextStreamChunkOpus() ([]byte, error) {
-	if str, ok := req.Stream.(pb.ChipperGrpc_StreamingIntentServer); ok {
-		var stream pb.ChipperGrpc_StreamingIntentServer = str
-		chunk, chunkErr := stream.Recv()
-		if chunkErr != nil {
-			logger.Println(chunkErr)
-			return nil, chunkErr
-		}
-		req.MicData = append(req.MicData, chunk.InputAudio...)
-		req.DecodedMicData = append(req.DecodedMicData, req.OpusDecode(chunk.InputAudio)...)
-		dataReturn := req.MicData[req.PrevLenRaw:]
-		req.LastAudioChunk = req.DecodedMicData[req.PrevLen:]
-		req.PrevLen = len(req.DecodedMicData)
-		req.PrevLenRaw = len(req.MicData)
-		return dataReturn, nil
-	} else if str, ok := req.Stream.(pb.ChipperGrpc_StreamingIntentGraphServer); ok {
+	if str, ok := req.Stream.(pb.ChipperGrpc_StreamingIntentGraphServer); ok {
 		var stream pb.ChipperGrpc_StreamingIntentGraphServer = str
-		chunk, chunkErr := stream.Recv()
-		if chunkErr != nil {
-			logger.Println(chunkErr)
-			return nil, chunkErr
-		}
-		req.MicData = append(req.MicData, chunk.InputAudio...)
-		req.DecodedMicData = append(req.DecodedMicData, req.OpusDecode(chunk.InputAudio)...)
-		dataReturn := req.MicData[req.PrevLenRaw:]
-		req.LastAudioChunk = req.DecodedMicData[req.PrevLen:]
-		req.PrevLen = len(req.DecodedMicData)
-		req.PrevLenRaw = len(req.MicData)
-		return dataReturn, nil
-	} else if str, ok := req.Stream.(pb.ChipperGrpc_StreamingKnowledgeGraphServer); ok {
-		var stream pb.ChipperGrpc_StreamingKnowledgeGraphServer = str
 		chunk, chunkErr := stream.Recv()
 		if chunkErr != nil {
 			logger.Println(chunkErr)
