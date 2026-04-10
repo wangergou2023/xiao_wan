@@ -11,14 +11,14 @@ import (
 	"sync"
 	"time"
 
-	"github.com/wangergou2023/wire-pod/chipper/pkg/logger"
-	sdk_wrapper "github.com/wangergou2023/wire-pod/chipper/pkg/sdk-wrapper"
-	"github.com/wangergou2023/wire-pod/chipper/pkg/vars"
-	"github.com/wangergou2023/wire-pod/chipper/pkg/vector"
-	"github.com/wangergou2023/wire-pod/chipper/pkg/vectorpb"
-	"github.com/wangergou2023/wire-pod/chipper/pkg/xiaowan/chat"
-	"github.com/wangergou2023/wire-pod/chipper/pkg/xiaowan/structured_outputs"
-	"github.com/wangergou2023/wire-pod/chipper/pkg/xiaowan/tts4"
+	"github.com/wangergou2023/xiao_wan/chipper/pkg/logger"
+	sdk_wrapper "github.com/wangergou2023/xiao_wan/chipper/pkg/sdk-wrapper"
+	"github.com/wangergou2023/xiao_wan/chipper/pkg/vars"
+	"github.com/wangergou2023/xiao_wan/chipper/pkg/vector"
+	"github.com/wangergou2023/xiao_wan/chipper/pkg/vectorpb"
+	"github.com/wangergou2023/xiao_wan/chipper/pkg/xiaowan/chat"
+	"github.com/wangergou2023/xiao_wan/chipper/pkg/xiaowan/structured_outputs"
+	"github.com/wangergou2023/xiao_wan/chipper/pkg/xiaowan/tts4"
 )
 
 // AudioTask 表示音频任务结构体，包含索引、消息、WAV文件、PCM文件和错误信息

@@ -12,7 +12,7 @@ import (
 
 	"github.com/fogleman/gg"
 	"github.com/nfnt/resize"
-	"github.com/wangergou2023/wire-pod/chipper/pkg/vectorpb"
+	"github.com/wangergou2023/xiao_wan/chipper/pkg/vectorpb"
 )
 
 const IMAGE_TRANSITION_NONE = 0

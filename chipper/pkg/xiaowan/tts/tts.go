@@ -6,9 +6,9 @@ import (
 	"os"
 
 	openai "github.com/sashabaranov/go-openai"
-	"github.com/wangergou2023/wire-pod/chipper/pkg/logger"
-	"github.com/wangergou2023/wire-pod/chipper/pkg/vars"
-	"github.com/wangergou2023/wire-pod/chipper/pkg/xiaowan/config"
+	"github.com/wangergou2023/xiao_wan/chipper/pkg/logger"
+	"github.com/wangergou2023/xiao_wan/chipper/pkg/vars"
+	"github.com/wangergou2023/xiao_wan/chipper/pkg/xiaowan/config"
 )
 
 func OpenAItts(outputFile string, aiText string) {

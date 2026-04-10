@@ -3,7 +3,7 @@ package vector
 import (
 	"context"
 
-	"github.com/wangergou2023/wire-pod/chipper/pkg/vectorpb"
+	"github.com/wangergou2023/xiao_wan/chipper/pkg/vectorpb"
 )
 
 // BehaviorControl assumes control of the vector robot for SDK usage.  Once control is

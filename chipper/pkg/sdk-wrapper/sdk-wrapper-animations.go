@@ -1,7 +1,7 @@
 package sdk_wrapper
 
 import (
-	"github.com/wangergou2023/wire-pod/chipper/pkg/vectorpb"
+	"github.com/wangergou2023/xiao_wan/chipper/pkg/vectorpb"
 )
 
 /* Animationnames on Vector 1.8

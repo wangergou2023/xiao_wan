@@ -6,7 +6,7 @@ import (
 	"time"
 
 	pb "github.com/digital-dream-labs/api/go/chipperpb"
-	"github.com/wangergou2023/wire-pod/chipper/pkg/logger"
+	"github.com/wangergou2023/xiao_wan/chipper/pkg/logger"
 )
 
 const (

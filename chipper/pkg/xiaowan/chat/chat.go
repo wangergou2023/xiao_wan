@@ -9,10 +9,10 @@ import (
 	"os"
 
 	"github.com/sashabaranov/go-openai"
-	"github.com/wangergou2023/wire-pod/chipper/pkg/logger"
-	"github.com/wangergou2023/wire-pod/chipper/pkg/vars"
-	"github.com/wangergou2023/wire-pod/chipper/pkg/xiaowan/config"
-	"github.com/wangergou2023/wire-pod/chipper/pkg/xiaowan/structured_outputs"
+	"github.com/wangergou2023/xiao_wan/chipper/pkg/logger"
+	"github.com/wangergou2023/xiao_wan/chipper/pkg/vars"
+	"github.com/wangergou2023/xiao_wan/chipper/pkg/xiaowan/config"
+	"github.com/wangergou2023/xiao_wan/chipper/pkg/xiaowan/structured_outputs"
 )
 
 var systemPrompt = `

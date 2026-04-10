@@ -5,10 +5,10 @@ import (
 	"time"
 
 	pb "github.com/digital-dream-labs/api/go/chipperpb"
-	"github.com/wangergou2023/wire-pod/chipper/pkg/logger"
-	"github.com/wangergou2023/wire-pod/chipper/pkg/vtt"
-	"github.com/wangergou2023/wire-pod/chipper/pkg/xiaowan/stt"
-	vector "github.com/wangergou2023/wire-pod/chipper/pkg/xiaowan/vector"
+	"github.com/wangergou2023/xiao_wan/chipper/pkg/logger"
+	"github.com/wangergou2023/xiao_wan/chipper/pkg/vtt"
+	"github.com/wangergou2023/xiao_wan/chipper/pkg/xiaowan/stt"
+	vector "github.com/wangergou2023/xiao_wan/chipper/pkg/xiaowan/vector"
 )
 
 // StreamingIntentGraph handles intent graph request streams

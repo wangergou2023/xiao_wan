@@ -14,8 +14,8 @@ import (
 	"strings"
 
 	"github.com/sashabaranov/go-openai"
-	"github.com/wangergou2023/wire-pod/chipper/pkg/logger"
-	"github.com/wangergou2023/wire-pod/chipper/pkg/vector"
+	"github.com/wangergou2023/xiao_wan/chipper/pkg/logger"
+	"github.com/wangergou2023/xiao_wan/chipper/pkg/vector"
 	"github.com/wlynxg/anet"
 )
 

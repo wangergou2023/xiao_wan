@@ -4,7 +4,7 @@ import (
 	"log"
 	"time"
 
-	"github.com/wangergou2023/wire-pod/chipper/pkg/vectorpb"
+	"github.com/wangergou2023/xiao_wan/chipper/pkg/vectorpb"
 )
 
 func assumeBehaviorControl(robot Robot, robotIndex int, priority string) {

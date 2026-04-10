@@ -12,7 +12,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/wangergou2023/wire-pod/chipper/pkg/vars"
+	"github.com/wangergou2023/xiao_wan/chipper/pkg/vars"
 )
 
 type TTSConfig struct {

@@ -12,8 +12,8 @@ import (
 	pb "github.com/digital-dream-labs/api/go/chipperpb"
 	"github.com/digital-dream-labs/opus-go/opus"
 	"github.com/maxhawkins/go-webrtcvad"
-	"github.com/wangergou2023/wire-pod/chipper/pkg/logger"
-	"github.com/wangergou2023/wire-pod/chipper/pkg/vtt"
+	"github.com/wangergou2023/xiao_wan/chipper/pkg/logger"
+	"github.com/wangergou2023/xiao_wan/chipper/pkg/vtt"
 )
 
 // one type and many functions for dealing with intent-graph requests

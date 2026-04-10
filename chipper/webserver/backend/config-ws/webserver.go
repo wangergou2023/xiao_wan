@@ -12,9 +12,9 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/wangergou2023/wire-pod/chipper/pkg/logger"
-	"github.com/wangergou2023/wire-pod/chipper/pkg/scripting"
-	"github.com/wangergou2023/wire-pod/chipper/pkg/vars"
+	"github.com/wangergou2023/xiao_wan/chipper/pkg/logger"
+	"github.com/wangergou2023/xiao_wan/chipper/pkg/scripting"
+	"github.com/wangergou2023/xiao_wan/chipper/pkg/vars"
 )
 
 var SttInitFunc func() error

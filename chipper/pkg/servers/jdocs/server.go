@@ -8,9 +8,9 @@ import (
 	"strings"
 
 	"github.com/digital-dream-labs/api/go/jdocspb"
-	"github.com/wangergou2023/wire-pod/chipper/pkg/logger"
-	tokenserver "github.com/wangergou2023/wire-pod/chipper/pkg/servers/token"
-	"github.com/wangergou2023/wire-pod/chipper/pkg/vars"
+	"github.com/wangergou2023/xiao_wan/chipper/pkg/logger"
+	tokenserver "github.com/wangergou2023/xiao_wan/chipper/pkg/servers/token"
+	"github.com/wangergou2023/xiao_wan/chipper/pkg/vars"
 	"google.golang.org/grpc/peer"
 )
 

@@ -9,10 +9,10 @@ import (
 	"time"
 
 	lualibs "github.com/vadv/gopher-lua-libs"
-	"github.com/wangergou2023/wire-pod/chipper/pkg/logger"
-	"github.com/wangergou2023/wire-pod/chipper/pkg/vars"
-	"github.com/wangergou2023/wire-pod/chipper/pkg/vector"
-	"github.com/wangergou2023/wire-pod/chipper/pkg/vectorpb"
+	"github.com/wangergou2023/xiao_wan/chipper/pkg/logger"
+	"github.com/wangergou2023/xiao_wan/chipper/pkg/vars"
+	"github.com/wangergou2023/xiao_wan/chipper/pkg/vector"
+	"github.com/wangergou2023/xiao_wan/chipper/pkg/vectorpb"
 	lua "github.com/yuin/gopher-lua"
 )
 

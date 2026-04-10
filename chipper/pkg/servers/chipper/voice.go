@@ -3,9 +3,9 @@ package server
 import (
 	"fmt"
 
-	"github.com/wangergou2023/wire-pod/chipper/pkg/logger"
-	"github.com/wangergou2023/wire-pod/chipper/pkg/vars"
-	"github.com/wangergou2023/wire-pod/chipper/pkg/xiaowan/stt"
+	"github.com/wangergou2023/xiao_wan/chipper/pkg/logger"
+	"github.com/wangergou2023/xiao_wan/chipper/pkg/vars"
+	"github.com/wangergou2023/xiao_wan/chipper/pkg/xiaowan/stt"
 )
 
 // speech-to-text

@@ -14,8 +14,8 @@ import (
 	"github.com/go-audio/wav"
 	"github.com/orcaman/writerseeker"
 	openai "github.com/sashabaranov/go-openai"
-	"github.com/wangergou2023/wire-pod/chipper/pkg/logger"
-	"github.com/wangergou2023/wire-pod/chipper/pkg/vars"
+	"github.com/wangergou2023/xiao_wan/chipper/pkg/logger"
+	"github.com/wangergou2023/xiao_wan/chipper/pkg/vars"
 )
 
 var Name string = "whisper"

@@ -10,7 +10,7 @@ import (
 	"strings"
 
 	"github.com/PerformLine/go-stockutil/colorutil"
-	"github.com/wangergou2023/wire-pod/chipper/pkg/vectorpb"
+	"github.com/wangergou2023/xiao_wan/chipper/pkg/vectorpb"
 )
 
 type CustomSettings struct {

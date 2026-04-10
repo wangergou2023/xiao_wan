@@ -13,7 +13,7 @@ import (
 	"time"
 
 	"github.com/digital-dream-labs/hugh/grpc/client"
-	"github.com/wangergou2023/wire-pod/chipper/pkg/vectorpb"
+	"github.com/wangergou2023/xiao_wan/chipper/pkg/vectorpb"
 	"google.golang.org/grpc"
 	"gopkg.in/ini.v1"
 )

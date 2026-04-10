@@ -1,6 +1,6 @@
 package sdk_wrapper
 
-import "github.com/wangergou2023/wire-pod/chipper/pkg/vectorpb"
+import "github.com/wangergou2023/xiao_wan/chipper/pkg/vectorpb"
 
 func DriveWheelsForward(lw float32, rw float32, lwtwo float32, rwtwo float32) {
 	_, _ = Robot.Conn.DriveWheels(
