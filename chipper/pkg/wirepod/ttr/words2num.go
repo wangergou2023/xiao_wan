@@ -77,7 +77,7 @@ func words2num(input string) string {
 	initializeTextToNumberwithCurrentLocalization()
 
 	containsNum, _ := regexp.MatchString(`\b\d+\b`, input)
-	if os.Getenv("STT_SERVICE") == "whisper.cpp" && containsNum {
+	if (os.Getenv("STT_SERVICE") == "whisper.cpp" || os.Getenv("STT_SERVICE") == "bigmodel") && containsNum {
 		return whisperSpeechtoNum(input)
 	}
 	totalSeconds := 0

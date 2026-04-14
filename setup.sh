@@ -143,6 +143,7 @@ function getSTT() {
         echo "2: Picovoice Leopard (local, usage collected, accurate, account signup required)"
         echo "3: VOSK (local, accurate, multilanguage, fast, recommended)"
         echo "4: Whisper (local, accurate, multilanguage, recommended ONLY for more powerful hardware, please don't run on a Pi)"
+        echo "5: BigModel GLM-ASR (online API, requires token)"
         echo
         read -p "Enter a number (3): " sttServiceNum
         if [[ ! -n ${sttServiceNum} ]]; then
@@ -160,6 +161,8 @@ function getSTT() {
             sttService="vosk"
             elif [[ ${sttServiceNum} == "4" ]]; then
             sttService="whisper"
+            elif [[ ${sttServiceNum} == "5" ]]; then
+            sttService="bigmodel"
         else
             echo
             echo "Choose a valid number, or just press enter to use the default number."
@@ -172,7 +175,31 @@ function getSTT() {
     else
         sttServicePrompt
     fi
-    if [[ ${sttService} == "leopard" ]]; then
+    if [[ ${sttService} == "bigmodel" ]]; then
+        function bigmodelApiPrompt() {
+            echo
+            echo "Enter your BigModel API token (Bearer token)."
+            echo
+            read -p "Token: " bigmodelToken
+            if [[ ! -n ${bigmodelToken} ]]; then
+                echo
+                echo "You must enter a token."
+                bigmodelApiPrompt
+            fi
+        }
+        function bigmodelModelPrompt() {
+            echo
+            read -p "Enter model name (glm-asr-2512): " bigmodelModel
+            if [[ ! -n ${bigmodelModel} ]]; then
+                bigmodelModel="glm-asr-2512"
+            fi
+        }
+        bigmodelApiPrompt
+        bigmodelModelPrompt
+        echo "export STT_SERVICE=bigmodel" >> ./chipper/source.sh
+        echo "export BIGMODEL_API_TOKEN=${bigmodelToken}" >> ./chipper/source.sh
+        echo "export BIGMODEL_ASR_MODEL=${bigmodelModel}" >> ./chipper/source.sh
+    elif [[ ${sttService} == "leopard" ]]; then
         function picoApiPrompt() {
             echo
             echo "Create an account at https://console.picovoice.ai/ and enter the Access Key it gives you."

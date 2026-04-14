@@ -62,6 +62,12 @@ if [[ ${STT_SERVICE} == "leopard" ]]; then
     else
         /usr/local/go/bin/go run -tags $GOTAGS -ldflags="${GOLDFLAGS}" cmd/experimental/whisper/main.go
     fi
+    elif [[ ${STT_SERVICE} == "bigmodel" ]]; then
+    if [[ -f ./chipper ]]; then
+        ./chipper
+    else
+        /usr/local/go/bin/go run -tags $GOTAGS -ldflags="${GOLDFLAGS}" cmd/experimental/bigmodel/main.go
+    fi
     elif [[ ${STT_SERVICE} == "whisper.cpp" ]]; then
     if [[ -f ./chipper ]]; then
         export C_INCLUDE_PATH="../whisper.cpp"
