@@ -248,6 +248,14 @@ func StreamingKGSim(req interface{}, esn string, transcribedText string, isKG bo
 		conf := openai.DefaultConfig(vars.APIConfig.Knowledge.Key)
 		conf.BaseURL = "https://api.together.xyz/v1"
 		c = openai.NewClientWithConfig(conf)
+	case "kimi":
+		if vars.APIConfig.Knowledge.Model == "" {
+			vars.APIConfig.Knowledge.Model = "kimi-k2.5"
+			vars.WriteConfigToDisk()
+		}
+		conf := openai.DefaultConfig(vars.APIConfig.Knowledge.Key)
+		conf.BaseURL = "https://api.moonshot.cn/v1"
+		c = openai.NewClientWithConfig(conf)
 	case "custom":
 		conf := openai.DefaultConfig(vars.APIConfig.Knowledge.Key)
 		conf.BaseURL = vars.APIConfig.Knowledge.Endpoint

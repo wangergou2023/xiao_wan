@@ -82,6 +82,7 @@
             <select name="kgProvider" id="kgProvider" form="kgAPIAddForm" onchange="checkKG()">
               <option value="" selected>None</option>
               <option value="openai">OpenAI</option>
+              <option value="kimi">Kimi (Moonshot AI)</option>
               <option value="houndify">Houndify</option>
               <option value="together">Together</option>
               <option value="custom">Custom</option>
@@ -133,6 +134,23 @@
                 <option value="nova">Nova</option>
                 <option value="shimmer">Shimmer</option>
               </select>
+            </span>
+
+            <span id="kimiInput" style="display: none">
+              <small class="desc">To use Kimi, create an account at
+                <a href="https://platform.kimi.com/settings/api-keys">platform.kimi.com</a> and enter your API Key
+                here.</small><br />
+              <label for="kimiKey">Kimi API Key:</label>
+              <input type="text" name="kimiKey" id="kimiKey" /><br />
+              <label for="kimiModel">Kimi Model: <small class="desc">(leave blank for default
+                  kimi-k2.5)</small></label>
+              <input type="text" name="kimiModel" id="kimiModel" /><br />
+              <label for="kimiAIPrompt">Kimi Prompt <small class="desc">(leave blank for
+                  default):</small></label><br />
+              <small><label class="desc" for="kimiAIPrompt">(default: "You are a helpful, animated robot called
+                  Vector. Keep the response concise yet
+                  informative.")</label></small>
+              <input type="text" name="kimiAIPrompt" id="kimiAIPrompt" /><br />
             </span>
 
             <span id="customAIInput" style="display: none">

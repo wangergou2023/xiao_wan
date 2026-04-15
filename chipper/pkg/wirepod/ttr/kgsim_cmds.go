@@ -475,6 +475,14 @@ func DoGetImage(msgs []openai.ChatCompletionMessage, param string, robot *vector
 		conf := openai.DefaultConfig(vars.APIConfig.Knowledge.Key)
 		conf.BaseURL = "https://api.together.xyz/v1"
 		c = openai.NewClientWithConfig(conf)
+	case "kimi":
+		if vars.APIConfig.Knowledge.Model == "" {
+			vars.APIConfig.Knowledge.Model = "kimi-k2.5"
+			vars.WriteConfigToDisk()
+		}
+		conf := openai.DefaultConfig(vars.APIConfig.Knowledge.Key)
+		conf.BaseURL = "https://api.moonshot.cn/v1"
+		c = openai.NewClientWithConfig(conf)
 	case "openai":
 		c = openai.NewClient(vars.APIConfig.Knowledge.Key)
 	case "custom":
