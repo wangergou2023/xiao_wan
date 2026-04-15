@@ -2,7 +2,7 @@ package main
 
 import (
 	"github.com/wangergou2023/xiao_wan/chipper/pkg/initwirepod"
-	stt "github.com/wangergou2023/xiao_wan/chipper/pkg/wirepod/stt/bigmodel"
+	stt "github.com/wangergou2023/xiao_wan/chipper/pkg/xiaowan/stt/bigmodel"
 )
 
 func main() {

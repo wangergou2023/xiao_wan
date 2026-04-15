@@ -6,8 +6,8 @@ import (
 	"github.com/wangergou2023/xiao_wan/chipper/pkg/logger"
 	"github.com/wangergou2023/xiao_wan/chipper/pkg/vars"
 	"github.com/wangergou2023/xiao_wan/chipper/pkg/vtt"
-	sr "github.com/wangergou2023/xiao_wan/chipper/pkg/wirepod/speechrequest"
-	ttr "github.com/wangergou2023/xiao_wan/chipper/pkg/wirepod/ttr"
+	sr "github.com/wangergou2023/xiao_wan/chipper/pkg/xiaowan/speechrequest"
+	ttr "github.com/wangergou2023/xiao_wan/chipper/pkg/xiaowan/ttr"
 )
 
 // This is here for compatibility with 1.6 and older software

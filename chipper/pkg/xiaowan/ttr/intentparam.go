@@ -8,7 +8,7 @@ import (
 	"github.com/fforchino/vector-go-sdk/pkg/vector"
 	"github.com/wangergou2023/xiao_wan/chipper/pkg/logger"
 	"github.com/wangergou2023/xiao_wan/chipper/pkg/vars"
-	lcztn "github.com/wangergou2023/xiao_wan/chipper/pkg/wirepod/localization"
+	lcztn "github.com/wangergou2023/xiao_wan/chipper/pkg/xiaowan/localization"
 )
 
 // stt

@@ -5,7 +5,7 @@ import (
 
 	"github.com/wangergou2023/xiao_wan/chipper/pkg/logger"
 	"github.com/wangergou2023/xiao_wan/chipper/pkg/vars"
-	sr "github.com/wangergou2023/xiao_wan/chipper/pkg/wirepod/speechrequest"
+	sr "github.com/wangergou2023/xiao_wan/chipper/pkg/xiaowan/speechrequest"
 )
 
 // Server stores the config

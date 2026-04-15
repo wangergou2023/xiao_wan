@@ -7,7 +7,7 @@ import (
 
 	"github.com/wangergou2023/xiao_wan/chipper/pkg/logger"
 	"github.com/wangergou2023/xiao_wan/chipper/pkg/vars"
-	botsetup "github.com/wangergou2023/xiao_wan/chipper/pkg/wirepod/setup"
+	botsetup "github.com/wangergou2023/xiao_wan/chipper/pkg/xiaowan/setup"
 )
 
 // cant be part of config-ws, otherwise import cycle

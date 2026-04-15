@@ -19,7 +19,7 @@ import (
 	tokenserver "github.com/wangergou2023/xiao_wan/chipper/pkg/servers/token"
 	"github.com/wangergou2023/xiao_wan/chipper/pkg/vars"
 	wpweb "github.com/wangergou2023/xiao_wan/chipper/webserver/backend/config-ws"
-	wp "github.com/wangergou2023/xiao_wan/chipper/pkg/wirepod/preqs"
+	wp "github.com/wangergou2023/xiao_wan/chipper/pkg/xiaowan/preqs"
 	sdkWeb "github.com/wangergou2023/xiao_wan/chipper/webserver/backend/sdkapp"
 	"github.com/soheilhy/cmux"
 
