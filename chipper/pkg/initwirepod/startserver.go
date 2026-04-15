@@ -18,9 +18,9 @@ import (
 	jdocsserver "github.com/kercre123/wire-pod/chipper/pkg/servers/jdocs"
 	tokenserver "github.com/kercre123/wire-pod/chipper/pkg/servers/token"
 	"github.com/kercre123/wire-pod/chipper/pkg/vars"
-	wpweb "github.com/kercre123/wire-pod/chipper/pkg/wirepod/config-ws"
+	wpweb "github.com/kercre123/wire-pod/chipper/webserver/backend/config-ws"
 	wp "github.com/kercre123/wire-pod/chipper/pkg/wirepod/preqs"
-	sdkWeb "github.com/kercre123/wire-pod/chipper/pkg/wirepod/sdkapp"
+	sdkWeb "github.com/kercre123/wire-pod/chipper/webserver/backend/sdkapp"
 	"github.com/soheilhy/cmux"
 
 	//	grpclog "github.com/digital-dream-labs/hugh/grpc/interceptors/logger"
