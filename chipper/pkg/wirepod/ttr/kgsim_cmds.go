@@ -502,6 +502,9 @@ func DoGetImage(msgs []openai.ChatCompletionMessage, param string, robot *vector
 		Messages:         msgs,
 		Stream:           true,
 	}
+	// if vars.APIConfig.Knowledge.Provider == "kimi" {
+	// 	aireq.Thinking = map[string]string{"type": "disabled"}
+	// }
 	if vars.APIConfig.Knowledge.Provider == "openai" {
 		aireq.Model = openai.GPT4oMini
 		logger.Println("Using " + aireq.Model)
