@@ -184,61 +184,6 @@ func customIntentHandler(req interface{}, voiceText string, botSerial string) bo
 	return successMatched
 }
 
-func pluginFunctionHandler(req interface{}, voiceText string, botSerial string) bool {
-	matched := false
-	var intent string
-	var igr *vtt.IntentGraphRequest
-	if str, ok := req.(*vtt.IntentGraphRequest); ok {
-		igr = str
-	}
-	var pluginResponse string
-	for num, array := range PluginUtterances {
-		array := array
-		for _, str := range *array {
-			if strings.Contains(voiceText, str) || str == "*" {
-				logger.Println("Bot " + botSerial + " matched plugin " + PluginNames[num] + ", executing function")
-				var guid string
-				var target string
-				for _, bot := range vars.BotInfo.Robots {
-					if bot.Esn == botSerial {
-						guid = bot.GUID
-						target = bot.IPAddress + ":443"
-					}
-				}
-				intent, pluginResponse = PluginFunctions[num](voiceText, botSerial, guid, target)
-				if intent == "" && pluginResponse == "" {
-					break
-				}
-				if intent == "" {
-					intent = "intent_imperative_praise"
-				}
-				logger.Println("Bot " + botSerial + " plugin " + PluginNames[num] + ", response " + pluginResponse)
-				if pluginResponse != "" && igr != nil {
-					response := &pb.IntentGraphResponse{
-						Session:      igr.Session,
-						DeviceId:     igr.Device,
-						ResponseType: pb.IntentGraphMode_KNOWLEDGE_GRAPH,
-						SpokenText:   pluginResponse,
-						QueryText:    voiceText,
-						IsFinal:      true,
-					}
-					igr.Stream.Send(response)
-				} else if pluginResponse != "" {
-					KGSim(botSerial, pluginResponse)
-				} else {
-					IntentPass(req, intent, voiceText, make(map[string]string), false)
-				}
-				matched = true
-				break
-			}
-		}
-		if matched {
-			break
-		}
-	}
-	return matched
-}
-
 func ProcessTextAll(req interface{}, voiceText string, intents []vars.JsonIntent, isOpus bool) bool {
 	var botSerial string
 	var req2 *vtt.IntentRequest
@@ -258,9 +203,8 @@ func ProcessTextAll(req interface{}, voiceText string, intents []vars.JsonIntent
 	var intentNum int = 0
 	var successMatched bool = false
 	voiceText = strings.ToLower(voiceText)
-	pluginMatched := pluginFunctionHandler(req, voiceText, botSerial)
 	customIntentMatched := customIntentHandler(req, voiceText, botSerial)
-	if !customIntentMatched && !pluginMatched {
+	if !customIntentMatched {
 		logger.Println("Not a custom intent")
 		// Look for a perfect match first
 		for _, b := range intents {
@@ -309,7 +253,7 @@ func ProcessTextAll(req interface{}, voiceText string, intents []vars.JsonIntent
 			}
 		}
 	} else {
-		logger.Println("This is a custom intent or plugin!")
+		logger.Println("This is a custom intent!")
 		successMatched = true
 	}
 	return successMatched

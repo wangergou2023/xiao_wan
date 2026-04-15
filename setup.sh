@@ -101,7 +101,6 @@ function getPackages() {
         sudo -u $SUDO_USER brew update
         sudo -u $SUDO_USER brew install wget pkg-config opus opusfile cmake lld
     fi
-    touch ./vector-cloud/packagesGotten
     echo
     echo "Installing golang binary package"
     mkdir golang
@@ -515,9 +514,8 @@ function scpToBot() {
         exit 0
     fi
     ssh  -oStrictHostKeyChecking=no -i ${keyPath} root@${botAddress} "mount -o rw,remount / && mount -o rw,remount,exec /data && systemctl stop anki-robot.target && mv /anki/data/assets/cozmo_resources/config/server_config.json /anki/data/assets/cozmo_resources/config/server_config.json.bak"
-    scp  -oStrictHostKeyChecking=no ${oldVar} -i ${keyPath} ./vector-cloud/build/vic-cloud root@${botAddress}:/anki/bin/
     scp  -oStrictHostKeyChecking=no ${oldVar} -i ${keyPath} ./certs/server_config.json root@${botAddress}:/anki/data/assets/cozmo_resources/config/
-    scp  -oStrictHostKeyChecking=no ${oldVar} -i ${keyPath} ./vector-cloud/pod-bot-install.sh root@${botAddress}:/data/
+    scp  -oStrictHostKeyChecking=no ${oldVar} -i ${keyPath} ./pod-bot-install.sh root@${botAddress}:/data/
     if [[ -f ./chipper/useepod ]]; then
         scp -oStrictHostKeyChecking=no ${oldVar} -i ${keyPath} ./chipper/epod/ep.crt root@${botAddress}:/anki/etc/wirepod-cert.crt
         scp -oStrictHostKeyChecking=no ${oldVar} -i ${keyPath} ./chipper/epod/ep.crt root@${botAddress}:/data/data/wirepod-cert.crt

@@ -81,9 +81,7 @@ persist_directories() {
     link_dir stt
     link_dir vosk
     link_dir whisper.cpp
-    link_dir vector-cloud/build
     link_dir chipper/jdocs
-    link_dir chipper/plugins
     link_dir chipper/session-certs
 }
 

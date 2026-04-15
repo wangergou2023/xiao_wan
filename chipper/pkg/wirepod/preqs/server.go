@@ -6,7 +6,6 @@ import (
 	"github.com/kercre123/wire-pod/chipper/pkg/logger"
 	"github.com/kercre123/wire-pod/chipper/pkg/vars"
 	sr "github.com/kercre123/wire-pod/chipper/pkg/wirepod/speechrequest"
-	ttr "github.com/kercre123/wire-pod/chipper/pkg/wirepod/ttr"
 )
 
 // Server stores the config
@@ -68,9 +67,6 @@ func New(InitFunc func() error, SttHandler interface{}, voiceProcessor string) (
 
 	// Initiating the chosen voice processor and load intents from json
 	VoiceProcessor = voiceProcessor
-
-	// Load plugins
-	ttr.LoadPlugins()
 
 	return &Server{}, err
 }

@@ -1,11 +1,7 @@
 /stt
-/vector-cloud/build/vic-cloud
 /chipper/source.sh
-/vector-cloud/build
 /chipper/chipper
 /certs
-/vector-cloud/packagesGotten
-/vector-cloud/cloud/cert.go
 /chipper/aarch64
 /chipper/armarch
 /chipper/processOnce
@@ -37,7 +33,6 @@
 /chipper/windows/.aptDone
 /chipper/macos/libs
 /chipper/macos/target
-/chipper/plugins/*.so
 /whisper.cpp
 .DS_Store
 /chipper/openaiChats.json
