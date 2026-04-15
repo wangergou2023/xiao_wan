@@ -1,10 +1,8 @@
-module github.com/kercre123/wire-pod/chipper
+module github.com/wangergou2023/xiao_wan/chipper
 
 go 1.18
 
 require (
-	github.com/Picovoice/leopard/binding/go/v2 v2.0.2
-	github.com/asticode/go-asticoqui v0.2.0
 	github.com/bramvdbogaerde/go-scp v1.2.1
 	github.com/digital-dream-labs/api v0.0.0-20210824232136-8cc90c1bb12c
 	github.com/digital-dream-labs/hugh v0.0.0-20210210154335-f4159b9fcd5f
@@ -15,8 +13,6 @@ require (
 	github.com/go-audio/wav v1.1.0
 	github.com/golang-jwt/jwt v3.2.2+incompatible
 	github.com/google/uuid v1.5.0
-	github.com/kercre123/vosk-api/go v1.0.2
-	github.com/kercre123/whisper.cpp/bindings/go v0.0.0-20250602164512-60cd96acff3a
 	github.com/kercre123/zeroconf v1.0.1
 	github.com/maxhawkins/go-webrtcvad v0.0.0-20210121163624-be60036f3083
 	github.com/ncruces/zenity v0.10.10
@@ -36,12 +32,10 @@ require (
 
 require (
 	github.com/VividCortex/ewma v1.1.1 // indirect
-	github.com/agnivade/levenshtein v1.1.1 // indirect
 	github.com/akavel/rsrc v0.10.2 // indirect
 	github.com/alecthomas/template v0.0.0-20190718012654-fb15b899a751 // indirect
 	github.com/alecthomas/units v0.0.0-20190924025748-f65c72e2690d // indirect
 	github.com/alessio/shellescape v1.4.1 // indirect
-	github.com/alphacep/vosk-api/go v0.3.50 // indirect
 	github.com/aws/aws-sdk-go v1.34.28 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/cbroglie/mustache v1.0.1 // indirect
@@ -63,7 +57,6 @@ require (
 	github.com/jamesruan/sodium v0.0.0-20181216154042-9620b83ffeae // indirect
 	github.com/jmespath/go-jmespath v0.4.0 // indirect
 	github.com/josephspurrier/goversioninfo v1.4.0 // indirect
-	github.com/kercre123/vosk-api v1.0.1 // indirect
 	github.com/kr/text v0.2.0 // indirect
 	github.com/lib/pq v1.7.0 // indirect
 	github.com/magiconair/properties v1.8.1 // indirect
@@ -90,6 +83,7 @@ require (
 	github.com/spf13/jwalterweatherman v1.1.0 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/spf13/viper v1.7.1 // indirect
+	github.com/stretchr/testify v1.9.0 // indirect
 	github.com/subosito/gotenv v1.2.0 // indirect
 	github.com/technoweenie/multipartstreamer v1.0.1 // indirect
 	github.com/yuin/gluamapper v0.0.0-20150323120927-d836955830e7 // indirect

@@ -6,11 +6,11 @@ import (
 	"regexp"
 
 	pb "github.com/digital-dream-labs/api/go/chipperpb"
-	"github.com/kercre123/wire-pod/chipper/pkg/logger"
-	"github.com/kercre123/wire-pod/chipper/pkg/vars"
-	"github.com/kercre123/wire-pod/chipper/pkg/vtt"
-	sr "github.com/kercre123/wire-pod/chipper/pkg/wirepod/speechrequest"
-	ttr "github.com/kercre123/wire-pod/chipper/pkg/wirepod/ttr"
+	"github.com/wangergou2023/xiao_wan/chipper/pkg/logger"
+	"github.com/wangergou2023/xiao_wan/chipper/pkg/vars"
+	"github.com/wangergou2023/xiao_wan/chipper/pkg/vtt"
+	sr "github.com/wangergou2023/xiao_wan/chipper/pkg/wirepod/speechrequest"
+	ttr "github.com/wangergou2023/xiao_wan/chipper/pkg/wirepod/ttr"
 	"github.com/pkg/errors"
 	"github.com/soundhound/houndify-sdk-go"
 )

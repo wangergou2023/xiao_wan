@@ -35,7 +35,7 @@ if [[ ${USE_INBUILT_BLE} == "true" ]]; then
     GOTAGS="${GOTAGS},inbuiltble"
 fi
 
-export GOLDFLAGS="-X 'github.com/kercre123/wire-pod/chipper/pkg/vars.CommitSHA=${COMMIT_HASH}'"
+export GOLDFLAGS="-X 'github.com/wangergou2023/xiao_wan/chipper/pkg/vars.CommitSHA=${COMMIT_HASH}'"
 
 #./chipper
 if [[ -f ./chipper ]]; then

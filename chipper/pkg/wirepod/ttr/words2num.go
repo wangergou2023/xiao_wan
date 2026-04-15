@@ -6,7 +6,7 @@ import (
 	"strconv"
 	"strings"
 
-	lcztn "github.com/kercre123/wire-pod/chipper/pkg/wirepod/localization" 
+	lcztn "github.com/wangergou2023/xiao_wan/chipper/pkg/wirepod/localization" 
 )
 
 // This file contains words2num. It is given the spoken text and returns a string which contains the true number.

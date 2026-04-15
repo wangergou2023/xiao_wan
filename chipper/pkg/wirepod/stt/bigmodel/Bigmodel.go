@@ -12,8 +12,8 @@ import (
 
 	"github.com/go-audio/audio"
 	"github.com/go-audio/wav"
-	"github.com/kercre123/wire-pod/chipper/pkg/logger"
-	sr "github.com/kercre123/wire-pod/chipper/pkg/wirepod/speechrequest"
+	"github.com/wangergou2023/xiao_wan/chipper/pkg/logger"
+	sr "github.com/wangergou2023/xiao_wan/chipper/pkg/wirepod/speechrequest"
 	"github.com/orcaman/writerseeker"
 )
 
