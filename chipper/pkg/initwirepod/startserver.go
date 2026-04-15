@@ -99,14 +99,14 @@ func BeginWirepodSpecific(sttInitFunc func() error, sttHandlerFunc interface{}, 
 func StartFromProgramInit(sttInitFunc func() error, sttHandlerFunc interface{}, voiceProcessorName string) {
 	if runtime.GOOS == "android" || runtime.GOOS == "ios" {
 		os.Setenv("DEBUG_LOGGING", "true")
-		os.Setenv("STT_SERVICE", "vosk")
+		os.Setenv("STT_SERVICE", "bigmodel")
 	}
 	err := BeginWirepodSpecific(sttInitFunc, sttHandlerFunc, voiceProcessorName)
 	if err != nil {
 		logger.Println("\033[33m\033[1mWire-pod is not setup. Use the webserver at port 8080 to set up wire-pod.\033[0m")
 	} else if !vars.APIConfig.PastInitialSetup {
 		logger.Println("\033[33m\033[1mWire-pod is not setup. Use the webserver at port 8080 to set up wire-pod.\033[0m")
-	} else if (vars.APIConfig.STT.Service == "vosk" || vars.APIConfig.STT.Service == "whisper.cpp" || vars.APIConfig.STT.Service == "bigmodel") && vars.APIConfig.STT.Language == "" {
+	} else if vars.APIConfig.STT.Service == "bigmodel" && vars.APIConfig.STT.Language == "" {
 		logger.Println("\033[33m\033[1mLanguage value is blank, but STT service is " + vars.APIConfig.STT.Service + ". Reinitiating setup process.\033[0m")
 		logger.Println("\033[33m\033[1mWire-pod is not setup. Use the webserver at port 8080 to set up wire-pod.\033[0m")
 		vars.APIConfig.PastInitialSetup = false

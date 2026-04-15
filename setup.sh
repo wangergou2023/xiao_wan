@@ -136,241 +136,29 @@ function getPackages() {
 function getSTT() {
     echo "export DEBUG_LOGGING=true" > ./chipper/source.sh
     rm -f ./chipper/pico.key
-    function sttServicePrompt() {
+    function bigmodelApiPrompt() {
         echo
-        echo "Which speech-to-text service would you like to use?"
-        echo "1: Coqui (local, no usage collection, less accurate, a little slower)"
-        echo "2: Picovoice Leopard (local, usage collected, accurate, account signup required)"
-        echo "3: VOSK (local, accurate, multilanguage, fast, recommended)"
-        echo "4: Whisper (local, accurate, multilanguage, recommended ONLY for more powerful hardware, please don't run on a Pi)"
-        echo "5: BigModel GLM-ASR (online API, requires token)"
+        echo "Enter your BigModel API token (Bearer token)."
         echo
-        read -p "Enter a number (3): " sttServiceNum
-        if [[ ! -n ${sttServiceNum} ]]; then
-            sttService="vosk"
-            elif [[ ${sttServiceNum} == "1" ]]; then
-            if [[ ${TARGET} == "darwin" ]]; then
-                echo "Coqui is not supported for macOS. Please select another option."
-                sttServicePrompt
-            else
-                sttService="coqui"
-            fi
-            elif [[ ${sttServiceNum} == "2" ]]; then
-            sttService="leopard"
-            elif [[ ${sttServiceNum} == "3" ]]; then
-            sttService="vosk"
-            elif [[ ${sttServiceNum} == "4" ]]; then
-            sttService="whisper"
-            elif [[ ${sttServiceNum} == "5" ]]; then
-            sttService="bigmodel"
-        else
+        read -p "Token: " bigmodelToken
+        if [[ ! -n ${bigmodelToken} ]]; then
             echo
-            echo "Choose a valid number, or just press enter to use the default number."
-            sttServicePrompt
+            echo "You must enter a token."
+            bigmodelApiPrompt
         fi
     }
-    if [[ "$STT" == "vosk" ]]; then
-        echo "Vosk config"
-        sttService="vosk"
-    else
-        sttServicePrompt
-    fi
-    if [[ ${sttService} == "bigmodel" ]]; then
-        function bigmodelApiPrompt() {
-            echo
-            echo "Enter your BigModel API token (Bearer token)."
-            echo
-            read -p "Token: " bigmodelToken
-            if [[ ! -n ${bigmodelToken} ]]; then
-                echo
-                echo "You must enter a token."
-                bigmodelApiPrompt
-            fi
-        }
-        function bigmodelModelPrompt() {
-            echo
-            read -p "Enter model name (glm-asr-2512): " bigmodelModel
-            if [[ ! -n ${bigmodelModel} ]]; then
-                bigmodelModel="glm-asr-2512"
-            fi
-        }
-        bigmodelApiPrompt
-        bigmodelModelPrompt
-        echo "export STT_SERVICE=bigmodel" >> ./chipper/source.sh
-        echo "export BIGMODEL_API_TOKEN=${bigmodelToken}" >> ./chipper/source.sh
-        echo "export BIGMODEL_ASR_MODEL=${bigmodelModel}" >> ./chipper/source.sh
-    elif [[ ${sttService} == "leopard" ]]; then
-        function picoApiPrompt() {
-            echo
-            echo "Create an account at https://console.picovoice.ai/ and enter the Access Key it gives you."
-            echo
-            read -p "Enter your Access Key: " picoKey
-            if [[ ! -n ${picoKey} ]]; then
-                echo
-                echo "You must enter a key."
-                picoApiPrompt
-            fi
-        }
-        picoApiPrompt
-        echo "export STT_SERVICE=leopard" >> ./chipper/source.sh
-        echo "export PICOVOICE_APIKEY=${picoKey}" >> ./chipper/source.sh
-        echo "export PICOVOICE_APIKEY=${picoKey}" > ./chipper/pico.key
-        elif [[ ${sttService} == "vosk" ]]; then
-        echo "export STT_SERVICE=vosk" >> ./chipper/source.sh
-        origDir="$(pwd)"
-        if [[ ! -f ./vosk/completed ]]; then
-            echo "Getting VOSK assets"
-            rm -fr ${ROOT}/.vosk
-            mkdir ${ROOT}/.vosk
-            cd ${ROOT}/.vosk
-            VOSK_VER="0.3.45"
-            if [[ ${TARGET} == "darwin" ]]; then
-                VOSK_VER="0.3.42"
-                VOSK_DIR="vosk-osx-${VOSK_VER}"
-                elif [[ ${ARCH} == "x86_64" ]]; then
-                VOSK_DIR="vosk-linux-x86_64-${VOSK_VER}"
-                elif [[ ${ARCH} == "aarch64" ]]; then
-                VOSK_DIR="vosk-linux-aarch64-${VOSK_VER}"
-                elif [[ ${ARCH} == "armv7l" ]]; then
-                VOSK_DIR="vosk-linux-armv7l-${VOSK_VER}"
-            fi
-            VOSK_ARCHIVE="$VOSK_DIR.zip"
-            wget -q --show-progress --no-check-certificate "https://github.com/alphacep/vosk-api/releases/download/v${VOSK_VER}/${VOSK_ARCHIVE}"
-            unzip "$VOSK_ARCHIVE"
-            mv "$VOSK_DIR" libvosk
-            rm -fr "$VOSK_ARCHIVE"
-            
-            cd ${origDir}/chipper
-            export CGO_ENABLED=1
-            export CGO_CFLAGS="-I${ROOT}/.vosk/libvosk"
-            export CGO_LDFLAGS="-L ${ROOT}/.vosk/libvosk -lvosk -ldl -lpthread"
-            export LD_LIBRARY_PATH="${ROOT}/.vosk/libvosk:$LD_LIBRARY_PATH"
-            /usr/local/go/bin/go get -u github.com/kercre123/vosk-api/go/...
-            /usr/local/go/bin/go get github.com/kercre123/vosk-api
-            /usr/local/go/bin/go install github.com/kercre123/vosk-api/go
-            cd ${origDir}
+    function bigmodelModelPrompt() {
+        echo
+        read -p "Enter model name (glm-asr-2512): " bigmodelModel
+        if [[ ! -n ${bigmodelModel} ]]; then
+            bigmodelModel="glm-asr-2512"
         fi
-        elif [[ ${sttService} == "whisper" ]]; then
-        echo "export STT_SERVICE=whisper.cpp" >> ./chipper/source.sh
-        origDir="$(pwd)"
-        echo "Getting Whisper assets"
-        if [[ ! -d ./whisper.cpp ]]; then
-            mkdir whisper.cpp
-            cd whisper.cpp
-            git clone https://github.com/ggerganov/whisper.cpp.git .
-            git checkout 7fd6fa809749078aa00edf945e959c898f2bd1af
-        else
-            cd whisper.cpp
-        fi
-        function whichWhisperModel() {
-            availableModels="tiny, base, small, medium, large-v3, large-v3-q5_0"
-            echo
-            echo "Which Whisper model would you like to use?"
-            echo "Options: $availableModels"
-            echo '(tiny is recommended)'
-            echo
-            read -p "Enter preferred model: " whispermodel
-            if [[ ! -n ${whispermodel} ]]; then
-                echo
-                echo "You must enter a key."
-                whichWhisperModel
-            fi
-            if [[ ! ${availableModels} == *"${whispermodel}"* ]]; then
-                echo
-                echo "Invalid model."
-                whichWhisperModel
-            fi
-        }
-        whichWhisperModel
-        ./models/download-ggml-model.sh $whispermodel
-        rm -rf build_go
-	cmake -B build_go \
-	-DCMAKE_POSITION_INDEPENDENT_CODE=ON
-	cmake --build build_go --config Release
-        cd ${origDir}
-        echo "export WHISPER_MODEL=$whispermodel" >> ./chipper/source.sh
-    else
-        echo "export STT_SERVICE=coqui" >> ./chipper/source.sh
-        if [[ ! -f ./stt/completed ]]; then
-            echo "Getting STT assets"
-            if [[ -d /root/.coqui ]]; then
-                rm -rf /root/.coqui
-            fi
-            origDir=$(pwd)
-            mkdir /root/.coqui
-            cd /root/.coqui
-            if [[ ${ARCH} == "x86_64" ]]; then
-                if [[ ${AVXSUPPORT} == "noavx" ]]; then
-                    wget -q --show-progress --no-check-certificate https://wire.my.to/noavx-coqui/native_client.tflite.Linux.tar.xz
-                else
-                    wget -q --show-progress --no-check-certificate https://github.com/coqui-ai/STT/releases/download/v1.3.0/native_client.tflite.Linux.tar.xz
-                fi
-                tar -xf native_client.tflite.Linux.tar.xz
-                rm -f ./native_client.tflite.Linux.tar.xz
-                elif [[ ${ARCH} == "aarch64" ]]; then
-                wget -q --show-progress --no-check-certificate https://github.com/coqui-ai/STT/releases/download/v1.3.0/native_client.tflite.linux.aarch64.tar.xz
-                tar -xf native_client.tflite.linux.aarch64.tar.xz
-                rm -f ./native_client.tflite.linux.aarch64.tar.xz
-                elif [[ ${ARCH} == "armv7l" ]]; then
-                wget -q --show-progress --no-check-certificate https://github.com/coqui-ai/STT/releases/download/v1.3.0/native_client.tflite.linux.armv7.tar.xz
-                tar -xf native_client.tflite.linux.armv7.tar.xz
-                rm -f ./native_client.tflite.linux.armv7.tar.xz
-            fi
-            cd ${origDir}/chipper
-            export CGO_LDFLAGS="-L/root/.coqui/"
-            export CGO_CXXFLAGS="-I/root/.coqui/"
-            export LD_LIBRARY_PATH="/root/.coqui/:$LD_LIBRARY_PATH"
-            /usr/local/go/bin/go get -u github.com/asticode/go-asticoqui/...
-            /usr/local/go/bin/go get github.com/asticode/go-asticoqui
-            /usr/local/go/bin/go install github.com/asticode/go-asticoqui
-            cd ${origDir}
-            mkdir -p stt
-            cd stt
-            function sttModelPrompt() {
-                echo
-                echo "Which voice model would you like to use?"
-                echo "1: large_vocabulary (faster, less accurate, ~100MB)"
-                echo "2: huge_vocabulary (slower, more accurate, handles faster speech better, ~900MB)"
-                echo
-                read -p "Enter a number (1): " sttModelNum
-                if [[ ! -n ${sttModelNum} ]]; then
-                    sttModel="large_vocabulary"
-                    elif [[ ${sttModelNum} == "1" ]]; then
-                    sttModel="large_vocabulary"
-                    elif [[ ${sttModelNum} == "2" ]]; then
-                    sttModel="huge_vocabulary"
-                else
-                    echo
-                    echo "Choose a valid number, or just press enter to use the default number."
-                    sttModelPrompt
-                fi
-            }
-            sttModelPrompt
-            if [[ -f model.scorer ]]; then
-                rm -rf ./*
-            fi
-            if [[ ${sttModel} == "large_vocabulary" ]]; then
-                echo "Getting STT model..."
-                wget -O model.tflite -q --show-progress --no-check-certificate https://coqui.gateway.scarf.sh/english/coqui/v1.0.0-large-vocab/model.tflite
-                echo "Getting STT scorer..."
-                wget -O model.scorer -q --show-progress --no-check-certificate https://coqui.gateway.scarf.sh/english/coqui/v1.0.0-large-vocab/large_vocabulary.scorer
-                elif [[ ${sttModel} == "huge_vocabulary" ]]; then
-                echo "Getting STT model..."
-                wget -O model.tflite -q --show-progress --no-check-certificate https://coqui.gateway.scarf.sh/english/coqui/v1.0.0-huge-vocab/model.tflite
-                echo "Getting STT scorer..."
-                wget -O model.scorer -q --show-progress --no-check-certificate https://coqui.gateway.scarf.sh/english/coqui/v1.0.0-huge-vocab/huge-vocabulary.scorer
-            else
-                echo "Invalid model specified"
-                exit 0
-            fi
-            echo
-            touch completed
-            echo "STT assets successfully downloaded!"
-            cd ..
-        else
-            echo "STT assets already there! If you want to redownload, use the 4th option in setup.sh."
-        fi
-    fi
+    }
+    bigmodelApiPrompt
+    bigmodelModelPrompt
+    echo "export STT_SERVICE=bigmodel" >> ./chipper/source.sh
+    echo "export BIGMODEL_API_TOKEN=${bigmodelToken}" >> ./chipper/source.sh
+    echo "export BIGMODEL_ASR_MODEL=${bigmodelModel}" >> ./chipper/source.sh
 }
 
 function IPDNSPrompt() {
@@ -572,7 +360,7 @@ function setupSystemd() {
     fi
     source ./chipper/source.sh
     echo "[Unit]" >wire-pod.service
-    echo "Description=Wire Escape Pod (coqui)" >>wire-pod.service
+    echo "Description=Wire Escape Pod (bigmodel)" >>wire-pod.service
     echo "Wants=network.target" >>wire-pod.service
     echo "After=network.target" >>wire-pod.service
     echo "StartLimitIntervalSec=500" >>wire-pod.service
@@ -596,32 +384,8 @@ function setupSystemd() {
     fi
     COMMIT_HASH="$(git rev-parse --short HEAD)"
     export GOLDFLAGS="-X 'github.com/kercre123/wire-pod/chipper/pkg/vars.CommitSHA=${COMMIT_HASH}'"
-    if [[ ${STT_SERVICE} == "leopard" ]]; then
-        echo "wire-pod.service created, building chipper with Picovoice STT service..."
-        /usr/local/go/bin/go build -tags $GOTAGS -ldflags="${GOLDFLAGS}" cmd/leopard/main.go
-        elif [[ ${STT_SERVICE} == "vosk" ]]; then
-        echo "wire-pod.service created, building chipper with VOSK STT service..."
-        export CGO_ENABLED=1
-        export CGO_CFLAGS="-I/root/.vosk/libvosk"
-        export CGO_LDFLAGS="-L /root/.vosk/libvosk -lvosk -ldl -lpthread"
-        export LD_LIBRARY_PATH="/root/.vosk/libvosk:$LD_LIBRARY_PATH"
-        /usr/local/go/bin/go build -tags $GOTAGS -ldflags="${GOLDFLAGS}" cmd/vosk/main.go
-        elif [[ ${STT_SERVICE} == "whisper.cpp" ]]; then
-        echo "wire-pod.service created, building chipper with Whisper.CPP STT service..."
-        export CGO_ENABLED=1
-        export C_INCLUDE_PATH="../whisper.cpp"
-        export LIBRARY_PATH="../whisper.cpp"
-        export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:$(pwd)/../whisper.cpp"
-        export CGO_LDFLAGS="-L$(pwd)/../whisper.cpp"
-        export CGO_CFLAGS="-I$(pwd)/../whisper.cpp"
-        /usr/local/go/bin/go build -tags $GOTAGS -ldflags="${GOLDFLAGS}" cmd/experimental/whisper.cpp/main.go
-    else
-        echo "wire-pod.service created, building chipper with Coqui STT service..."
-        export CGO_LDFLAGS="-L/root/.coqui/"
-        export CGO_CXXFLAGS="-I/root/.coqui/"
-        export LD_LIBRARY_PATH="/root/.coqui/:$LD_LIBRARY_PATH"
-        /usr/local/go/bin/go build -tags $GOTAGS -ldflags="${GOLDFLAGS}" cmd/coqui/main.go
-    fi
+    echo "wire-pod.service created, building chipper with BigModel STT service..."
+    /usr/local/go/bin/go build -tags $GOTAGS -ldflags="${GOLDFLAGS}" cmd/experimental/bigmodel/main.go
     sync
     mv main chipper
     echo
