@@ -23,10 +23,8 @@ require (
 	github.com/ncruces/zenity v0.10.10
 	github.com/nfnt/resize v0.0.0-20180221191011-83c6a9932646
 	github.com/orcaman/writerseeker v0.0.0-20200621085525-1d3f536ff85e
-	github.com/pkg/errors v0.9.1
 	github.com/sashabaranov/go-openai v1.27.1
 	github.com/soheilhy/cmux v0.1.5
-	github.com/soundhound/houndify-sdk-go v0.3.5
 	github.com/vadv/gopher-lua-libs v0.5.0
 	github.com/wlynxg/anet v0.0.1
 	github.com/yuin/gopher-lua v1.1.1
@@ -86,6 +84,7 @@ require (
 	github.com/mitchellh/mapstructure v1.4.3 // indirect
 	github.com/montanaflynn/stats v0.6.3 // indirect
 	github.com/pelletier/go-toml v1.8.0 // indirect
+	github.com/pkg/errors v0.9.1 // indirect
 	github.com/prometheus/client_golang v1.11.1 // indirect
 	github.com/prometheus/client_model v0.2.0 // indirect
 	github.com/prometheus/common v0.26.0 // indirect

@@ -21,22 +21,10 @@ type systemIntentResponseStruct struct {
 
 func IntentPass(req interface{}, intentThing string, speechText string, intentParams map[string]string, isParam bool) (interface{}, error) {
 	var esn string
-	var req1 *vtt.IntentRequest
-	var req2 *vtt.IntentGraphRequest
-	var isIntentGraph bool
-	if str, ok := req.(*vtt.IntentRequest); ok {
+	var req1 *vtt.IntentGraphRequest
+	if str, ok := req.(*vtt.IntentGraphRequest); ok {
 		req1 = str
 		esn = req1.Device
-		isIntentGraph = false
-	} else if str, ok := req.(*vtt.IntentGraphRequest); ok {
-		req2 = str
-		esn = req2.Device
-		isIntentGraph = true
-	}
-
-	// intercept if not intent graph but intent graph is enabled
-	if !isIntentGraph && vars.APIConfig.Knowledge.IntentGraph && intentThing == "intent_system_unmatched" {
-		intentThing = "intent_greeting_hello"
 	}
 
 	var intentResult pb.IntentResult
@@ -56,45 +44,25 @@ func IntentPass(req interface{}, intentThing string, speechText string, intentPa
 	if isParam {
 		logger.LogUI("Parameters sent: " + fmt.Sprint(intentParams))
 	}
-	intent := pb.IntentResponse{
-		IsFinal:      true,
-		IntentResult: &intentResult,
-	}
 	intentGraphSend := pb.IntentGraphResponse{
 		ResponseType: pb.IntentGraphMode_INTENT,
 		IsFinal:      true,
 		IntentResult: &intentResult,
 		CommandType:  pb.RobotMode_VOICE_COMMAND.String(),
 	}
-	if !isIntentGraph {
-		if err := req1.Stream.Send(&intent); err != nil {
-			return nil, err
-		}
-		r := &vtt.IntentResponse{
-			Intent: &intent,
-		}
-		logger.Println("Bot " + esn + " Intent Sent: " + intentThing)
-		if isParam {
-			logger.Println("Bot "+esn+" Parameters Sent:", intentParams)
-		} else {
-			logger.Println("No Parameters Sent")
-		}
-		return r, nil
-	} else {
-		if err := req2.Stream.Send(&intentGraphSend); err != nil {
-			return nil, err
-		}
-		r := &vtt.IntentGraphResponse{
-			Intent: &intentGraphSend,
-		}
-		logger.Println("Bot " + esn + " Intent Sent: " + intentThing)
-		if isParam {
-			logger.Println("Bot "+esn+" Parameters Sent:", intentParams)
-		} else {
-			logger.Println("No Parameters Sent")
-		}
-		return r, nil
+	if err := req1.Stream.Send(&intentGraphSend); err != nil {
+		return nil, err
 	}
+	r := &vtt.IntentGraphResponse{
+		Intent: &intentGraphSend,
+	}
+	logger.Println("Bot " + esn + " Intent Sent: " + intentThing)
+	if isParam {
+		logger.Println("Bot "+esn+" Parameters Sent:", intentParams)
+	} else {
+		logger.Println("No Parameters Sent")
+	}
+	return r, nil
 }
 
 func customIntentHandler(req interface{}, voiceText string, botSerial string) bool {
@@ -186,16 +154,8 @@ func customIntentHandler(req interface{}, voiceText string, botSerial string) bo
 
 func ProcessTextAll(req interface{}, voiceText string, intents []vars.JsonIntent, isOpus bool) bool {
 	var botSerial string
-	var req2 *vtt.IntentRequest
-	var req1 *vtt.KnowledgeGraphRequest
 	var req3 *vtt.IntentGraphRequest
-	if str, ok := req.(*vtt.IntentRequest); ok {
-		req2 = str
-		botSerial = req2.Device
-	} else if str, ok := req.(*vtt.KnowledgeGraphRequest); ok {
-		req1 = str
-		botSerial = req1.Device
-	} else if str, ok := req.(*vtt.IntentGraphRequest); ok {
+	if str, ok := req.(*vtt.IntentGraphRequest); ok {
 		req3 = str
 		botSerial = req3.Device
 	}
@@ -273,7 +233,7 @@ func KnowledgeGraphResponseIG(req *vtt.IntentGraphRequest, spokenText string, qu
 		QueryText:    queryText,
 		CommandType:  pb.RobotMode_VOICE_COMMAND.String(),
 	}
-	
+
 	if err := req.Stream.Send(&intentGraphSend); err != nil {
 		return err
 	}

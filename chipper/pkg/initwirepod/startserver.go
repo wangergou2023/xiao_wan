@@ -12,16 +12,16 @@ import (
 	"github.com/digital-dream-labs/api/go/jdocspb"
 	"github.com/digital-dream-labs/api/go/tokenpb"
 	"github.com/digital-dream-labs/hugh/log"
+	"github.com/soheilhy/cmux"
 	"github.com/wangergou2023/xiao_wan/chipper/pkg/logger"
 	"github.com/wangergou2023/xiao_wan/chipper/pkg/mdnshandler"
 	chipperserver "github.com/wangergou2023/xiao_wan/chipper/pkg/servers/chipper"
 	jdocsserver "github.com/wangergou2023/xiao_wan/chipper/pkg/servers/jdocs"
 	tokenserver "github.com/wangergou2023/xiao_wan/chipper/pkg/servers/token"
 	"github.com/wangergou2023/xiao_wan/chipper/pkg/vars"
-	wpweb "github.com/wangergou2023/xiao_wan/chipper/webserver/backend/config-ws"
 	wp "github.com/wangergou2023/xiao_wan/chipper/pkg/xiaowan/preqs"
+	wpweb "github.com/wangergou2023/xiao_wan/chipper/webserver/backend/config-ws"
 	sdkWeb "github.com/wangergou2023/xiao_wan/chipper/webserver/backend/sdkapp"
-	"github.com/soheilhy/cmux"
 
 	//	grpclog "github.com/digital-dream-labs/hugh/grpc/interceptors/logger"
 
@@ -64,8 +64,6 @@ func grpcServe(l net.Listener, p *wp.Server) error {
 	}
 
 	s, _ := chipperserver.New(
-		chipperserver.WithIntentProcessor(p),
-		chipperserver.WithKnowledgeGraphProcessor(p),
 		chipperserver.WithIntentGraphProcessor(p),
 	)
 
