@@ -4,9 +4,9 @@ import (
 	"context"
 	"log"
 
-	"github.com/fforchino/vector-go-sdk/pkg/vector"
-	"github.com/fforchino/vector-go-sdk/pkg/vectorpb"
 	"github.com/wangergou2023/xiao_wan/chipper/pkg/logger"
+	"github.com/wangergou2023/xiao_wan/chipper/pkg/vector"
+	"github.com/wangergou2023/xiao_wan/chipper/pkg/vectorpb"
 )
 
 // sayText 在短句播报前先抢占行为控制，避免被机器人自身行为打断。

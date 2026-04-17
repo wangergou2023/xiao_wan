@@ -4,9 +4,9 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/fforchino/vector-go-sdk/pkg/vector"
 	"github.com/wangergou2023/xiao_wan/chipper/pkg/logger"
 	"github.com/wangergou2023/xiao_wan/chipper/pkg/vars"
+	"github.com/wangergou2023/xiao_wan/chipper/pkg/vector"
 	lcztn "github.com/wangergou2023/xiao_wan/chipper/pkg/xiaowan/localization"
 	"github.com/wangergou2023/xiao_wan/chipper/pkg/xiaowan/ttr/robot"
 )

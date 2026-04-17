@@ -6,10 +6,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/fforchino/vector-go-sdk/pkg/vector"
-	"github.com/fforchino/vector-go-sdk/pkg/vectorpb"
 	"github.com/wangergou2023/xiao_wan/chipper/pkg/logger"
 	"github.com/wangergou2023/xiao_wan/chipper/pkg/vars"
+	"github.com/wangergou2023/xiao_wan/chipper/pkg/vector"
+	"github.com/wangergou2023/xiao_wan/chipper/pkg/vectorpb"
 )
 
 // KGSim 用于在不经过完整 LLM 流程时，让机器人直接播报一段短文本。

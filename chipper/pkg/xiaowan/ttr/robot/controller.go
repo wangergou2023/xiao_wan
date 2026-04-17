@@ -4,9 +4,9 @@ import (
 	"context"
 	"errors"
 
-	"github.com/fforchino/vector-go-sdk/pkg/vector"
-	"github.com/fforchino/vector-go-sdk/pkg/vectorpb"
 	sdk_wrapper "github.com/wangergou2023/xiao_wan/chipper/pkg/sdk-wrapper"
+	"github.com/wangergou2023/xiao_wan/chipper/pkg/vector"
+	"github.com/wangergou2023/xiao_wan/chipper/pkg/vectorpb"
 )
 
 // ensureSDKForRobot 确保 sdk-wrapper 已绑定到当前机器人，方便复用更高层的控制封装。

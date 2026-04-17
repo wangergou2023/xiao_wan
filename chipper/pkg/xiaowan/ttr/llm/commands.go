@@ -10,11 +10,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/fforchino/vector-go-sdk/pkg/vector"
-	"github.com/fforchino/vector-go-sdk/pkg/vectorpb"
 	"github.com/sashabaranov/go-openai"
 	"github.com/wangergou2023/xiao_wan/chipper/pkg/logger"
 	"github.com/wangergou2023/xiao_wan/chipper/pkg/vars"
+	"github.com/wangergou2023/xiao_wan/chipper/pkg/vector"
+	"github.com/wangergou2023/xiao_wan/chipper/pkg/vectorpb"
 	robotpkg "github.com/wangergou2023/xiao_wan/chipper/pkg/xiaowan/ttr/robot"
 )
 

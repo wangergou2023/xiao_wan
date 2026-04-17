@@ -10,7 +10,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/fforchino/vector-go-sdk/pkg/vector"
+	"github.com/wangergou2023/xiao_wan/chipper/pkg/vector"
 )
 
 const (

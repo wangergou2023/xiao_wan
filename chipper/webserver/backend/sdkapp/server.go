@@ -16,10 +16,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/fforchino/vector-go-sdk/pkg/vectorpb"
 	"github.com/wangergou2023/xiao_wan/chipper/pkg/logger"
 	"github.com/wangergou2023/xiao_wan/chipper/pkg/scripting"
 	"github.com/wangergou2023/xiao_wan/chipper/pkg/vars"
+	"github.com/wangergou2023/xiao_wan/chipper/pkg/vectorpb"
 )
 
 var serverFiles string = "./webserver/sdkapp"
@@ -523,23 +523,23 @@ func SdkapiHandler(w http.ResponseWriter, r *http.Request) {
 	case r.URL.Path == "/api-sdk/trigger_wake_word":
 		robotIP := strings.Split(robotObj.Target, ":")[0]
 		consoleURL := fmt.Sprintf("http://%s:8889/consolevarset?key=FakeButtonPressType&value=singlePressDetected", robotIP)
-		
+
 		client := &http.Client{
 			Timeout: 10 * time.Second,
 		}
-		
+
 		resp, err := client.Get(consoleURL)
 		if err != nil {
 			http.Error(w, "Failed to trigger wake word: "+err.Error(), http.StatusInternalServerError)
 			return
 		}
 		defer resp.Body.Close()
-		
+
 		if resp.StatusCode != http.StatusOK {
 			http.Error(w, "Consolevars returned error", resp.StatusCode)
 			return
 		}
-		
+
 		fmt.Fprint(w, "success")
 		return
 	}
