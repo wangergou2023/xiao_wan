@@ -9,7 +9,10 @@ import (
 	"github.com/wangergou2023/xiao_wan/chipper/pkg/vectorpb"
 )
 
+const wakeWordInterruptGracePeriod = 3 * time.Second
+
 func InterruptKGSimWhenTouchedOrWaked(rob *vector.Vector, stop chan bool, stopStop chan bool) bool {
+	startedAt := time.Now()
 	strm, err := rob.Conn.EventStream(
 		context.Background(),
 		&vectorpb.EventRequest{
@@ -69,6 +72,10 @@ func InterruptKGSimWhenTouchedOrWaked(rob *vector.Vector, stop chan bool, stopSt
 					valsAboveValue = 0
 				}
 			case *vectorpb.Event_WakeWord:
+				if time.Since(startedAt) < wakeWordInterruptGracePeriod {
+					logger.Println("Ignoring wake word interrupt during response startup grace period")
+					continue
+				}
 				logger.Println("Interrupting LLM response (source: wake word)")
 				stopResponse = true
 			default:
