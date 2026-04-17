@@ -165,3 +165,11 @@ func DoSayText_BigModel(robot *vector.Vector, input string) error {
 	}
 	return playPCM24kOnRobot(robot, speechBytes)
 }
+
+// DoSayText_BigModelWithAudio 直接复用已经预生成好的 PCM，减少句子之间的等待。
+func DoSayText_BigModelWithAudio(robot *vector.Vector, speechBytes []byte) error {
+	if len(speechBytes) == 0 {
+		return fmt.Errorf("bigmodel tts returned empty audio")
+	}
+	return playPCM24kOnRobot(robot, speechBytes)
+}

@@ -272,22 +272,27 @@ func DoPlaySound(sound string, robot *vector.Vector) error {
 	return nil
 }
 
-// DoSayText 统一走文本播报入口，优先使用智谱 TTS，失败时再回退到机器人原生播报。
-func DoSayText(input string, robot *vector.Vector) error {
-	// just before vector speaks
-	input = removeSpecialCharacters(input)
-	if strings.TrimSpace(input) == "" {
+// DoSayText 统一走文本播报入口，优先复用预生成好的智谱 TTS，失败时再回退到机器人原生播报。
+func DoSayText(input string, robot *vector.Vector, prefetch *ttsPrefetchSession) error {
+	normalizedInput := normalizeSpeechText(input)
+	if normalizedInput == "" {
 		return nil
 	}
 
 	if bigModelTTSEnabled() {
-		if err := DoSayText_BigModel(robot, input); err == nil {
+		if speechBytes, ok, err := prefetch.Take(normalizedInput); ok {
+			if err == nil {
+				return DoSayText_BigModelWithAudio(robot, speechBytes)
+			}
+			logger.Println("BigModel TTS prefetched audio failed, falling back to direct request: " + err.Error())
+		}
+		if err := DoSayText_BigModel(robot, normalizedInput); err == nil {
 			return nil
 		} else {
 			logger.Println("BigModel TTS failed, falling back to SDK voice: " + err.Error())
 		}
 	}
-	return robotpkg.SayTextWithSDK(robot, input)
+	return robotpkg.SayTextWithSDK(robot, normalizedInput)
 }
 
 func DoGetImage(msgs []openai.ChatCompletionMessage, param string, robot *vector.Vector, stopStop chan bool) {
@@ -368,6 +373,7 @@ func DoGetImage(msgs []openai.ChatCompletionMessage, param string, robot *vector
 	c := newKnowledgeClient()
 	ctx := context.Background()
 	speakReady := make(chan string)
+	prefetch := newTTSPrefetchSession()
 
 	aireq := openai.ChatCompletionRequest{
 		MaxTokens:        2048,
@@ -411,7 +417,9 @@ func DoGetImage(msgs []openai.ChatCompletionMessage, param string, robot *vector
 				isDone = true
 				if len(fullRespSlice) == 0 && strings.TrimSpace(fullfullRespText) != "" {
 					logger.Println("LLM debug: final response has no sentence punctuation, using raw content")
-					fullRespSlice = append(fullRespSlice, strings.TrimSpace(fullfullRespText))
+					finalChunk := strings.TrimSpace(fullfullRespText)
+					fullRespSlice = append(fullRespSlice, finalChunk)
+					prefetch.PreloadFromRaw(finalChunk)
 				}
 				logger.Println("LLM final raw: " + clipDebugString(fullfullRespText, 300))
 				logger.Println("LLM final slices: " + fmt.Sprint(fullRespSlice))
@@ -457,6 +465,7 @@ func DoGetImage(msgs []openai.ChatCompletionMessage, param string, robot *vector
 			if nextSentence, remainder, ok := splitFirstSpeechChunk(fullRespText); ok {
 				fullRespSlice = append(fullRespSlice, nextSentence)
 				fullRespText = remainder
+				prefetch.PreloadFromRaw(nextSentence)
 				select {
 				case speakReady <- nextSentence:
 				default:
@@ -483,7 +492,7 @@ func DoGetImage(msgs []openai.ChatCompletionMessage, param string, robot *vector
 		}
 		logger.Println(respSlice[numInResp])
 		acts := GetActionsFromString(respSlice[numInResp])
-		PerformActions(msgs, acts, robot, stopStop)
+		PerformActions(msgs, acts, robot, stopStop, prefetch)
 		numInResp = numInResp + 1
 		if stopImaging {
 			return
@@ -496,7 +505,7 @@ func DoNewRequest(robot *vector.Vector) {
 	_ = robotpkg.StartKnowledgeQuestion(robot)
 }
 
-func PerformActions(msgs []openai.ChatCompletionMessage, actions []RobotAction, robot *vector.Vector, stopStop chan bool) bool {
+func PerformActions(msgs []openai.ChatCompletionMessage, actions []RobotAction, robot *vector.Vector, stopStop chan bool, prefetch *ttsPrefetchSession) bool {
 	// assuming we have behavior control already
 	stopPerforming := false
 	go func() {
@@ -510,7 +519,7 @@ func PerformActions(msgs []openai.ChatCompletionMessage, actions []RobotAction, 
 		}
 		switch {
 		case action.Action == ActionSayText:
-			DoSayText(action.Parameter, robot)
+			DoSayText(action.Parameter, robot, prefetch)
 		case action.Action == ActionPlayAnimation:
 			DoPlayAnimation(action.Parameter, robot)
 		case action.Action == ActionPlayAnimationWI:

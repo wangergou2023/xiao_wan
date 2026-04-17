@@ -120,6 +120,7 @@ func StreamingKGSim(req interface{}, esn string, transcribedText string, isKG bo
 	c := newKnowledgeClient()
 	speakReady := make(chan string)
 	successIntent := make(chan bool, 1)
+	prefetch := newTTSPrefetchSession()
 	intentAnnounced := false
 	notifySuccess := func() {
 		if intentAnnounced {
@@ -173,7 +174,9 @@ func StreamingKGSim(req interface{}, esn string, transcribedText string, isKG bo
 				// prevents a crash
 				if len(fullRespSlice) == 0 && strings.TrimSpace(fullfullRespText) != "" {
 					logger.Println("LLM debug: final response has no sentence punctuation, using raw content")
-					fullRespSlice = append(fullRespSlice, strings.TrimSpace(fullfullRespText))
+					finalChunk := strings.TrimSpace(fullfullRespText)
+					fullRespSlice = append(fullRespSlice, finalChunk)
+					prefetch.PreloadFromRaw(finalChunk)
 					notifySuccess()
 				}
 				logger.Println("LLM final raw: " + clipDebugString(fullfullRespText, 300))
@@ -241,6 +244,7 @@ func StreamingKGSim(req interface{}, esn string, transcribedText string, isKG bo
 			if nextSentence, remainder, ok := splitFirstSpeechChunk(fullRespText); ok {
 				fullRespSlice = append(fullRespSlice, nextSentence)
 				fullRespText = remainder
+				prefetch.PreloadFromRaw(nextSentence)
 				notifySuccess()
 				select {
 				case speakReady <- nextSentence:
@@ -299,7 +303,7 @@ func StreamingKGSim(req interface{}, esn string, transcribedText string, isKG bo
 			logger.Println(respSlice[numInResp])
 			acts := GetActionsFromString(respSlice[numInResp])
 			nChat[len(nChat)-1].Content = fullRespText
-			disconnect = PerformActions(nChat, acts, robot, stopStop)
+			disconnect = PerformActions(nChat, acts, robot, stopStop, prefetch)
 			if disconnect {
 				break
 			}
