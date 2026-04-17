@@ -17,7 +17,7 @@ import (
 
 const (
 	bigModelTTSEndpoint     = "https://open.bigmodel.cn/api/paas/v4/audio/speech"
-	defaultBigModelTTSModel = "glm-4-voice"
+	defaultBigModelTTSModel = "glm-tts"
 	defaultBigModelTTSVoice = "tongtong"
 )
 
@@ -68,9 +68,9 @@ func normalizeBigModelTTSModel(model string) string {
 		return ""
 	}
 	lowerModel := strings.ToLower(strings.TrimSpace(model))
-	// 防止把聊天模型误填到 TTS 模型里，导致接口报 messages 参数非法。
+	// 防止把聊天模型误填到 TTS 模型里，导致语音接口按聊天协议报 messages 参数非法。
 	if strings.Contains(lowerModel, "glm-5") || strings.Contains(lowerModel, "glm-4.5") || strings.Contains(lowerModel, "chat") {
-		logger.Println("BigModel TTS model looks like a chat model, falling back to glm-4-voice: " + model)
+		logger.Println("BigModel TTS model looks like a chat model, falling back to glm-tts: " + model)
 		return defaultBigModelTTSModel
 	}
 	return model
