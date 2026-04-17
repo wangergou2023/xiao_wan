@@ -16,6 +16,9 @@ const (
 
 func getKnowledgeAPIKey() string {
 	if vars.APIConfig.Knowledge.Provider == "bigmodel" && strings.TrimSpace(vars.APIConfig.Knowledge.Key) == "" {
+		if strings.TrimSpace(vars.APIConfig.BigModel.Key) != "" {
+			return strings.TrimSpace(vars.APIConfig.BigModel.Key)
+		}
 		return strings.TrimSpace(os.Getenv("BIGMODEL_API_TOKEN"))
 	}
 	return strings.TrimSpace(vars.APIConfig.Knowledge.Key)
@@ -32,6 +35,9 @@ func getKnowledgeModel(gpt3tryagain bool) string {
 		return openai.GPT4oMini
 	case "bigmodel":
 		if strings.TrimSpace(vars.APIConfig.Knowledge.Model) == "" {
+			if strings.TrimSpace(vars.APIConfig.BigModel.LLMModel) != "" {
+				return strings.TrimSpace(vars.APIConfig.BigModel.LLMModel)
+			}
 			return defaultBigModelModel
 		}
 		return strings.TrimSpace(vars.APIConfig.Knowledge.Model)

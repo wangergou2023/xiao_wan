@@ -77,8 +77,8 @@
           <p>当语音请求未被普通意图匹配命中时，会转交给这里配置的大模型。请选择提供商，并只填写该提供商需要的字段。</p>
           <hr class="small-hr">
           <div class="setup-note">
-            <strong>TTS 提示：</strong>当设置了 <code>BIGMODEL_API_TOKEN</code> 后，机器人播报会优先使用 BigModel TTS。
-            这个页面只负责配置大模型提供商和回退行为，不负责配置 BigModel TTS 的密钥。
+            <strong>说明：</strong>BigModel 的 STT、LLM、TTS 现在都可以在这个页面里配置。
+            旧的环境变量仍可作为兼容回退，但推荐以后统一使用 Web 配置。
           </div>
           <hr class="small-hr">
           <div id="addKGProviderAPI"></div>
@@ -103,9 +103,9 @@
             </span>
 
             <span id="bigModelInput" style="display: none">
-              <small class="desc">这里使用智谱 BigModel 官方对话补全接口。若留空 API Key，则自动回退使用环境变量 <code>BIGMODEL_API_TOKEN</code>。</small><br />
-              <label for="bigmodelKey">API Key <small class="desc">（可选，留空则使用环境变量）</small>：</label>
-              <input type="text" name="bigmodelKey" id="bigmodelKey" placeholder="留空则读取 BIGMODEL_API_TOKEN" /><br />
+              <small class="desc">这里使用智谱 BigModel 官方对话补全接口。若留空 API Key 和模型名，则自动回退使用下面的 BigModel 公共配置。</small><br />
+              <label for="bigmodelKey">API Key <small class="desc">（可选，留空则使用下方公共配置）</small>：</label>
+              <input type="text" name="bigmodelKey" id="bigmodelKey" placeholder="留空则复用下方 BigModel 公共配置" /><br />
               <label for="bigmodelModel">模型名称 <small class="desc">（留空则使用默认值 glm-5.1）</small>：</label>
               <input type="text" name="bigmodelModel" id="bigmodelModel" placeholder="glm-5.1" /><br />
               <label for="bigmodelPrompt">系统提示词 <small class="desc">（留空则使用默认值）：</small></label><br />
@@ -136,11 +136,34 @@
               如果你想清空上下文，可以随时 <a href="#" onclick="deleteSavedChats(); return false;">删除已保存对话</a>。
             </div>
 
+            <hr class="small-hr">
+            <div class="setup-note">
+              <strong>BigModel 公共配置：</strong>下面这些设置会被 BigModel STT、BigModel LLM 和 BigModel TTS 共同复用。
+            </div>
+            <span id="bigModelSharedInput">
+              <label for="bigmodelSharedKey">BigModel API Key <small class="desc">（建议填写在这里，供 STT / LLM / TTS 共用）</small>：</label>
+              <input type="text" name="bigmodelSharedKey" id="bigmodelSharedKey" placeholder="填写你的 BigModel API Key" /><br />
+              <label for="bigmodelASRModel">ASR 模型 <small class="desc">（留空则默认 glm-asr-2512）</small>：</label>
+              <input type="text" name="bigmodelASRModel" id="bigmodelASRModel" placeholder="glm-asr-2512" /><br />
+              <label for="bigmodelSharedLLMModel">默认 LLM 模型 <small class="desc">（留空则默认 glm-5.1）</small>：</label>
+              <input type="text" name="bigmodelSharedLLMModel" id="bigmodelSharedLLMModel" placeholder="glm-5.1" /><br />
+              <label for="bigmodelTTSModel">TTS 模型 <small class="desc">（留空则默认 glm-4-voice）</small>：</label>
+              <input type="text" name="bigmodelTTSModel" id="bigmodelTTSModel" placeholder="glm-4-voice" /><br />
+              <label for="bigmodelTTSVoice">TTS 音色 <small class="desc">（留空则默认 tongtong）</small>：</label>
+              <input type="text" name="bigmodelTTSVoice" id="bigmodelTTSVoice" placeholder="tongtong" /><br />
+              <label for="bigmodelTTSSpeed">TTS 语速 <small class="desc">（默认 1.0）</small>：</label>
+              <input type="text" name="bigmodelTTSSpeed" id="bigmodelTTSSpeed" placeholder="1.0" /><br />
+              <label for="bigmodelTTSVolume">TTS 音量 <small class="desc">（默认 1.0）</small>：</label>
+              <input type="text" name="bigmodelTTSVolume" id="bigmodelTTSVolume" placeholder="1.0" /><br />
+            </span>
+
           </form>
         </div>
         <hr class="small-hr">
         <button onclick="sendKGAPIKey()">应用设置</button>
+        <button onclick="sendBigModelConfig()">保存 BigModel 公共配置</button>
         <div id="addKGProviderAPIStatus"></div>
+        <div id="bigModelConfigStatus"></div>
         <hr />
       </div>
 
@@ -202,6 +225,7 @@
 <script>
   updateWeatherAPI();
   updateKGAPI();
+  updateBigModelConfig();
 </script>
 
 </html>

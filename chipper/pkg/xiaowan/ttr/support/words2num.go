@@ -1,11 +1,11 @@
 package support
 
 import (
-	"os"
 	"regexp"
 	"strconv"
 	"strings"
 
+	"github.com/wangergou2023/xiao_wan/chipper/pkg/vars"
 	lcztn "github.com/wangergou2023/xiao_wan/chipper/pkg/xiaowan/localization"
 )
 
@@ -76,7 +76,7 @@ func words2num(input string) string {
 	initializeTextToNumberwithCurrentLocalization()
 
 	containsNum, _ := regexp.MatchString(`\b\d+\b`, input)
-	if os.Getenv("STT_SERVICE") == "bigmodel" && containsNum {
+	if vars.APIConfig.STT.Service == "bigmodel" && containsNum {
 		return whisperSpeechtoNum(input)
 	}
 	totalSeconds := 0

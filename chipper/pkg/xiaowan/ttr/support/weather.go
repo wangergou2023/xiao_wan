@@ -382,7 +382,7 @@ func weatherParser(speechText string, botLocation string, botUnits string) (stri
 	if strings.Contains(speechText, lcztn.GetText(lcztn.STR_WEATHER_IN)) {
 		splitPhrase := strings.SplitAfter(removeEndPunctuation(speechText), lcztn.GetText(lcztn.STR_WEATHER_IN))
 		speechLocation = strings.TrimSpace(splitPhrase[1])
-		if os.Getenv("STT_SERVICE") != "bigmodel" {
+		if vars.APIConfig.STT.Service != "bigmodel" {
 			if len(splitPhrase) == 3 {
 				speechLocation = speechLocation + " " + strings.TrimSpace(splitPhrase[2])
 			} else if len(splitPhrase) == 4 {

@@ -10,6 +10,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/wangergou2023/xiao_wan/chipper/pkg/vars"
 	"github.com/wangergou2023/xiao_wan/chipper/pkg/vector"
 )
 
@@ -38,10 +39,20 @@ type bigModelTTSError struct {
 }
 
 func bigModelTTSEnabled() bool {
-	return strings.TrimSpace(os.Getenv("BIGMODEL_API_TOKEN")) != ""
+	return strings.TrimSpace(getBigModelToken()) != ""
+}
+
+func getBigModelToken() string {
+	if strings.TrimSpace(vars.APIConfig.BigModel.Key) != "" {
+		return strings.TrimSpace(vars.APIConfig.BigModel.Key)
+	}
+	return strings.TrimSpace(os.Getenv("BIGMODEL_API_TOKEN"))
 }
 
 func getBigModelTTSModel() string {
+	if model := strings.TrimSpace(vars.APIConfig.BigModel.TTSModel); model != "" {
+		return model
+	}
 	if model := strings.TrimSpace(os.Getenv("BIGMODEL_TTS_MODEL")); model != "" {
 		return model
 	}
@@ -49,6 +60,9 @@ func getBigModelTTSModel() string {
 }
 
 func getBigModelTTSVoice() string {
+	if voice := strings.TrimSpace(vars.APIConfig.BigModel.TTSVoice); voice != "" {
+		return voice
+	}
 	if voice := strings.TrimSpace(os.Getenv("BIGMODEL_TTS_VOICE")); voice != "" {
 		return voice
 	}
@@ -56,6 +70,16 @@ func getBigModelTTSVoice() string {
 }
 
 func getBigModelTTSFloat(name string, fallback float64) float64 {
+	switch name {
+	case "BIGMODEL_TTS_SPEED":
+		if vars.APIConfig.BigModel.TTSSpeed > 0 {
+			return vars.APIConfig.BigModel.TTSSpeed
+		}
+	case "BIGMODEL_TTS_VOLUME":
+		if vars.APIConfig.BigModel.TTSVolume > 0 {
+			return vars.APIConfig.BigModel.TTSVolume
+		}
+	}
 	raw := strings.TrimSpace(os.Getenv(name))
 	if raw == "" {
 		return fallback
@@ -85,7 +109,7 @@ func requestBigModelSpeech(input string) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	req.Header.Set("Authorization", "Bearer "+strings.TrimSpace(os.Getenv("BIGMODEL_API_TOKEN")))
+	req.Header.Set("Authorization", "Bearer "+getBigModelToken())
 	req.Header.Set("Content-Type", "application/json")
 
 	resp, err := http.DefaultClient.Do(req)

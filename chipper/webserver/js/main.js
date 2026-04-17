@@ -315,6 +315,36 @@ function sendKGAPIKey() {
     });
 }
 
+function sendBigModelConfig() {
+  const toNumber = (value, fallback) => {
+    const parsed = parseFloat(value);
+    return Number.isFinite(parsed) ? parsed : fallback;
+  };
+
+  const data = {
+    key: getE("bigmodelSharedKey").value,
+    asr_model: getE("bigmodelASRModel").value,
+    llm_model: getE("bigmodelSharedLLMModel").value,
+    tts_model: getE("bigmodelTTSModel").value,
+    tts_voice: getE("bigmodelTTSVoice").value,
+    tts_speed: toNumber(getE("bigmodelTTSSpeed").value, 1.0),
+    tts_volume: toNumber(getE("bigmodelTTSVolume").value, 1.0),
+  };
+
+  fetch("/api/set_bigmodel_config", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(data),
+  })
+    .then((response) => response.text())
+    .then((response) => {
+      displayMessage("bigModelConfigStatus", response);
+      alert(response);
+    });
+}
+
 function deleteSavedChats() {
   if (confirm("确认删除所有已保存的对话记录吗？")) {
     fetch("/api/delete_chats")
@@ -344,6 +374,20 @@ function updateKGAPI() {
         getE("customAIEndpoint").value = data.endpoint;
       }
       checkKG();
+    });
+}
+
+function updateBigModelConfig() {
+  fetch("/api/get_bigmodel_config")
+    .then((response) => response.json())
+    .then((data) => {
+      getE("bigmodelSharedKey").value = data.key || "";
+      getE("bigmodelASRModel").value = data.asr_model || "";
+      getE("bigmodelSharedLLMModel").value = data.llm_model || "";
+      getE("bigmodelTTSModel").value = data.tts_model || "";
+      getE("bigmodelTTSVoice").value = data.tts_voice || "";
+      getE("bigmodelTTSSpeed").value = data.tts_speed || "";
+      getE("bigmodelTTSVolume").value = data.tts_volume || "";
     });
 }
 

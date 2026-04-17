@@ -3,7 +3,7 @@
 
 <head>
     
-  <title>Wire-Pod Initial Setup</title>
+  <title>Wire-Pod 初始设置</title>
   <!-- Meta Apple tags for a PWA like experience. -->
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
@@ -19,37 +19,35 @@
 <body>
   <div id="outer">
     <div id="content" class="">
-      <h1>Wire-Pod Setup</h1>
+      <h1>Wire-Pod 初始设置</h1>
       <hr />
       <div id="setup-status"></div>
       <div id="config-options" style="display: block">
         <p>
-          Welcome to wire-pod! Configure these
-          options to your liking then click the "Submit Settings" button at the
-          bottom to finish setting up wire-pod.
+          欢迎使用 wire-pod！先完成下面这些基础设置，然后点击底部的“提交设置”按钮即可完成初始化。
         </p>
         <hr />
         <div id="section-conn" style="display: block">
-          <h3>Connection Method</h3>
+          <h3>连接方式</h3>
           <hr class="small-hr">
           <div class="center" id="connStatus"></div>
           <select onchange="checkConn()" name="connSelection" id="connSelection">
             <option value="ep">
-              Escape Pod (recommended for regular, production robots)
+              Escape Pod（推荐用于普通量产机器人）
             </option>
             <option value="ip">
-              IP Address (recommended for OSKR/dev-unlocked robots)
+              IP 地址（推荐用于 OSKR / 开发解锁机器人）
             </option>
           </select>
           <div class="center" id="portViz" style="display: none">
-            <label for="portInput">Input custom port here (default is 443)</label>
+            <label for="portInput">在这里输入自定义端口（默认 443）</label>
             <input type="text" id="portInput" name="portInput" placeholder="443" />
           </div>
           <hr />
         </div>
 
         <div id="section-language" style="display: none">
-          <h3>Speech-to-Text Language</h3>
+          <h3>语音识别语言</h3>
           <hr class="small-hr">
           <div class="center" id="languageStatus"></div>
           <div id="languageSelectionDiv">
@@ -73,12 +71,15 @@
           <hr />
         </div>
 
-        <small class="desc">Weather and Knowledge Graph settings can be configured in the Server Settings page once
-          wire-pod is set up.</small>
+        <div class="setup-note">
+          <strong>提示：</strong>BigModel 的 STT / LLM / TTS Key 与模型参数，现在都统一在“服务器设置”页面中配置，
+          不需要再去脚本里手动输入 token。
+        </div>
+        <small class="desc">天气、大模型和 BigModel 公共配置，可以在初始化完成后进入“服务器设置”页面继续填写。</small>
         <hr />
 
         <button onclick="sendSetupInfo()">
-          Submit Settings
+          提交设置
         </button>
       </div>
     </div>

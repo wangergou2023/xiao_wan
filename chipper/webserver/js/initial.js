@@ -6,7 +6,7 @@ function checkLanguage() {
       const languageSelection = document.getElementById("languageSelection");
 
       if (parsed.provider !== "vosk" && parsed.provider !== "whisper.cpp") {
-        console.log("stt not vosk/whisper");
+        console.log("stt provider is not vosk or whisper");
         sectionLanguage.style.display = "none";
         languageSelection.value = "en-US";
       } else {
@@ -24,7 +24,7 @@ function updateSetupStatus(statusString) {
 
 function sendSetupInfo() {
   document.getElementById("config-options").style.display = "none";
-  updateSetupStatus("Initiating setup...");
+  updateSetupStatus("正在初始化设置...");
 
   const language = document.getElementById("languageSelection").value;
   const langData = { language };
@@ -41,24 +41,24 @@ function sendSetupInfo() {
     .then((response) => response.text())
     .then((response) => {
       if (response.includes("success")) {
-        updateSetupStatus("Language set successfully.");
+        updateSetupStatus("语言设置成功。");
         setConn();
       } else if (response.includes("downloading")) {
-        updateSetupStatus("Downloading language model...");
+        updateSetupStatus("正在下载语言模型...");
         var interval = setInterval(() => {
           fetch("/api/get_download_status")
             .then((response) => response.text())
             .then((statusText) => {
               updateSetupStatus(statusText);
               if (statusText.includes("success")) {
-                updateSetupStatus("Language set successfully.");
+                updateSetupStatus("语言设置成功。");
                 clearInterval(interval);
                 setConn();
               } else if (statusText.includes("error")) {
                 document.getElementById("config-options").style.display = "block";
                 clearInterval(interval);
               } else if (statusText.includes("not downloading")) {
-                updateSetupStatus("Initiating language model download...");
+                updateSetupStatus("正在初始化语言模型下载...");
               }
             });
         }, 500);
@@ -78,7 +78,7 @@ function checkConn() {
 }
 
 function setConn() {
-  updateSetupStatus("Setting connection type (ep or ip)...");
+  updateSetupStatus("正在设置连接方式（Escape Pod 或 IP）...");
   const connValue = document.getElementById("connSelection").value;
   let port = document.getElementById("portInput").value;
   port = port ? port : "443";
@@ -88,10 +88,10 @@ function setConn() {
     .then((response) => response.text())
     .then((response) => {
       if (response) {
-        updateSetupStatus("Setup is complete! Wire-pod has started. Redirecting to main page...");
+        updateSetupStatus("设置完成！Wire-pod 已启动，正在跳转到主页...");
         setTimeout(() => window.location.href = "/", 3000);
       } else {
-        updateSetupStatus("Error setting up wire-pod, check the logs");
+        updateSetupStatus("初始化 wire-pod 失败，请检查日志。");
         document.getElementById("config-options").style.display = "block";
       }
     });

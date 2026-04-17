@@ -12,9 +12,10 @@ import (
 
 	"github.com/go-audio/audio"
 	"github.com/go-audio/wav"
-	"github.com/wangergou2023/xiao_wan/chipper/pkg/logger"
-	sr "github.com/wangergou2023/xiao_wan/chipper/pkg/xiaowan/speechrequest"
 	"github.com/orcaman/writerseeker"
+	"github.com/wangergou2023/xiao_wan/chipper/pkg/logger"
+	"github.com/wangergou2023/xiao_wan/chipper/pkg/vars"
+	sr "github.com/wangergou2023/xiao_wan/chipper/pkg/xiaowan/speechrequest"
 )
 
 var Name string = "bigmodel"
@@ -24,10 +25,28 @@ type bigmodelResp struct {
 }
 
 func Init() error {
-	if os.Getenv("BIGMODEL_API_TOKEN") == "" {
-		logger.Println("BIGMODEL_API_TOKEN not found. You must set it to use BigModel GLM-ASR.")
+	if getBigModelToken() == "" {
+		logger.Println("BigModel API token not found in web config or environment. You must set it to use BigModel GLM-ASR.")
 	}
 	return nil
+}
+
+func getBigModelToken() string {
+	if strings.TrimSpace(vars.APIConfig.BigModel.Key) != "" {
+		return strings.TrimSpace(vars.APIConfig.BigModel.Key)
+	}
+	return strings.TrimSpace(os.Getenv("BIGMODEL_API_TOKEN"))
+}
+
+func getBigModelASRModel() string {
+	if strings.TrimSpace(vars.APIConfig.BigModel.ASRModel) != "" {
+		return strings.TrimSpace(vars.APIConfig.BigModel.ASRModel)
+	}
+	model := strings.TrimSpace(os.Getenv("BIGMODEL_ASR_MODEL"))
+	if model == "" {
+		return "glm-asr-2512"
+	}
+	return model
 }
 
 func pcm2wav(in io.Reader) []byte {
@@ -73,10 +92,7 @@ func newAudioIntBuffer(r io.Reader) (*audio.IntBuffer, error) {
 
 func makeBigModelReq(in []byte) string {
 	url := "https://open.bigmodel.cn/api/paas/v4/audio/transcriptions"
-	model := os.Getenv("BIGMODEL_ASR_MODEL")
-	if model == "" {
-		model = "glm-asr-2512"
-	}
+	model := getBigModelASRModel()
 
 	buf := new(bytes.Buffer)
 	w := multipart.NewWriter(buf)
@@ -88,7 +104,7 @@ func makeBigModelReq(in []byte) string {
 
 	httpReq, _ := http.NewRequest("POST", url, buf)
 	httpReq.Header.Set("Content-Type", w.FormDataContentType())
-	httpReq.Header.Set("Authorization", "Bearer "+os.Getenv("BIGMODEL_API_TOKEN"))
+	httpReq.Header.Set("Authorization", "Bearer "+getBigModelToken())
 
 	client := &http.Client{}
 	resp, err := client.Do(httpReq)

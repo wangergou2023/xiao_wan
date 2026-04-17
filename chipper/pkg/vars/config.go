@@ -34,6 +34,15 @@ type apiConfig struct {
 		TopP           float32 `json:"top_p"`
 		Temperature    float32 `json:"temp"`
 	} `json:"knowledge"`
+	BigModel struct {
+		Key       string  `json:"key"`
+		ASRModel  string  `json:"asr_model"`
+		LLMModel  string  `json:"llm_model"`
+		TTSModel  string  `json:"tts_model"`
+		TTSVoice  string  `json:"tts_voice"`
+		TTSSpeed  float64 `json:"tts_speed"`
+		TTSVolume float64 `json:"tts_volume"`
+	} `json:"bigmodel"`
 	STT struct {
 		Service  string `json:"provider"`
 		Language string `json:"language"`
@@ -70,6 +79,11 @@ func CreateConfigFromEnv() {
 	} else {
 		APIConfig.Knowledge.Enable = false
 	}
+	APIConfig.BigModel.Key = os.Getenv("BIGMODEL_API_TOKEN")
+	APIConfig.BigModel.ASRModel = os.Getenv("BIGMODEL_ASR_MODEL")
+	APIConfig.BigModel.LLMModel = os.Getenv("BIGMODEL_LLM_MODEL")
+	APIConfig.BigModel.TTSModel = os.Getenv("BIGMODEL_TTS_MODEL")
+	APIConfig.BigModel.TTSVoice = os.Getenv("BIGMODEL_TTS_VOICE")
 	WriteSTT()
 	APIConfig.HasReadFromEnv = true
 	writeBytes, _ := json.Marshal(APIConfig)
@@ -107,10 +121,6 @@ func ReadConfig() {
 			logger.Println(err)
 			return
 		}
-		// stt service is the only thing controlled by shell
-		if APIConfig.STT.Service != os.Getenv("STT_SERVICE") {
-			WriteSTT()
-		}
 		if !APIConfig.HasReadFromEnv {
 			if APIConfig.Server.Port != os.Getenv("DDL_RPC_PORT") {
 				APIConfig.HasReadFromEnv = true
@@ -130,6 +140,23 @@ func ReadConfig() {
 		if APIConfig.Knowledge.Model == "meta-llama/Llama-2-70b-chat-hf" {
 			logger.Println("Updating legacy Llama model name")
 			APIConfig.Knowledge.Model = "meta-llama/Llama-3-70b-chat-hf"
+		}
+
+		if strings.TrimSpace(APIConfig.BigModel.Key) == "" && strings.TrimSpace(os.Getenv("BIGMODEL_API_TOKEN")) != "" {
+			logger.Println("Migrating BIGMODEL_API_TOKEN from environment into apiConfig.json")
+			APIConfig.BigModel.Key = strings.TrimSpace(os.Getenv("BIGMODEL_API_TOKEN"))
+		}
+		if strings.TrimSpace(APIConfig.BigModel.ASRModel) == "" && strings.TrimSpace(os.Getenv("BIGMODEL_ASR_MODEL")) != "" {
+			APIConfig.BigModel.ASRModel = strings.TrimSpace(os.Getenv("BIGMODEL_ASR_MODEL"))
+		}
+		if strings.TrimSpace(APIConfig.BigModel.LLMModel) == "" && strings.TrimSpace(os.Getenv("BIGMODEL_LLM_MODEL")) != "" {
+			APIConfig.BigModel.LLMModel = strings.TrimSpace(os.Getenv("BIGMODEL_LLM_MODEL"))
+		}
+		if strings.TrimSpace(APIConfig.BigModel.TTSModel) == "" && strings.TrimSpace(os.Getenv("BIGMODEL_TTS_MODEL")) != "" {
+			APIConfig.BigModel.TTSModel = strings.TrimSpace(os.Getenv("BIGMODEL_TTS_MODEL"))
+		}
+		if strings.TrimSpace(APIConfig.BigModel.TTSVoice) == "" && strings.TrimSpace(os.Getenv("BIGMODEL_TTS_VOICE")) != "" {
+			APIConfig.BigModel.TTSVoice = strings.TrimSpace(os.Getenv("BIGMODEL_TTS_VOICE"))
 		}
 
 		writeBytes, _ := json.Marshal(APIConfig)

@@ -136,29 +136,11 @@ function getPackages() {
 function getSTT() {
     echo "export DEBUG_LOGGING=true" > ./chipper/source.sh
     rm -f ./chipper/pico.key
-    function bigmodelApiPrompt() {
-        echo
-        echo "Enter your BigModel API token (Bearer token)."
-        echo
-        read -p "Token: " bigmodelToken
-        if [[ ! -n ${bigmodelToken} ]]; then
-            echo
-            echo "You must enter a token."
-            bigmodelApiPrompt
-        fi
-    }
-    function bigmodelModelPrompt() {
-        echo
-        read -p "Enter model name (glm-asr-2512): " bigmodelModel
-        if [[ ! -n ${bigmodelModel} ]]; then
-            bigmodelModel="glm-asr-2512"
-        fi
-    }
-    bigmodelApiPrompt
-    bigmodelModelPrompt
+    echo
+    echo "BigModel credentials are now configured in the Wire-Pod web setup page."
+    echo "After installation, open the web UI and fill in the BigModel shared settings there."
+    echo
     echo "export STT_SERVICE=bigmodel" >> ./chipper/source.sh
-    echo "export BIGMODEL_API_TOKEN=${bigmodelToken}" >> ./chipper/source.sh
-    echo "export BIGMODEL_ASR_MODEL=${bigmodelModel}" >> ./chipper/source.sh
 }
 
 function IPDNSPrompt() {

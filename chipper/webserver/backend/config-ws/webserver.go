@@ -43,6 +43,10 @@ func apiHandler(w http.ResponseWriter, r *http.Request) {
 		handleSetKGAPI(w, r)
 	case "get_kg_api":
 		handleGetKGAPI(w)
+	case "set_bigmodel_config":
+		handleSetBigModelConfig(w, r)
+	case "get_bigmodel_config":
+		handleGetBigModelConfig(w)
 	case "set_stt_info":
 		handleSetSTTInfo(w, r)
 	case "get_download_status":
@@ -215,6 +219,20 @@ func handleSetKGAPI(w http.ResponseWriter, r *http.Request) {
 func handleGetKGAPI(w http.ResponseWriter) {
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(vars.APIConfig.Knowledge)
+}
+
+func handleSetBigModelConfig(w http.ResponseWriter, r *http.Request) {
+	if err := json.NewDecoder(r.Body).Decode(&vars.APIConfig.BigModel); err != nil {
+		http.Error(w, "invalid request body", http.StatusBadRequest)
+		return
+	}
+	vars.WriteConfigToDisk()
+	fmt.Fprint(w, "BigModel settings applied.")
+}
+
+func handleGetBigModelConfig(w http.ResponseWriter) {
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(vars.APIConfig.BigModel)
 }
 
 func handleSetSTTInfo(w http.ResponseWriter, r *http.Request) {
