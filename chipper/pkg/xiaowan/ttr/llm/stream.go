@@ -258,18 +258,6 @@ func StreamingKGSim(req interface{}, esn string, transcribedText string, isKG bo
 	go func() {
 		interrupted = robotpkg.InterruptKGSimWhenTouchedOrWaked(robot, stop, stopStop)
 	}()
-	var TTSLoopAnimation string
-	var TTSGetinAnimation string
-	if isKG {
-		TTSLoopAnimation = "anim_knowledgegraph_answer_01"
-		TTSGetinAnimation = "anim_knowledgegraph_searching_getout_01"
-	} else {
-		TTSLoopAnimation = "anim_tts_loop_02"
-		TTSGetinAnimation = "anim_getin_tts_01"
-	}
-
-	var stopTTSLoop bool
-	TTSLoopStopped := make(chan bool)
 	for range start {
 		if isKG {
 			kgStopLooping = true
@@ -279,34 +267,8 @@ func StreamingKGSim(req interface{}, esn string, transcribedText string, isKG bo
 		} else {
 			time.Sleep(time.Millisecond * 300)
 		}
-		robot.Conn.PlayAnimation(
-			ctx,
-			&vectorpb.PlayAnimationRequest{
-				Animation: &vectorpb.Animation{
-					Name: TTSGetinAnimation,
-				},
-				Loops: 1,
-			},
-		)
-		if !vars.APIConfig.Knowledge.CommandsEnable {
-			go func() {
-				for {
-					if stopTTSLoop {
-						TTSLoopStopped <- true
-						break
-					}
-					robot.Conn.PlayAnimation(
-						ctx,
-						&vectorpb.PlayAnimationRequest{
-							Animation: &vectorpb.Animation{
-								Name: TTSLoopAnimation,
-							},
-							Loops: 1,
-						},
-					)
-				}
-			}()
-		}
+		speechSession := newSpeechAnimationSession(robot, ctx, newSpeechAnimationConfig(isKG), !vars.APIConfig.Knowledge.CommandsEnable)
+		speechSession.Start()
 		var disconnect bool
 		numInResp := 0
 		for {
@@ -334,12 +296,7 @@ func StreamingKGSim(req interface{}, esn string, transcribedText string, isKG bo
 			}
 			numInResp = numInResp + 1
 		}
-		if !vars.APIConfig.Knowledge.CommandsEnable {
-			stopTTSLoop = true
-			for range TTSLoopStopped {
-				break
-			}
-		}
+		speechSession.Stop(!interrupted)
 		time.Sleep(time.Millisecond * 100)
 		// if isKG {
 		// 	robot.Conn.PlayAnimation(

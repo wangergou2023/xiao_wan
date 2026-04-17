@@ -2,6 +2,7 @@ package llm
 
 import (
 	"context"
+	"errors"
 	"time"
 
 	"github.com/wangergou2023/xiao_wan/chipper/pkg/vector"
@@ -9,19 +10,33 @@ import (
 	robotpkg "github.com/wangergou2023/xiao_wan/chipper/pkg/xiaowan/ttr/robot"
 )
 
-func pcmLength(data []byte) time.Duration {
+func pcmChunkBytes(chunks [][]byte) int {
+	total := 0
+	for _, chunk := range chunks {
+		total += len(chunk)
+	}
+	return total
+}
+
+func pcmLengthFromBytes(totalBytes int) time.Duration {
 	bytesPerSample := 2
 	sampleRate := 16000
-	numSamples := len(data) / bytesPerSample
+	numSamples := totalBytes / bytesPerSample
 	return time.Duration(numSamples*1000/sampleRate) * time.Millisecond
 }
 
 // playPCM24kOnRobot 把 24k PCM 音频降采样后推给机器人外放。
+// 行为控制与说话动画由上层流式播报流程统一管理，这里只负责可靠推流。
 func playPCM24kOnRobot(robot *vector.Vector, speechBytes []byte) error {
+	if robot == nil {
+		return errors.New("robot is nil")
+	}
 	vclient, err := robot.Conn.ExternalAudioStreamPlayback(context.Background())
 	if err != nil {
 		return err
 	}
+	defer vclient.CloseSend()
+
 	if err := vclient.Send(&vectorpb.ExternalAudioStreamRequest{
 		AudioRequestType: &vectorpb.ExternalAudioStreamRequest_AudioStreamPrepare{
 			AudioStreamPrepare: &vectorpb.ExternalAudioStreamPrepare{
@@ -34,30 +49,32 @@ func playPCM24kOnRobot(robot *vector.Vector, speechBytes []byte) error {
 	}
 
 	audioChunks := robotpkg.Downsample24kTo16k(speechBytes)
-	var playedBytes []byte
-	for _, chunk := range audioChunks {
-		playedBytes = append(playedBytes, chunk...)
+	if len(audioChunks) == 0 {
+		return errors.New("empty pcm after downsample")
 	}
 
-	go func() {
-		for _, chunk := range audioChunks {
-			_ = vclient.Send(&vectorpb.ExternalAudioStreamRequest{
-				AudioRequestType: &vectorpb.ExternalAudioStreamRequest_AudioStreamChunk{
-					AudioStreamChunk: &vectorpb.ExternalAudioStreamChunk{
-						AudioChunkSizeBytes: 1024,
-						AudioChunkSamples:   chunk,
-					},
+	for _, chunk := range audioChunks {
+		if err := vclient.Send(&vectorpb.ExternalAudioStreamRequest{
+			AudioRequestType: &vectorpb.ExternalAudioStreamRequest_AudioStreamChunk{
+				AudioStreamChunk: &vectorpb.ExternalAudioStreamChunk{
+					AudioChunkSizeBytes: uint32(len(chunk)),
+					AudioChunkSamples:   chunk,
 				},
-			})
-			time.Sleep(25 * time.Millisecond)
-		}
-		_ = vclient.Send(&vectorpb.ExternalAudioStreamRequest{
-			AudioRequestType: &vectorpb.ExternalAudioStreamRequest_AudioStreamComplete{
-				AudioStreamComplete: &vectorpb.ExternalAudioStreamComplete{},
 			},
-		})
-	}()
+		}); err != nil {
+			return err
+		}
+		time.Sleep(25 * time.Millisecond)
+	}
 
-	time.Sleep(pcmLength(playedBytes) + 50*time.Millisecond)
+	if err := vclient.Send(&vectorpb.ExternalAudioStreamRequest{
+		AudioRequestType: &vectorpb.ExternalAudioStreamRequest_AudioStreamComplete{
+			AudioStreamComplete: &vectorpb.ExternalAudioStreamComplete{},
+		},
+	}); err != nil {
+		return err
+	}
+
+	time.Sleep(pcmLengthFromBytes(pcmChunkBytes(audioChunks)) + 50*time.Millisecond)
 	return nil
 }
