@@ -409,6 +409,16 @@ func DoGetImage(msgs []openai.ChatCompletionMessage, param string, robot *vector
 			response, err := stream.Recv()
 			if errors.Is(err, io.EOF) {
 				isDone = true
+				if len(fullRespSlice) == 0 && strings.TrimSpace(fullfullRespText) != "" {
+					logger.Println("LLM debug: final response has no sentence punctuation, using raw content")
+					fullRespSlice = append(fullRespSlice, strings.TrimSpace(fullfullRespText))
+				}
+				logger.Println("LLM final raw: " + clipDebugString(fullfullRespText, 300))
+				logger.Println("LLM final slices: " + fmt.Sprint(fullRespSlice))
+				if len(fullRespSlice) == 0 {
+					logger.Println("LLM returned no response")
+					return
+				}
 				newStr := fullRespSlice[0]
 				for i, str := range fullRespSlice {
 					if i == 0 {
@@ -438,28 +448,17 @@ func DoGetImage(msgs []openai.ChatCompletionMessage, param string, robot *vector
 				logger.Println("Stream error: " + err.Error())
 				return
 			}
-			fullfullRespText = fullfullRespText + removeSpecialCharacters(response.Choices[0].Delta.Content)
-			fullRespText = fullRespText + removeSpecialCharacters(response.Choices[0].Delta.Content)
-			if strings.Contains(fullRespText, "...") || strings.Contains(fullRespText, ".'") || strings.Contains(fullRespText, ".\"") || strings.Contains(fullRespText, ".") || strings.Contains(fullRespText, "?") || strings.Contains(fullRespText, "!") {
-				var sepStr string
-				if strings.Contains(fullRespText, "...") {
-					sepStr = "..."
-				} else if strings.Contains(fullRespText, ".'") {
-					sepStr = ".'"
-				} else if strings.Contains(fullRespText, ".\"") {
-					sepStr = ".\""
-				} else if strings.Contains(fullRespText, ".") {
-					sepStr = "."
-				} else if strings.Contains(fullRespText, "?") {
-					sepStr = "?"
-				} else if strings.Contains(fullRespText, "!") {
-					sepStr = "!"
-				}
-				splitResp := strings.Split(strings.TrimSpace(fullRespText), sepStr)
-				fullRespSlice = append(fullRespSlice, strings.TrimSpace(splitResp[0])+sepStr)
-				fullRespText = splitResp[1]
+			deltaText := removeSpecialCharacters(response.Choices[0].Delta.Content)
+			if strings.TrimSpace(deltaText) != "" {
+				logger.Println("LLM delta: " + clipDebugString(deltaText, 80))
+			}
+			fullfullRespText = fullfullRespText + deltaText
+			fullRespText = fullRespText + deltaText
+			if nextSentence, remainder, ok := splitFirstSentence(fullRespText); ok {
+				fullRespSlice = append(fullRespSlice, nextSentence)
+				fullRespText = remainder
 				select {
-				case speakReady <- strings.TrimSpace(splitResp[0]) + sepStr:
+				case speakReady <- nextSentence:
 				default:
 				}
 			}
