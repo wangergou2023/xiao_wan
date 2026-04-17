@@ -10,6 +10,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/wangergou2023/xiao_wan/chipper/pkg/logger"
 	"github.com/wangergou2023/xiao_wan/chipper/pkg/vars"
 	"github.com/wangergou2023/xiao_wan/chipper/pkg/vector"
 )
@@ -50,13 +51,29 @@ func getBigModelToken() string {
 }
 
 func getBigModelTTSModel() string {
-	if model := strings.TrimSpace(vars.APIConfig.BigModel.TTSModel); model != "" {
+	if model := normalizeBigModelTTSModel(strings.TrimSpace(vars.APIConfig.BigModel.TTSModel)); model != "" {
 		return model
+	}
+	if model := strings.TrimSpace(vars.APIConfig.BigModel.TTSModel); model != "" {
+		return normalizeBigModelTTSModel(model)
 	}
 	if model := strings.TrimSpace(os.Getenv("BIGMODEL_TTS_MODEL")); model != "" {
-		return model
+		return normalizeBigModelTTSModel(model)
 	}
 	return defaultBigModelTTSModel
+}
+
+func normalizeBigModelTTSModel(model string) string {
+	if model == "" {
+		return ""
+	}
+	lowerModel := strings.ToLower(strings.TrimSpace(model))
+	// 防止把聊天模型误填到 TTS 模型里，导致接口报 messages 参数非法。
+	if strings.Contains(lowerModel, "glm-5") || strings.Contains(lowerModel, "glm-4.5") || strings.Contains(lowerModel, "chat") {
+		logger.Println("BigModel TTS model looks like a chat model, falling back to glm-4-voice: " + model)
+		return defaultBigModelTTSModel
+	}
+	return model
 }
 
 func getBigModelTTSVoice() string {

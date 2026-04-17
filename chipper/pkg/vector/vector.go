@@ -76,6 +76,37 @@ type RobotSDKInfoStore struct {
 	} `json:"robots"`
 }
 
+func findBotSDKInfoFile() string {
+	var candidates []string
+
+	if wirepodHome := strings.TrimSpace(os.Getenv("WIREPOD_HOME")); wirepodHome != "" {
+		candidates = append(candidates,
+			filepath.Join(wirepodHome, "chipper/jdocs/botSdkInfo.json"),
+			filepath.Join(wirepodHome, "jdocs/botSdkInfo.json"),
+		)
+	}
+
+	if wd, err := os.Getwd(); err == nil {
+		candidates = append(candidates,
+			filepath.Join(wd, "jdocs/botSdkInfo.json"),
+			filepath.Join(wd, "chipper/jdocs/botSdkInfo.json"),
+			filepath.Join(filepath.Dir(wd), "jdocs/botSdkInfo.json"),
+			filepath.Join(filepath.Dir(wd), "chipper/jdocs/botSdkInfo.json"),
+		)
+	}
+
+	for _, candidate := range candidates {
+		if _, err := os.Stat(candidate); err == nil {
+			return candidate
+		}
+	}
+
+	if len(candidates) > 0 {
+		return candidates[0]
+	}
+	return "chipper/jdocs/botSdkInfo.json"
+}
+
 // NewWP returns either a vector struct for wirepod pod vector, or an error on failure
 // This function assumes you are working with Wirepod, that saves in "./jdocs/botSdkInfo.json" a JSON file with the
 // configuration info needed
@@ -86,11 +117,7 @@ func NewWP(serial string) (*Vector, error) {
 	}
 
 	cfg := options{}
-	wirepodPath := os.Getenv("WIREPOD_HOME")
-	if len(wirepodPath) == 0 {
-		wirepodPath = "."
-	}
-	botSdkInfoFile := filepath.Join(wirepodPath, "chipper/jdocs/botSdkInfo.json")
+	botSdkInfoFile := findBotSDKInfoFile()
 	jsonBytes, err := os.ReadFile(botSdkInfoFile)
 	if err != nil {
 		log.Println("vector-go-sdk error: Error opening " + botSdkInfoFile + ", likely doesn't exist")
