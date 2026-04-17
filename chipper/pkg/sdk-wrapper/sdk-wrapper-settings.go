@@ -52,9 +52,10 @@ func RefreshSDKSettings() error {
 		return err
 	}
 	customSettingsJSON, err := getCustomSettings()
+	parsedCustomSettings := CustomSettings{}
 	if err != nil {
 		log.Println("WARNING: Could not load Vector custom settings, creating a blank file")
-		customSettings = CustomSettings{
+		parsedCustomSettings = CustomSettings{
 			RobotName:      "",
 			ChatTarget:     "",
 			LoggedInToChat: false,
@@ -62,11 +63,14 @@ func RefreshSDKSettings() error {
 			TTSVoice:       TTS_ENGINE_VOICESERVER_VOICE_ENGLISH_DEFAULT,
 		}
 	}
-	//println(string(customSettingsJSON))
-	//println(string(settingsJSON))
-
-	json.Unmarshal([]byte(settingsJSON), &settings)
-	json.Unmarshal([]byte(customSettingsJSON), &customSettings)
+	parsedSettings := map[string]interface{}{}
+	// 反序列化到局部变量，避免并发刷新时多个 goroutine 同时写同一张 map。
+	json.Unmarshal([]byte(settingsJSON), &parsedSettings)
+	if err == nil {
+		json.Unmarshal([]byte(customSettingsJSON), &parsedCustomSettings)
+	}
+	settings = parsedSettings
+	customSettings = parsedCustomSettings
 	refreshLanguage()
 	return nil
 }

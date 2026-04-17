@@ -16,6 +16,7 @@ import (
 	"path"
 	"path/filepath"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/wangergou2023/xiao_wan/chipper/pkg/vector"
@@ -37,8 +38,17 @@ var transCfg = &http.Transport{
 
 var eventStream vectorpb.ExternalInterface_EventStreamClient
 var SDKConfig = SDKConfigData{"/tmp/", "data", "nvm"}
+var sdkInitMu sync.Mutex
+var sdkRobotSerial string
 
 func InitSDK(serial string) error {
+	sdkInitMu.Lock()
+	defer sdkInitMu.Unlock()
+
+	if Robot != nil && sdkRobotSerial == serial && eventStream != nil {
+		return nil
+	}
+
 	var err error
 	InitLanguages(LANGUAGE_ENGLISH)
 	Robot, err = vector.NewEP(serial)
@@ -46,6 +56,7 @@ func InitSDK(serial string) error {
 		log.Println(err)
 		return err
 	}
+	sdkRobotSerial = serial
 	ctx = context.Background()
 	eventStream, err = Robot.Conn.EventStream(ctx, &vectorpb.EventRequest{})
 	if err != nil {
@@ -57,6 +68,13 @@ func InitSDK(serial string) error {
 }
 
 func InitSDKForWirepod(serial string) error {
+	sdkInitMu.Lock()
+	defer sdkInitMu.Unlock()
+
+	if Robot != nil && sdkRobotSerial == serial && eventStream != nil {
+		return nil
+	}
+
 	var err error
 	InitLanguages(LANGUAGE_ENGLISH)
 	Robot, err = vector.NewWP(serial)
@@ -64,6 +82,7 @@ func InitSDKForWirepod(serial string) error {
 		log.Println(err)
 		return err
 	}
+	sdkRobotSerial = serial
 	ctx = context.Background()
 	eventStream, err = Robot.Conn.EventStream(ctx, &vectorpb.EventRequest{})
 	if err != nil {
