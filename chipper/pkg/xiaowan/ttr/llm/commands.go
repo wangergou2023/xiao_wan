@@ -8,6 +8,7 @@ import (
 	"io"
 	"os"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/sashabaranov/go-openai"
@@ -17,6 +18,8 @@ import (
 	"github.com/wangergou2023/xiao_wan/chipper/pkg/vectorpb"
 	robotpkg "github.com/wangergou2023/xiao_wan/chipper/pkg/xiaowan/ttr/robot"
 )
+
+const speechAnimationWICooldown = 1200 * time.Millisecond
 
 const (
 	// arg: text to say
@@ -248,6 +251,12 @@ func DoPlayAnimation(animation string, robot *vector.Vector) error {
 
 // DoPlayAnimationWI 通过 robot 控制层异步播放不打断语音的动画。
 func DoPlayAnimationWI(animation string, robot *vector.Vector) error {
+	if robot == nil {
+		return nil
+	}
+	if !allowSpeechAnimationWI(robot.Cfg.SerialNo, animation) {
+		return nil
+	}
 	for _, animThing := range animationMap {
 		if animation == animThing[0] {
 			go func() {
@@ -508,6 +517,7 @@ func DoNewRequest(robot *vector.Vector) {
 func PerformActions(msgs []openai.ChatCompletionMessage, actions []RobotAction, robot *vector.Vector, stopStop chan bool, prefetch *ttsPrefetchSession) bool {
 	// assuming we have behavior control already
 	stopPerforming := false
+	allowWIDuringThisSentence := true
 	go func() {
 		for range stopStop {
 			stopPerforming = true
@@ -523,7 +533,10 @@ func PerformActions(msgs []openai.ChatCompletionMessage, actions []RobotAction, 
 		case action.Action == ActionPlayAnimation:
 			DoPlayAnimation(action.Parameter, robot)
 		case action.Action == ActionPlayAnimationWI:
-			DoPlayAnimationWI(action.Parameter, robot)
+			if allowWIDuringThisSentence {
+				DoPlayAnimationWI(action.Parameter, robot)
+				allowWIDuringThisSentence = false
+			}
 		case action.Action == ActionNewRequest:
 			go DoNewRequest(robot)
 			return true
@@ -592,3 +605,34 @@ type AnimationQueue struct {
 }
 
 var AnimationQueues []AnimationQueue
+
+type speechAnimationWIState struct {
+	LastAnimation string
+	LastPlayedAt  time.Time
+}
+
+var (
+	speechAnimationWIMu     sync.Mutex
+	speechAnimationWIStates = map[string]speechAnimationWIState{}
+)
+
+// allowSpeechAnimationWI 对说话期的 WI 动作做轻量节流，避免一句里动作太密导致排队抢占。
+func allowSpeechAnimationWI(esn, animation string) bool {
+	speechAnimationWIMu.Lock()
+	defer speechAnimationWIMu.Unlock()
+
+	state := speechAnimationWIStates[esn]
+	now := time.Now()
+	if !state.LastPlayedAt.IsZero() && now.Sub(state.LastPlayedAt) < speechAnimationWICooldown {
+		return false
+	}
+	if state.LastAnimation == animation && !state.LastPlayedAt.IsZero() && now.Sub(state.LastPlayedAt) < 3*time.Second {
+		return false
+	}
+
+	speechAnimationWIStates[esn] = speechAnimationWIState{
+		LastAnimation: animation,
+		LastPlayedAt:  now,
+	}
+	return true
+}
