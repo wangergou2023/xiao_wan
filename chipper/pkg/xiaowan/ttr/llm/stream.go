@@ -119,7 +119,18 @@ func StreamingKGSim(req interface{}, esn string, transcribedText string, isKG bo
 	var isDone bool
 	c := newKnowledgeClient()
 	speakReady := make(chan string)
-	successIntent := make(chan bool)
+	successIntent := make(chan bool, 1)
+	intentAnnounced := false
+	notifySuccess := func() {
+		if intentAnnounced {
+			return
+		}
+		intentAnnounced = true
+		select {
+		case successIntent <- true:
+		default:
+		}
+	}
 
 	aireq := CreateAIReq(transcribedText, esn, false, isKG)
 
@@ -163,6 +174,7 @@ func StreamingKGSim(req interface{}, esn string, transcribedText string, isKG bo
 				if len(fullRespSlice) == 0 && strings.TrimSpace(fullfullRespText) != "" {
 					logger.Println("LLM debug: final response has no sentence punctuation, using raw content")
 					fullRespSlice = append(fullRespSlice, strings.TrimSpace(fullfullRespText))
+					notifySuccess()
 				}
 				logger.Println("LLM final raw: " + clipDebugString(fullfullRespText, 300))
 				logger.Println("LLM final slices: " + fmt.Sprint(fullRespSlice))
@@ -226,13 +238,10 @@ func StreamingKGSim(req interface{}, esn string, transcribedText string, isKG bo
 			}
 			fullfullRespText = fullfullRespText + deltaText
 			fullRespText = fullRespText + deltaText
-			if nextSentence, remainder, ok := splitFirstSentence(fullRespText); ok {
+			if nextSentence, remainder, ok := splitFirstSpeechChunk(fullRespText); ok {
 				fullRespSlice = append(fullRespSlice, nextSentence)
 				fullRespText = remainder
-				select {
-				case successIntent <- true:
-				default:
-				}
+				notifySuccess()
 				select {
 				case speakReady <- nextSentence:
 				default:

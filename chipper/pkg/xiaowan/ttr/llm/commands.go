@@ -454,7 +454,7 @@ func DoGetImage(msgs []openai.ChatCompletionMessage, param string, robot *vector
 			}
 			fullfullRespText = fullfullRespText + deltaText
 			fullRespText = fullRespText + deltaText
-			if nextSentence, remainder, ok := splitFirstSentence(fullRespText); ok {
+			if nextSentence, remainder, ok := splitFirstSpeechChunk(fullRespText); ok {
 				fullRespSlice = append(fullRespSlice, nextSentence)
 				fullRespText = remainder
 				select {
