@@ -365,23 +365,7 @@ func DoGetImage(msgs []openai.ChatCompletionMessage, param string, robot *vector
 	var fullfullRespText string
 	var fullRespSlice []string
 	var isDone bool
-	var c *openai.Client
-	switch vars.APIConfig.Knowledge.Provider {
-	case "together":
-		if vars.APIConfig.Knowledge.Model == "" {
-			vars.APIConfig.Knowledge.Model = "meta-llama/Llama-2-70b-chat-hf"
-			vars.WriteConfigToDisk()
-		}
-		conf := openai.DefaultConfig(vars.APIConfig.Knowledge.Key)
-		conf.BaseURL = "https://api.together.xyz/v1"
-		c = openai.NewClientWithConfig(conf)
-	case "openai":
-		c = openai.NewClient(vars.APIConfig.Knowledge.Key)
-	case "custom":
-		conf := openai.DefaultConfig(vars.APIConfig.Knowledge.Key)
-		conf.BaseURL = vars.APIConfig.Knowledge.Endpoint
-		c = openai.NewClientWithConfig(conf)
-	}
+	c := newKnowledgeClient()
 	ctx := context.Background()
 	speakReady := make(chan string)
 
@@ -394,13 +378,8 @@ func DoGetImage(msgs []openai.ChatCompletionMessage, param string, robot *vector
 		Messages:         msgs,
 		Stream:           true,
 	}
-	if vars.APIConfig.Knowledge.Provider == "openai" {
-		aireq.Model = openai.GPT4oMini
-		logger.Println("Using " + aireq.Model)
-	} else {
-		logger.Println("Using " + vars.APIConfig.Knowledge.Model)
-		aireq.Model = vars.APIConfig.Knowledge.Model
-	}
+	aireq.Model = getKnowledgeModel(false)
+	logKnowledgeModel(aireq.Model)
 	if stopImaging {
 		return
 	}

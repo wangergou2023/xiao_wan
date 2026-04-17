@@ -10,7 +10,6 @@ require (
 	github.com/digital-dream-labs/hugh v0.0.0-20210210154335-f4159b9fcd5f
 	github.com/digital-dream-labs/opus-go v0.0.0-20201230195736-934a8a9e0a1e
 	github.com/digital-dream-labs/vector-bluetooth v0.0.0-20210604051118-1c511122d877
-	github.com/fforchino/vector-go-sdk v0.0.0-20231108155304-62168f3595d6
 	github.com/fogleman/gg v1.3.0
 	github.com/go-audio/audio v1.0.0
 	github.com/go-audio/wav v1.1.0

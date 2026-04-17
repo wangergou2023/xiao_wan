@@ -182,6 +182,25 @@ h2, h3 {
   margin-bottom: 0px;
 }
 
+.setup-note {
+  margin: 1rem auto;
+  max-width: 44rem;
+  padding: 0.9rem 1rem;
+  border: 1px solid var(--fg-color);
+  border-radius: 10px;
+  background: linear-gradient(135deg, rgba(0, 255, 128, 0.08), rgba(255, 255, 255, 0.03));
+  color: var(--text-color);
+  text-align: left;
+  line-height: 1.45;
+}
+
+.setup-note code {
+  color: var(--fg-color);
+  background: rgba(0, 0, 0, 0.22);
+  padding: 0.05rem 0.35rem;
+  border-radius: 4px;
+}
+
 .desc {
   color: var(--bg-color-alt);
 }

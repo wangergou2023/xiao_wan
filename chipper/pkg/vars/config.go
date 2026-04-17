@@ -3,6 +3,7 @@ package vars
 import (
 	"encoding/json"
 	"os"
+	"strings"
 
 	"github.com/wangergou2023/xiao_wan/chipper/pkg/logger"
 )
@@ -21,21 +22,17 @@ type apiConfig struct {
 		Unit     string `json:"unit"`
 	} `json:"weather"`
 	Knowledge struct {
-		Enable                 bool    `json:"enable"`
-		Provider               string  `json:"provider"`
-		Key                    string  `json:"key"`
-		ID                     string  `json:"id"`
-		Model                  string  `json:"model"`
-		IntentGraph            bool    `json:"intentgraph"`
-		RobotName              string  `json:"robotName"`
-		OpenAIPrompt           string  `json:"openai_prompt"`
-		OpenAIVoice            string  `json:"openai_voice"`
-		OpenAIVoiceWithEnglish bool    `json:"openai_voice_with_english"`
-		SaveChat               bool    `json:"save_chat"`
-		CommandsEnable         bool    `json:"commands_enable"`
-		Endpoint               string  `json:"endpoint"`
-		TopP                   float32 `json:"top_p"`
-		Temperature            float32 `json:"temp"`
+		Enable         bool    `json:"enable"`
+		Provider       string  `json:"provider"`
+		Key            string  `json:"key"`
+		Model          string  `json:"model"`
+		IntentGraph    bool    `json:"intentgraph"`
+		OpenAIPrompt   string  `json:"openai_prompt"`
+		SaveChat       bool    `json:"save_chat"`
+		CommandsEnable bool    `json:"commands_enable"`
+		Endpoint       string  `json:"endpoint"`
+		TopP           float32 `json:"top_p"`
+		Temperature    float32 `json:"temp"`
 	} `json:"knowledge"`
 	STT struct {
 		Service  string `json:"provider"`
@@ -69,9 +66,6 @@ func CreateConfigFromEnv() {
 	if os.Getenv("KNOWLEDGE_ENABLED") == "true" {
 		APIConfig.Knowledge.Enable = true
 		APIConfig.Knowledge.Provider = os.Getenv("KNOWLEDGE_PROVIDER")
-		if os.Getenv("KNOWLEDGE_PROVIDER") == "houndify" {
-			APIConfig.Knowledge.ID = os.Getenv("KNOWLEDGE_ID")
-		}
 		APIConfig.Knowledge.Key = os.Getenv("KNOWLEDGE_KEY")
 	} else {
 		APIConfig.Knowledge.Enable = false
@@ -124,8 +118,17 @@ func ReadConfig() {
 			}
 		}
 
+		// 兼容旧配置：把历史的 together provider 自动迁移到通用自定义接口。
+		if APIConfig.Knowledge.Provider == "together" {
+			logger.Println("Migrating deprecated Together provider config to custom endpoint")
+			APIConfig.Knowledge.Provider = "custom"
+			if strings.TrimSpace(APIConfig.Knowledge.Endpoint) == "" {
+				APIConfig.Knowledge.Endpoint = "https://api.together.xyz/v1"
+			}
+		}
+
 		if APIConfig.Knowledge.Model == "meta-llama/Llama-2-70b-chat-hf" {
-			logger.Println("Setting Together model to Llama3")
+			logger.Println("Updating legacy Llama model name")
 			APIConfig.Knowledge.Model = "meta-llama/Llama-3-70b-chat-hf"
 		}
 

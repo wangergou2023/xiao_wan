@@ -245,38 +245,24 @@ function updateWeatherAPI() {
 function checkKG() {
   const provider = getE("kgProvider").value;
   const elements = [
-    "houndifyInput",
-    "togetherInput",
+    "bigModelInput",
     "customAIInput",
-    "intentGraphInput",
     "openAIInput",
-    "saveChatInput",
-    "llmCommandInput",
-    "openAIVoiceForEnglishInput",
+    "llmDefaultsNote",
   ];
 
   elements.forEach((el) => (getE(el).style.display = "none"));
 
   if (provider) {
-    if (provider === "houndify") {
-      getE("houndifyInput").style.display = "block";
-      getE("intentGraphInput").style.display = "block";
-    } else if (provider === "openai") {
-      getE("intentGraphInput").style.display = "block";
+    if (provider === "openai") {
       getE("openAIInput").style.display = "block";
-      getE("saveChatInput").style.display = "block";
-      getE("llmCommandInput").style.display = "block";
-      getE("openAIVoiceForEnglishInput").style.display = "block";
-    } else if (provider === "together") {
-      getE("intentGraphInput").style.display = "block";
-      getE("togetherInput").style.display = "block";
-      getE("saveChatInput").style.display = "block";
-      getE("llmCommandInput").style.display = "block";
+      getE("llmDefaultsNote").style.display = "block";
+    } else if (provider === "bigmodel") {
+      getE("bigModelInput").style.display = "block";
+      getE("llmDefaultsNote").style.display = "block";
     } else if (provider === "custom") {
-      getE("intentGraphInput").style.display = "block";
       getE("customAIInput").style.display = "block";
-      getE("saveChatInput").style.display = "block";
-      getE("llmCommandInput").style.display = "block";
+      getE("llmDefaultsNote").style.display = "block";
     }
   }
 }
@@ -288,45 +274,31 @@ function sendKGAPIKey() {
     provider,
     key: "",
     model: "",
-    id: "",
     intentgraph: false,
-    robotName: "",
     openai_prompt: "",
-    openai_voice: "",
-    openai_voice_with_english: false,
-    save_chat: false,
-    commands_enable: false,
+    save_chat: true,
+    commands_enable: true,
     endpoint: "",
   };
   if (provider === "openai") {
     data.key = getE("openaiKey").value;
     data.openai_prompt = getE("openAIPrompt").value;
-    data.intentgraph = getE("intentyes").checked
-    data.save_chat = getE("saveChatYes").checked
-    data.commands_enable = getE("commandYes").checked
-    data.openai_voice = getE("openaiVoice").value
-    data.openai_voice_with_english = getE("voiceEnglishYes").checked
+    data.intentgraph = true
+  } else if (provider === "bigmodel") {
+    data.key = getE("bigmodelKey").value;
+    data.model = getE("bigmodelModel").value;
+    data.openai_prompt = getE("bigmodelPrompt").value;
+    data.intentgraph = true
   } else if (provider === "custom") {
     data.key = getE("customKey").value;
     data.model = getE("customModel").value;
     data.openai_prompt = getE("customAIPrompt").value;
     data.endpoint = getE("customAIEndpoint").value;
-    data.intentgraph = getE("intentyes").checked
-    data.save_chat = getE("saveChatYes").checked
-    data.commands_enable = getE("commandYes").checked
-  } else if (provider === "together") {
-    data.key = getE("togetherKey").value;
-    data.model = getE("togetherModel").value;
-    data.openai_prompt = getE("togetherAIPrompt").value;
-    data.intentgraph = getE("intentyes").checked;
-    data.save_chat = getE("saveChatYes").checked
-    data.commands_enable = getE("commandYes").checked
-  } else if (provider === "houndify") {
-    data.key = getE("houndKey").value;
-    data.id = getE("houndID").value;
-    data.intentgraph = getE("intentyes").checked
+    data.intentgraph = true
   } else {
     data.enable = false;
+    data.save_chat = false;
+    data.commands_enable = false;
   }
 
   fetch("/api/set_kg_api", {
@@ -344,11 +316,11 @@ function sendKGAPIKey() {
 }
 
 function deleteSavedChats() {
-  if (confirm("Are you sure? This will delete all saved chats.")) {
+  if (confirm("确认删除所有已保存的对话记录吗？")) {
     fetch("/api/delete_chats")
       .then((response) => response.text())
       .then(() => {
-        alert("Successfully deleted all saved chats.");
+        alert("已成功删除所有已保存的对话记录。");
       });
   }
 }
@@ -361,30 +333,15 @@ function updateKGAPI() {
       if (data.provider === "openai") {
         getE("openaiKey").value = data.key;
         getE("openAIPrompt").value = data.openai_prompt;
-        getE("openaiVoice").value = data.openai_voice;
-        getE("commandYes").checked = data.commands_enable
-        getE("intentyes").checked = data.intentgraph
-        getE("saveChatYes").checked = data.save_chat
-        getE("voiceEnglishYes").checked = data.openai_voice_with_english
-      } else if (data.provider === "together") {
-        getE("togetherKey").value = data.key;
-        getE("togetherModel").value = data.model;
-        getE("togetherAIPrompt").value = data.openai_prompt;
-        getE("commandYes").checked = data.commands_enable
-        getE("intentyes").checked = data.intentgraph
-        getE("saveChatYes").checked = data.save_chat
+      } else if (data.provider === "bigmodel") {
+        getE("bigmodelKey").value = data.key;
+        getE("bigmodelModel").value = data.model;
+        getE("bigmodelPrompt").value = data.openai_prompt;
       } else if (data.provider === "custom") {
         getE("customKey").value = data.key;
         getE("customModel").value = data.model;
         getE("customAIPrompt").value = data.openai_prompt;
         getE("customAIEndpoint").value = data.endpoint;
-        getE("commandYes").checked = data.commands_enable
-        getE("intentyes").checked = data.intentgraph
-        getE("saveChatYes").checked = data.save_chat
-      } else if (data.provider === "houndify") {
-        getE("houndKey").value = data.key;
-        getE("houndID").value = data.id;
-        getE("intentyes").checked = data.intentgraph
       }
       checkKG();
     });
@@ -393,7 +350,7 @@ function updateKGAPI() {
 function setSTTLanguage() {
   const data = { language: getE("languageSelection").value };
 
-  displayMessage("languageStatus", "Setting...");
+  displayMessage("languageStatus", "设置中...");
 
   fetch("/api/set_stt_info", {
     method: "POST",
@@ -405,7 +362,7 @@ function setSTTLanguage() {
     .then((response) => response.text())
     .then((response) => {
       if (response.includes("downloading")) {
-        displayMessage("languageStatus", "Downloading model...");
+        displayMessage("languageStatus", "正在下载模型...");
         updateSTTLanguageDownload();
       } else {
         displayMessage("languageStatus", response);
@@ -420,7 +377,7 @@ function updateSTTLanguageDownload() {
     fetch("/api/get_download_status")
       .then((response) => response.text())
       .then((response) => {
-        displayMessage("languageStatus", response.includes("not downloading") ? "Initiating download..." : response)
+        displayMessage("languageStatus", response.includes("not downloading") ? "正在初始化下载..." : response)
         if (response.includes("success") || response.includes("error")) {
           displayMessage("languageStatus", response);
           getE("languageSelectionDiv").style.display = "block";
