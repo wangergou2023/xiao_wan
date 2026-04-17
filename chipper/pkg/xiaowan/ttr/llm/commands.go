@@ -1,4 +1,4 @@
-package wirepod_ttr
+package llm
 
 import (
 	"context"
@@ -12,9 +12,10 @@ import (
 
 	"github.com/fforchino/vector-go-sdk/pkg/vector"
 	"github.com/fforchino/vector-go-sdk/pkg/vectorpb"
+	"github.com/sashabaranov/go-openai"
 	"github.com/wangergou2023/xiao_wan/chipper/pkg/logger"
 	"github.com/wangergou2023/xiao_wan/chipper/pkg/vars"
-	"github.com/sashabaranov/go-openai"
+	robotpkg "github.com/wangergou2023/xiao_wan/chipper/pkg/xiaowan/ttr/robot"
 )
 
 const (
@@ -231,41 +232,27 @@ func CmdParamToAction(cmd, param string) RobotAction {
 	}
 }
 
+// DoPlayAnimation 通过 robot 控制层播放会打断语音的动画。
 func DoPlayAnimation(animation string, robot *vector.Vector) error {
 	for _, animThing := range animationMap {
 		if animation == animThing[0] {
 			StartAnim_Queue(robot.Cfg.SerialNo)
-			robot.Conn.PlayAnimation(
-				context.Background(),
-				&vectorpb.PlayAnimationRequest{
-					Animation: &vectorpb.Animation{
-						Name: animThing[1],
-					},
-					Loops: 1,
-				},
-			)
+			err := robotpkg.PlayAnimationWithSDK(robot, animThing[1], 1, false, false, false)
 			StopAnim_Queue(robot.Cfg.SerialNo)
-			return nil
+			return err
 		}
 	}
 	logger.Println("Animation provided by LLM doesn't exist: " + animation)
 	return nil
 }
 
+// DoPlayAnimationWI 通过 robot 控制层异步播放不打断语音的动画。
 func DoPlayAnimationWI(animation string, robot *vector.Vector) error {
 	for _, animThing := range animationMap {
 		if animation == animThing[0] {
 			go func() {
 				StartAnim_Queue(robot.Cfg.SerialNo)
-				robot.Conn.PlayAnimation(
-					context.Background(),
-					&vectorpb.PlayAnimationRequest{
-						Animation: &vectorpb.Animation{
-							Name: animThing[1],
-						},
-						Loops: 1,
-					},
-				)
+				robotpkg.PlayAnimationWithSDK(robot, animThing[1], 1, false, false, false)
 				StopAnim_Queue(robot.Cfg.SerialNo)
 			}()
 			return nil
@@ -285,109 +272,22 @@ func DoPlaySound(sound string, robot *vector.Vector) error {
 	return nil
 }
 
+// DoSayText 统一走文本播报入口，优先使用智谱 TTS，失败时再回退到机器人原生播报。
 func DoSayText(input string, robot *vector.Vector) error {
-
 	// just before vector speaks
-	removeSpecialCharacters(input)
-
-	if (vars.APIConfig.STT.Language != "en-US" && vars.APIConfig.Knowledge.Provider == "openai") || vars.APIConfig.Knowledge.OpenAIVoiceWithEnglish {
-		err := DoSayText_OpenAI(robot, input)
-		return err
-	}
-	robot.Conn.SayText(
-		context.Background(),
-		&vectorpb.SayTextRequest{
-			Text:           input,
-			UseVectorVoice: true,
-			DurationScalar: 0.95,
-		},
-	)
-	return nil
-}
-
-func pcmLength(data []byte) time.Duration {
-	bytesPerSample := 2
-	sampleRate := 16000
-	numSamples := len(data) / bytesPerSample
-	duration := time.Duration(numSamples*1000/sampleRate) * time.Millisecond
-	return duration
-}
-
-func getOpenAIVoice(voice string) openai.SpeechVoice {
-	voiceMap := map[string]openai.SpeechVoice{
-		"alloy":   openai.VoiceAlloy,
-		"onyx":    openai.VoiceOnyx,
-		"fable":   openai.VoiceFable,
-		"shimmer": openai.VoiceShimmer,
-		"nova":    openai.VoiceNova,
-		"echo":    openai.VoiceEcho,
-		"":        openai.VoiceFable,
-	}
-	return voiceMap[voice]
-}
-
-// TODO
-func DoSayText_OpenAI(robot *vector.Vector, input string) error {
+	input = removeSpecialCharacters(input)
 	if strings.TrimSpace(input) == "" {
 		return nil
 	}
-	openaiVoice := getOpenAIVoice(vars.APIConfig.Knowledge.OpenAIVoice)
-	// if vars.APIConfig.Knowledge.OpenAIVoice == "" {
-	// 	openaiVoice = openai.VoiceFable
-	// } else {
-	// 	openaiVoice = getOpenAIVoice(vars.APIConfig.Knowledge.OpenAIPrompt)
-	// }
-	oc := openai.NewClient(vars.APIConfig.Knowledge.Key)
-	resp, err := oc.CreateSpeech(context.Background(), openai.CreateSpeechRequest{
-		Model:          openai.TTSModel1,
-		Input:          input,
-		Voice:          openaiVoice,
-		ResponseFormat: openai.SpeechResponseFormatPcm,
-	})
-	if err != nil {
-		logger.Println(err)
-		return err
-	}
-	speechBytes, _ := io.ReadAll(resp)
-	vclient, err := robot.Conn.ExternalAudioStreamPlayback(context.Background())
-	if err != nil {
-		return err
-	}
-	vclient.Send(&vectorpb.ExternalAudioStreamRequest{
-		AudioRequestType: &vectorpb.ExternalAudioStreamRequest_AudioStreamPrepare{
-			AudioStreamPrepare: &vectorpb.ExternalAudioStreamPrepare{
-				AudioFrameRate: 16000,
-				AudioVolume:    100,
-			},
-		},
-	})
-	//time.Sleep(time.Millisecond * 30)
-	audioChunks := downsample24kTo16k(speechBytes)
 
-	var chunksToDetermineLength []byte
-	for _, chunk := range audioChunks {
-		chunksToDetermineLength = append(chunksToDetermineLength, chunk...)
-	}
-	go func() {
-		for _, chunk := range audioChunks {
-			vclient.Send(&vectorpb.ExternalAudioStreamRequest{
-				AudioRequestType: &vectorpb.ExternalAudioStreamRequest_AudioStreamChunk{
-					AudioStreamChunk: &vectorpb.ExternalAudioStreamChunk{
-						AudioChunkSizeBytes: 1024,
-						AudioChunkSamples:   chunk,
-					},
-				},
-			})
-			time.Sleep(time.Millisecond * 25)
+	if bigModelTTSEnabled() {
+		if err := DoSayText_BigModel(robot, input); err == nil {
+			return nil
+		} else {
+			logger.Println("BigModel TTS failed, falling back to SDK voice: " + err.Error())
 		}
-		vclient.Send(&vectorpb.ExternalAudioStreamRequest{
-			AudioRequestType: &vectorpb.ExternalAudioStreamRequest_AudioStreamComplete{
-				AudioStreamComplete: &vectorpb.ExternalAudioStreamComplete{},
-			},
-		})
-	}()
-	time.Sleep(pcmLength(chunksToDetermineLength) + (time.Millisecond * 50))
-	return nil
+	}
+	return robotpkg.SayTextWithSDK(robot, input)
 }
 
 func DoGetImage(msgs []openai.ChatCompletionMessage, param string, robot *vector.Vector, stopStop chan bool) {
@@ -615,7 +515,7 @@ func DoGetImage(msgs []openai.ChatCompletionMessage, param string, robot *vector
 
 func DoNewRequest(robot *vector.Vector) {
 	time.Sleep(time.Second / 3)
-	robot.Conn.AppIntent(context.Background(), &vectorpb.AppIntentRequest{Intent: "knowledge_question"})
+	_ = robotpkg.StartKnowledgeQuestion(robot)
 }
 
 func PerformActions(msgs []openai.ChatCompletionMessage, actions []RobotAction, robot *vector.Vector, stopStop chan bool) bool {

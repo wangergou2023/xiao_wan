@@ -1,7 +1,6 @@
-package wirepod_ttr
+package intent
 
 import (
-	"encoding/json"
 	"strconv"
 	"strings"
 
@@ -9,9 +8,10 @@ import (
 	"github.com/wangergou2023/xiao_wan/chipper/pkg/logger"
 	"github.com/wangergou2023/xiao_wan/chipper/pkg/vars"
 	lcztn "github.com/wangergou2023/xiao_wan/chipper/pkg/xiaowan/localization"
+	"github.com/wangergou2023/xiao_wan/chipper/pkg/xiaowan/ttr/robot"
 )
 
-// stt
+// ParamChecker 在规则匹配后补齐业务参数，并把结果回写到响应流。
 func ParamChecker(req interface{}, intent string, speechText string, botSerial string) {
 	var intentParam string
 	var intentParamValue string
@@ -24,39 +24,7 @@ func ParamChecker(req interface{}, intent string, speechText string, botSerial s
 	var botIsEarlyOpus bool = false
 	var DoWeatherError bool = false
 
-	// see if jdoc exists
-	botJdoc, jdocExists := vars.GetJdoc("vic:"+botSerial, "vic.RobotSettings")
-	if jdocExists {
-		type robotSettingsJson struct {
-			ButtonWakeword int  `json:"button_wakeword"`
-			Clock24Hour    bool `json:"clock_24_hour"`
-			CustomEyeColor struct {
-				Enabled    bool    `json:"enabled"`
-				Hue        float64 `json:"hue"`
-				Saturation float64 `json:"saturation"`
-			} `json:"custom_eye_color"`
-			DefaultLocation  string `json:"default_location"`
-			DistIsMetric     bool   `json:"dist_is_metric"`
-			EyeColor         int    `json:"eye_color"`
-			Locale           string `json:"locale"`
-			MasterVolume     int    `json:"master_volume"`
-			TempIsFahrenheit bool   `json:"temp_is_fahrenheit"`
-			TimeZone         string `json:"time_zone"`
-		}
-		var robotSettings robotSettingsJson
-		err := json.Unmarshal([]byte(botJdoc.JsonDoc), &robotSettings)
-		if err != nil {
-			logger.Println("Error unmarshaling json in paramchecker")
-			logger.Println(err)
-		} else {
-			botLocation = robotSettings.DefaultLocation
-			if robotSettings.TempIsFahrenheit {
-				botUnits = "F"
-			} else {
-				botUnits = "C"
-			}
-		}
-	}
+	botLocation, botUnits = loadBotSpeechSettings(botSerial, botLocation, botUnits)
 	if botPlaySpecific {
 		if strings.Contains(intent, "intent_play_blackjack") {
 			isParam = true
@@ -139,13 +107,10 @@ func ParamChecker(req interface{}, intent string, speechText string, botSerial s
 	} else if strings.Contains(intent, "intent_weather_extend") {
 		isParam = true
 		newIntent = intent
-		condition, is_forecast, local_datetime, speakable_location_string, temperature, temperature_unit := weatherParser(speechText, botLocation, botUnits)
-		if local_datetime == "test" {
+		intentParams, DoWeatherError = buildWeatherParamsFromSpeech(speechText, botLocation, botUnits)
+		if DoWeatherError {
 			newIntent = "intent_system_unmatched"
 			isParam = false
-			DoWeatherError = true
-		} else {
-			intentParams = map[string]string{"condition": condition, "is_forecast": is_forecast, "local_datetime": local_datetime, "speakable_location_string": speakable_location_string, "temperature": temperature, "temperature_unit": temperature_unit}
 		}
 	} else if strings.Contains(intent, "intent_imperative_volumelevel_extend") {
 		isParam = true
@@ -192,7 +157,7 @@ func ParamChecker(req interface{}, intent string, speechText string, botSerial s
 				if err != nil {
 					logger.Println("error connecting to vector:", err)
 				} else {
-					sayText(vec, "You must add a face in the web interface. It cannot be done via voice by default.")
+					robot.SayText(vec, "You must add a face in the web interface. It cannot be done via voice by default.")
 				}
 			}
 			logger.Println("You must add a face via the web interface (Bot Settings -> Connect -> Faces).")
@@ -232,7 +197,7 @@ func ParamChecker(req interface{}, intent string, speechText string, botSerial s
 	} else if strings.Contains(intent, "intent_clock_settimer_extend") {
 		isParam = true
 		newIntent = intent
-		timerSecs := words2num(speechText)
+		timerSecs := parseTimerSecondsFromSpeech(speechText)
 		logger.Println("Seconds parsed from speech: " + timerSecs)
 		intentParam = "timer_duration"
 		intentParamValue = timerSecs
@@ -317,15 +282,15 @@ func ParamChecker(req interface{}, intent string, speechText string, botSerial s
 	if DoWeatherError {
 		if vars.APIConfig.Weather.Enable {
 			logger.Println("The weather API is not configured properly.")
-			KGSim(botSerial, "The weather API is not configured properly. Please check the wire pod logs for more details.")
+			robot.KGSim(botSerial, "The weather API is not configured properly. Please check the wire pod logs for more details.")
 		} else {
 			logger.Println("The weather API is not configured.")
-			KGSim(botSerial, "The weather API is not configured.")
+			robot.KGSim(botSerial, "The weather API is not configured.")
 		}
 	}
 }
 
-// stintent
+// ParamCheckerSlotsEnUS 处理 STIntent 风格的英文 slot，并转换成统一的 intent 参数。
 func ParamCheckerSlotsEnUS(req interface{}, intent string, slots map[string]string, isOpus bool, botSerial string) {
 	var intentParam string
 	var intentParamValue string
@@ -336,39 +301,7 @@ func ParamCheckerSlotsEnUS(req interface{}, intent string, slots map[string]stri
 	var botUnits string = "F"
 	var botPlaySpecific bool = false
 	var botIsEarlyOpus bool = false
-	// see if jdoc exists
-	botJdoc, jdocExists := vars.GetJdoc("vic:"+botSerial, "vic.RobotSettings")
-	if jdocExists {
-		type robotSettingsJson struct {
-			ButtonWakeword int  `json:"button_wakeword"`
-			Clock24Hour    bool `json:"clock_24_hour"`
-			CustomEyeColor struct {
-				Enabled    bool    `json:"enabled"`
-				Hue        float64 `json:"hue"`
-				Saturation float64 `json:"saturation"`
-			} `json:"custom_eye_color"`
-			DefaultLocation  string `json:"default_location"`
-			DistIsMetric     bool   `json:"dist_is_metric"`
-			EyeColor         int    `json:"eye_color"`
-			Locale           string `json:"locale"`
-			MasterVolume     int    `json:"master_volume"`
-			TempIsFahrenheit bool   `json:"temp_is_fahrenheit"`
-			TimeZone         string `json:"time_zone"`
-		}
-		var robotSettings robotSettingsJson
-		err := json.Unmarshal([]byte(botJdoc.JsonDoc), &robotSettings)
-		if err != nil {
-			logger.Println("Error unmarshaling json in paramchecker")
-			logger.Println(err)
-		} else {
-			botLocation = robotSettings.DefaultLocation
-			if robotSettings.TempIsFahrenheit {
-				botUnits = "F"
-			} else {
-				botUnits = "C"
-			}
-		}
-	}
+	botLocation, botUnits = loadBotSpeechSettings(botSerial, botLocation, botUnits)
 	if strings.Contains(intent, "volume") {
 		if slots["volume"] != "" {
 			newIntent = "intent_imperative_volumelevel_extend"
@@ -462,8 +395,7 @@ func ParamCheckerSlotsEnUS(req interface{}, intent string, slots map[string]stri
 	} else if strings.Contains(intent, "intent_weather_extend") {
 		isParam = true
 		newIntent = intent
-		condition, is_forecast, local_datetime, speakable_location_string, temperature, temperature_unit := weatherParser("what's the weather", botLocation, botUnits)
-		intentParams = map[string]string{"condition": condition, "is_forecast": is_forecast, "local_datetime": local_datetime, "speakable_location_string": speakable_location_string, "temperature": temperature, "temperature_unit": temperature_unit}
+		intentParams = buildWeatherParamsFromSlots(botLocation, botUnits)
 	} else {
 		if intentParam == "" {
 			newIntent = intent
@@ -515,6 +447,7 @@ func ParamCheckerSlotsEnUS(req interface{}, intent string, slots map[string]stri
 	IntentPass(req, newIntent, intent, intentParams, isParam)
 }
 
+// prehistoricParamChecker 保留旧式文本参数解析逻辑，供未走 slot 的兼容场景使用。
 func prehistoricParamChecker(req interface{}, intent string, speechText string) {
 	// intent.go detects if the stream uses opus or PCM.
 	// If the stream is PCM, it is likely a bot with 0.10.
@@ -563,8 +496,7 @@ func prehistoricParamChecker(req interface{}, intent string, speechText string) 
 	} else if strings.Contains(intent, "intent_weather_extend") {
 		isParam = true
 		newIntent = intent
-		condition, is_forecast, local_datetime, speakable_location_string, temperature, temperature_unit := weatherParser(speechText, botLocation, botUnits)
-		intentParams = map[string]string{"condition": condition, "is_forecast": is_forecast, "local_datetime": local_datetime, "speakable_location_string": speakable_location_string, "temperature": temperature, "temperature_unit": temperature_unit}
+		intentParams, _ = buildWeatherParamsFromSpeech(speechText, botLocation, botUnits)
 	} else if strings.Contains(intent, "intent_imperative_volumelevel_extend") {
 		isParam = true
 		newIntent = intent
@@ -627,7 +559,7 @@ func prehistoricParamChecker(req interface{}, intent string, speechText string) 
 	} else if strings.Contains(intent, "intent_clock_settimer_extend") {
 		isParam = true
 		newIntent = "intent_clock_settimer"
-		timerSecs := words2num(speechText)
+		timerSecs := parseTimerSecondsFromSpeech(speechText)
 		logger.Println("Seconds parsed from speech: " + timerSecs)
 		intentParam = "timer_duration"
 		intentParamValue = timerSecs

@@ -1,4 +1,4 @@
-package wirepod_ttr
+package intent
 
 import (
 	"bytes"
@@ -19,6 +19,7 @@ type systemIntentResponseStruct struct {
 	ReturnIntent string `json:"returnIntent"`
 }
 
+// IntentPass 将匹配到的 intent 结果写回 IntentGraph 流。
 func IntentPass(req interface{}, intentThing string, speechText string, intentParams map[string]string, isParam bool) (interface{}, error) {
 	var esn string
 	var req1 *vtt.IntentGraphRequest
@@ -152,6 +153,7 @@ func customIntentHandler(req interface{}, voiceText string, botSerial string) bo
 	return successMatched
 }
 
+// ProcessTextAll 负责执行自定义 intent、精确匹配和模糊匹配三段流程。
 func ProcessTextAll(req interface{}, voiceText string, intents []vars.JsonIntent, isOpus bool) bool {
 	var botSerial string
 	var req3 *vtt.IntentGraphRequest
@@ -219,6 +221,7 @@ func ProcessTextAll(req interface{}, voiceText string, intents []vars.JsonIntent
 	return successMatched
 }
 
+// KnowledgeGraphResponseIG 将知识回答包装成 IntentGraph 的 KG 响应。
 func KnowledgeGraphResponseIG(req *vtt.IntentGraphRequest, spokenText string, queryText string) error {
 	intentResult := pb.IntentResult{
 		QueryText: queryText,

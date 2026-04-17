@@ -1,4 +1,4 @@
-package wirepod_ttr
+package support
 
 import (
 	"encoding/json"
@@ -429,4 +429,9 @@ func weatherParser(speechText string, botLocation string, botUnits string) (stri
 	// call to weather API
 	condition, is_forecast, local_datetime, speakable_location_string, temperature, temperature_unit := getWeather(apiLocation, botUnits, hoursFromNow)
 	return condition, is_forecast, local_datetime, speakable_location_string, temperature, temperature_unit
+}
+
+// WeatherParser 负责把天气相关口语解析成设备需要的结构化参数。
+func WeatherParser(speechText string, botLocation string, botUnits string) (string, string, string, string, string, string) {
+	return weatherParser(speechText, botLocation, botUnits)
 }

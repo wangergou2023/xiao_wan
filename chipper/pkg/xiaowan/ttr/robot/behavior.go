@@ -1,4 +1,4 @@
-package wirepod_ttr
+package robot
 
 import (
 	"context"
@@ -9,6 +9,7 @@ import (
 	"github.com/wangergou2023/xiao_wan/chipper/pkg/logger"
 )
 
+// sayText 在短句播报前先抢占行为控制，避免被机器人自身行为打断。
 func sayText(robot *vector.Vector, text string) {
 	controlRequest := &vectorpb.BehaviorControlRequest{
 		RequestType: &vectorpb.BehaviorControlRequest_ControlRequest{
@@ -138,4 +139,9 @@ func BControl(robot *vector.Vector, ctx context.Context, start, stop chan bool) 
 		}
 		// * end - modified from official vector-go-sdk
 	}()
+}
+
+// SayText 对外暴露一个简单播报入口，供 intent 参数处理等场景复用。
+func SayText(robot *vector.Vector, text string) {
+	sayText(robot, text)
 }

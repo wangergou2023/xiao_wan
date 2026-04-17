@@ -1,4 +1,4 @@
-package wirepod_ttr
+package robot
 
 import (
 	"encoding/binary"
@@ -89,4 +89,9 @@ func downsample24kTo16kLinear(input []byte) []byte {
 	}
 
 	return int16sToBytes(output)
+}
+
+// Downsample24kTo16k 对外暴露 24k PCM 到 16k PCM 的降采样能力。
+func Downsample24kTo16k(input []byte) [][]byte {
+	return downsample24kTo16k(input)
 }
