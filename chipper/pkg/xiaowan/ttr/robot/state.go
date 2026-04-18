@@ -6,7 +6,7 @@ import (
 	"time"
 )
 
-const passiveGreetingQuietPeriod = 12 * time.Second
+const passiveGreetingQuietPeriod = 3 * time.Second
 
 type robotActivityState struct {
 	ActiveCount   int
@@ -48,11 +48,12 @@ func BeginForegroundActivity(esn string) func() {
 	}
 }
 
-// IsBusyForPassiveGreeting 判断机器人是否正忙，或刚结束一轮交互，不适合插入被动问候。
-func IsBusyForPassiveGreeting(esn string) bool {
+// PassiveGreetingBlockReason 返回为什么当前不适合插入被动问候。
+// 这里只拦真正的前台交互，避免把机器人桌面闲逛也当成“忙”。
+func PassiveGreetingBlockReason(esn string) string {
 	esn = normalizeESN(esn)
 	if esn == "" {
-		return false
+		return ""
 	}
 
 	robotActivityMu.Lock()
@@ -60,12 +61,17 @@ func IsBusyForPassiveGreeting(esn string) bool {
 
 	state := robotActivityStates[esn]
 	if state.ActiveCount > 0 {
-		return true
+		return "foreground interaction active"
 	}
 	if !state.LastEndedAt.IsZero() && time.Since(state.LastEndedAt) < passiveGreetingQuietPeriod {
-		return true
+		return "recent foreground interaction cooldown"
 	}
-	return false
+	return ""
+}
+
+// IsBusyForPassiveGreeting 判断机器人当前是否需要暂缓被动问候。
+func IsBusyForPassiveGreeting(esn string) bool {
+	return PassiveGreetingBlockReason(esn) != ""
 }
 
 func normalizeESN(esn string) string {

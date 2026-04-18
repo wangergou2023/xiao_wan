@@ -25,6 +25,12 @@ type observedFaceState struct {
 	LastSeenAt time.Time
 }
 
+type pendingGreetingState struct {
+	Name     string
+	QueuedAt time.Time
+	Watching bool
+}
+
 var (
 	faceWatcherMu     sync.Mutex
 	faceWatchers      = map[string]bool{}
@@ -32,7 +38,10 @@ var (
 	observedFaces     = map[string]observedFaceState{}
 	autoGreetMu       sync.Mutex
 	lastAutoGreets    = map[string]time.Time{}
+	pendingGreetMu    sync.Mutex
+	pendingGreets     = map[string]pendingGreetingState{}
 	ownerGreetingFunc func(esn, name string) error
+	knownGreetingFunc func(esn, name string) error
 )
 
 // BuildPromptContext 返回最近一次识别到的人脸上下文，供 LLM 判断当前面对的是谁。
@@ -87,6 +96,15 @@ func identityKind(profile memorypkg.UserProfile, name string) string {
 	default:
 		return "known_face"
 	}
+}
+
+func identityKindForESN(esn, name string) string {
+	return identityKind(memorypkg.LoadProfile(esn), name)
+}
+
+// IdentityKindForGreeting 返回当前识别名字对应的长期身份类型。
+func IdentityKindForGreeting(esn, name string) string {
+	return identityKindForESN(esn, name)
 }
 
 func samePerson(faceName, profileName string) bool {
@@ -204,21 +222,15 @@ func maybeAutoGreetKnownFace(esn, name string) {
 		logger.Println(fmt.Sprintf("Auto face greeting skipped for %s name=%q: feature disabled", esn, name))
 		return
 	}
-	if robotpkg.IsBusyForPassiveGreeting(esn) {
-		logger.Println(fmt.Sprintf("Auto face greeting skipped for %s name=%q: robot is busy", esn, name))
+	if reason := robotpkg.PassiveGreetingBlockReason(esn); reason != "" {
+		logger.Println(fmt.Sprintf("Auto face greeting delayed for %s name=%q: %s", esn, name, reason))
+		queuePendingAutoGreeting(esn, name)
 		return
 	}
 	if !shouldAutoGreet(esn, name) {
 		return
 	}
-	go func() {
-		logger.Println(fmt.Sprintf("Auto face greeting starting for %s name=%q", esn, name))
-		if err := speakAutoGreeting(esn, name); err != nil {
-			logger.Println("Auto face greeting failed for " + esn + ": " + err.Error())
-			return
-		}
-		logger.Println(fmt.Sprintf("Auto face greeting finished for %s name=%q", esn, name))
-	}()
+	startAutoGreeting(esn, name)
 }
 
 func shouldAutoGreet(esn, name string) bool {
@@ -247,6 +259,18 @@ func speakAutoGreeting(esn, name string) error {
 		logger.Println(fmt.Sprintf("Auto face greeting branch for %s name=%q: owner -> llm greeting", esn, name))
 		return ownerGreetingFunc(esn, name)
 	}
+	if kind == "user" && knownGreetingFunc != nil {
+		logger.Println(fmt.Sprintf("Auto face greeting branch for %s name=%q: user -> llm greeting", esn, name))
+		return knownGreetingFunc(esn, name)
+	}
+	if kind == "nickname" && knownGreetingFunc != nil {
+		logger.Println(fmt.Sprintf("Auto face greeting branch for %s name=%q: nickname -> llm greeting", esn, name))
+		return knownGreetingFunc(esn, name)
+	}
+	if kind == "known_face" && knownGreetingFunc != nil {
+		logger.Println(fmt.Sprintf("Auto face greeting branch for %s name=%q: known_face -> llm greeting", esn, name))
+		return knownGreetingFunc(esn, name)
+	}
 	text := buildAutoGreetingText(profile, name)
 	if strings.TrimSpace(text) == "" {
 		logger.Println(fmt.Sprintf("Auto face greeting branch for %s name=%q: %s -> empty template", esn, name, kind))
@@ -259,6 +283,104 @@ func speakAutoGreeting(esn, name string) error {
 // SetOwnerGreetingFunc 注入“识别到主人后用 LLM 生成问候”的实现，避免 vision 直接依赖 llm 包。
 func SetOwnerGreetingFunc(fn func(esn, name string) error) {
 	ownerGreetingFunc = fn
+}
+
+// SetKnownGreetingFunc 注入“识别到普通已命名人脸后用 LLM 生成问候”的实现。
+func SetKnownGreetingFunc(fn func(esn, name string) error) {
+	knownGreetingFunc = fn
+}
+
+func startAutoGreeting(esn, name string) {
+	go func() {
+		logger.Println(fmt.Sprintf("Auto face greeting starting for %s name=%q", esn, name))
+		if err := speakAutoGreeting(esn, name); err != nil {
+			logger.Println("Auto face greeting failed for " + esn + ": " + err.Error())
+			return
+		}
+		logger.Println(fmt.Sprintf("Auto face greeting finished for %s name=%q", esn, name))
+	}()
+}
+
+func queuePendingAutoGreeting(esn, name string) {
+	pendingGreetMu.Lock()
+	state := pendingGreets[esn]
+	state.Name = name
+	state.QueuedAt = time.Now()
+	shouldStartWatcher := !state.Watching
+	state.Watching = true
+	pendingGreets[esn] = state
+	pendingGreetMu.Unlock()
+
+	if !shouldStartWatcher {
+		return
+	}
+
+	go flushPendingAutoGreeting(esn)
+}
+
+func flushPendingAutoGreeting(esn string) {
+	ticker := time.NewTicker(time.Second)
+	defer ticker.Stop()
+
+	for range ticker.C {
+		pendingGreetMu.Lock()
+		state, ok := pendingGreets[esn]
+		if !ok {
+			pendingGreetMu.Unlock()
+			return
+		}
+
+		if !vars.APIConfig.Vision.AutoGreetKnownFaces {
+			delete(pendingGreets, esn)
+			pendingGreetMu.Unlock()
+			logger.Println(fmt.Sprintf("Pending auto face greeting cleared for %s: feature disabled", esn))
+			return
+		}
+
+		if time.Since(state.QueuedAt) > recentFaceTTL {
+			delete(pendingGreets, esn)
+			pendingGreetMu.Unlock()
+			logger.Println(fmt.Sprintf("Pending auto face greeting expired for %s name=%q", esn, state.Name))
+			return
+		}
+
+		if reason := robotpkg.PassiveGreetingBlockReason(esn); reason != "" {
+			pendingGreetMu.Unlock()
+			continue
+		}
+
+		name := state.Name
+		delete(pendingGreets, esn)
+		pendingGreetMu.Unlock()
+
+		if !isFaceStillPresent(esn, name) {
+			logger.Println(fmt.Sprintf("Pending auto face greeting dropped for %s name=%q: face no longer present", esn, name))
+			return
+		}
+
+		if !shouldAutoGreet(esn, name) {
+			logger.Println(fmt.Sprintf("Pending auto face greeting skipped for %s name=%q after unblock", esn, name))
+			return
+		}
+
+		logger.Println(fmt.Sprintf("Pending auto face greeting released for %s name=%q", esn, name))
+		startAutoGreeting(esn, name)
+		return
+	}
+}
+
+func isFaceStillPresent(esn, name string) bool {
+	observedFacesMu.Lock()
+	defer observedFacesMu.Unlock()
+
+	state, ok := observedFaces[esn]
+	if !ok {
+		return false
+	}
+	if time.Since(state.LastSeenAt) > recentFaceTTL {
+		return false
+	}
+	return strings.EqualFold(strings.TrimSpace(state.Name), strings.TrimSpace(name))
 }
 
 func buildAutoGreetingText(profile memorypkg.UserProfile, name string) string {
@@ -277,10 +399,10 @@ func buildAutoGreetingText(profile memorypkg.UserProfile, name string) string {
 		}
 		return name + "，你好呀，我看到你回来啦。"
 	case "user":
-		return name + "，你好呀，很高兴见到你。"
+		return name + "，欢迎回来呀，见到你真开心。"
 	case "nickname":
-		return name + "，你好呀，我认出你啦。"
+		return name + "，我一眼就认出你啦。"
 	default:
-		return name + "，你好呀。"
+		return name + "，你好呀，又见到你啦。"
 	}
 }

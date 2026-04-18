@@ -41,6 +41,9 @@ func UpdateProfileFromConversation(esn, userText, aiText string) {
 	for _, topic := range extractForbiddenTopics(userText) {
 		addUnique(&profile.ForbiddenTopics, topic)
 	}
+	for _, fact := range extractStableFacts(userText) {
+		addFact(&profile, fact)
+	}
 
 	// 如果 AI 已经确认记住了，就把名字和身份关系固化下来。
 	if strings.Contains(aiText, "记住") && profile.OwnerName == "" && profile.UserName != "" &&
@@ -136,6 +139,106 @@ func extractForbiddenTopics(text string) []string {
 	return topics
 }
 
+// extractStableFacts 提取适合长期保存的稳定事实。
+// 这里只抓两类：
+// 1. 用户明确要求“记住/记一下”的信息
+// 2. 明显稳定的个人背景信息，如居住地 / 籍贯
+func extractStableFacts(text string) []string {
+	var facts []string
+	if fact := extractExplicitMemoryFact(text); fact != "" {
+		facts = append(facts, fact)
+	}
+	if fact := extractHomeFact(text); fact != "" {
+		facts = append(facts, fact)
+	}
+	return facts
+}
+
+func extractExplicitMemoryFact(text string) string {
+	for _, marker := range []string{"记住", "记一下", "你要记住", "给我记住"} {
+		if idx := strings.Index(text, marker); idx >= 0 {
+			fact := strings.TrimSpace(text[idx+len(marker):])
+			fact = normalizeMemoryFact(fact)
+			if plausibleFact(fact) {
+				return fact
+			}
+		}
+	}
+	return ""
+}
+
+func extractHomeFact(text string) string {
+	switch {
+	case strings.Contains(text, "我家住"):
+		if value := extractTailValue(text, "我家住"); value != "" {
+			return "用户家住" + value
+		}
+	case strings.Contains(text, "我住在"):
+		if value := extractTailValue(text, "我住在"); value != "" {
+			return "用户住在" + value
+		}
+	case strings.Contains(text, "我是") && strings.Contains(text, "人"):
+		if value := extractRegionIdentity(text); value != "" {
+			return "用户是" + value
+		}
+	}
+	return ""
+}
+
+func extractTailValue(text, marker string) string {
+	idx := strings.Index(text, marker)
+	if idx < 0 {
+		return ""
+	}
+	value := strings.TrimSpace(text[idx+len(marker):])
+	value = trimTrailingClause(value)
+	if !plausibleFact(value) {
+		return ""
+	}
+	return value
+}
+
+func extractRegionIdentity(text string) string {
+	idx := strings.Index(text, "我是")
+	if idx < 0 {
+		return ""
+	}
+	value := strings.TrimSpace(text[idx+len("我是"):])
+	value = trimTrailingClause(value)
+	if strings.HasSuffix(value, "人") && plausibleFact(value) {
+		return value
+	}
+	return ""
+}
+
+func normalizeMemoryFact(text string) string {
+	text = strings.TrimSpace(text)
+	text = strings.TrimLeft(text, "，,。：:;； ")
+	for _, prefix := range []string{"我家住", "我住在", "我是", "我"} {
+		if strings.HasPrefix(text, prefix) {
+			switch prefix {
+			case "我家住":
+				if value := strings.TrimSpace(strings.TrimPrefix(text, prefix)); plausibleFact(value) {
+					return "用户家住" + trimTrailingClause(value)
+				}
+			case "我住在":
+				if value := strings.TrimSpace(strings.TrimPrefix(text, prefix)); plausibleFact(value) {
+					return "用户住在" + trimTrailingClause(value)
+				}
+			case "我是":
+				if value := strings.TrimSpace(strings.TrimPrefix(text, prefix)); plausibleFact(value) {
+					return "用户是" + trimTrailingClause(value)
+				}
+			case "我":
+				if value := strings.TrimSpace(strings.TrimPrefix(text, prefix)); plausibleFact(value) {
+					return "用户" + trimTrailingClause(value)
+				}
+			}
+		}
+	}
+	return trimTrailingClause(text)
+}
+
 func trimTrailingClause(text string) string {
 	for _, sep := range []string{"，", ",", "。", "！", "?", "？", " ", "你", "我", "以后"} {
 		if idx := strings.Index(text, sep); idx >= 0 {
@@ -149,6 +252,11 @@ func trimTrailingClause(text string) string {
 func plausibleName(name string) bool {
 	runes := []rune(strings.TrimSpace(name))
 	return len(runes) >= 2 && len(runes) <= 8
+}
+
+func plausibleFact(fact string) bool {
+	runes := []rune(strings.TrimSpace(fact))
+	return len(runes) >= 2 && len(runes) <= 32
 }
 
 func addFact(profile *UserProfile, fact string) {
