@@ -348,7 +348,6 @@ function sendBigModelConfig() {
 function sendVisionConfig() {
   const data = {
     enable_face_context: getE("visionEnableFaceContext").checked,
-    auto_greet_known_faces: getE("visionAutoGreetKnownFaces").checked,
   };
 
   fetch("/api/set_vision_config", {
@@ -416,7 +415,6 @@ function updateVisionConfig() {
     .then((response) => response.json())
     .then((data) => {
       getE("visionEnableFaceContext").checked = !!data.enable_face_context;
-      getE("visionAutoGreetKnownFaces").checked = !!data.auto_greet_known_faces;
     });
 }
 

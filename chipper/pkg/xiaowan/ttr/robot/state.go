@@ -9,9 +9,6 @@ import (
 	"github.com/wangergou2023/xiao_wan/chipper/pkg/logger"
 )
 
-const passiveGreetingQuietPeriod = 3 * time.Second
-const staleForegroundActivityTimeout = 30 * time.Second
-
 type robotActivityState struct {
 	ActiveCount   int
 	LastStartedAt time.Time
@@ -68,44 +65,6 @@ func BeginForegroundActivity(esn, source string) func() {
 			logger.Println(fmt.Sprintf("Foreground activity end for %s source=%s active_count=%d sources=%s", esn, source, state.ActiveCount, formatActiveSources(state.ActiveSources)))
 		})
 	}
-}
-
-// PassiveGreetingBlockReason 返回为什么当前不适合插入被动问候。
-// 这里只拦真正的前台交互，避免把机器人桌面闲逛也当成“忙”。
-func PassiveGreetingBlockReason(esn string) string {
-	esn = normalizeESN(esn)
-	if esn == "" {
-		return ""
-	}
-
-	robotActivityMu.Lock()
-	defer robotActivityMu.Unlock()
-
-	state := robotActivityStates[esn]
-	if state.ActiveCount > 0 && !state.LastStartedAt.IsZero() && time.Since(state.LastStartedAt) > staleForegroundActivityTimeout {
-		logger.Println(fmt.Sprintf(
-			"Foreground activity stale auto-release for %s after %s sources=%s",
-			esn,
-			time.Since(state.LastStartedAt).Round(time.Second),
-			formatActiveSources(state.ActiveSources),
-		))
-		state.ActiveCount = 0
-		state.ActiveSources = map[string]int{}
-		state.LastEndedAt = time.Now()
-		robotActivityStates[esn] = state
-	}
-	if state.ActiveCount > 0 {
-		return "foreground interaction active: " + formatActiveSources(state.ActiveSources)
-	}
-	if !state.LastEndedAt.IsZero() && time.Since(state.LastEndedAt) < passiveGreetingQuietPeriod {
-		return "recent foreground interaction cooldown"
-	}
-	return ""
-}
-
-// IsBusyForPassiveGreeting 判断机器人当前是否需要暂缓被动问候。
-func IsBusyForPassiveGreeting(esn string) bool {
-	return PassiveGreetingBlockReason(esn) != ""
 }
 
 func normalizeESN(esn string) string {

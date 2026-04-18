@@ -22,8 +22,7 @@ type apiConfig struct {
 		Unit     string `json:"unit"`
 	} `json:"weather"`
 	Vision struct {
-		EnableFaceContext   bool `json:"enable_face_context"`
-		AutoGreetKnownFaces bool `json:"auto_greet_known_faces"`
+		EnableFaceContext bool `json:"enable_face_context"`
 	} `json:"vision"`
 	Knowledge struct {
 		Enable         bool    `json:"enable"`
@@ -69,7 +68,6 @@ func WriteConfigToDisk() {
 func CreateConfigFromEnv() {
 	// if no config exists, create it
 	APIConfig.Vision.EnableFaceContext = true
-	APIConfig.Vision.AutoGreetKnownFaces = false
 	if os.Getenv("WEATHERAPI_ENABLED") == "true" {
 		APIConfig.Weather.Enable = true
 		APIConfig.Weather.Provider = os.Getenv("WEATHERAPI_PROVIDER")
@@ -129,7 +127,6 @@ func ReadConfig() {
 		}
 		if !strings.Contains(string(configBytes), "\"vision\"") {
 			APIConfig.Vision.EnableFaceContext = true
-			APIConfig.Vision.AutoGreetKnownFaces = false
 		}
 		if !APIConfig.HasReadFromEnv {
 			if APIConfig.Server.Port != os.Getenv("DDL_RPC_PORT") {

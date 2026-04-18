@@ -164,7 +164,7 @@
 
             <hr class="small-hr">
             <div class="setup-note">
-              <strong>视觉与人脸：</strong>这些选项用于控制“识别人脸后是否提供给大模型”和“空闲时是否自动打招呼”。
+              <strong>视觉与人脸：</strong>这些选项用于控制“识别人脸后是否提供给大模型”。
             </div>
             <span id="visionInput">
               <label for="visionEnableFaceContext">
@@ -172,12 +172,6 @@
                 启用人脸上下文
               </label>
               <small class="desc">识别到已知人脸后，会把“当前面前是谁”注入到大模型上下文。</small><br />
-
-              <label for="visionAutoGreetKnownFaces">
-                <input type="checkbox" id="visionAutoGreetKnownFaces" />
-                自动向已知人脸打招呼
-              </label>
-              <small class="desc">仅在机器人空闲时生效，并带冷却时间，避免重复插话。</small><br />
             </span>
 
           </form>
