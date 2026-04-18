@@ -11,7 +11,7 @@ This file stores freeform durable memory that may matter across conversations.
 
 ## Durable Remembered Context
 
-No durable user facts have been confirmed yet.
+- The user lives in northeast China.
 
 ## Memory Writing Guidance
 
@@ -31,5 +31,5 @@ Do not store as long-term memory:
 
 ## Sync Info
 
-- Robot ESN: test-esn
+- Robot ESN: 0dd1c497
 - Source of truth: confirmed freeform memory saved by the system

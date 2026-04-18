@@ -233,7 +233,12 @@ func StreamingKGSim(req interface{}, esn string, transcribedText string, isKG bo
 						followupText, followErr := createToolFollowup(ctx, c, aireq, nChat)
 						if followErr != nil {
 							logger.Println("LLM tool follow-up failed: " + followErr.Error())
-						} else if strings.TrimSpace(followupText) != "" {
+							followupText = strings.TrimSpace(localToolFollowupFromResults(toolResults))
+							if followupText != "" {
+								logger.Println("Using local tool follow-up fallback")
+							}
+						}
+						if strings.TrimSpace(followupText) != "" {
 							fullRespSlice = append(fullRespSlice, followupText)
 							if strings.TrimSpace(fullfullRespText) == "" {
 								fullfullRespText = followupText

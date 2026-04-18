@@ -67,6 +67,19 @@ func BuildPromptContext(esn string) string {
 	return ""
 }
 
+// EnsureWorkspaceMemoryDoc 从长期记忆 json 源数据恢复并同步 workspace/memory/MEMORY.md。
+// 这样即使进程重启，只要 json 还在，下一次请求组 prompt 时也能重新读到长期记忆。
+func EnsureWorkspaceMemoryDoc(esn string) {
+	profileMu.Lock()
+	defer profileMu.Unlock()
+
+	profile := loadProfileUnlocked(esn)
+	if strings.TrimSpace(profile.ESN) == "" {
+		return
+	}
+	syncProfileToMemoryDoc(profile)
+}
+
 func profilesDir() string {
 	return filepath.Join(filepath.Dir(vars.ApiConfigPath), "memory_profiles")
 }

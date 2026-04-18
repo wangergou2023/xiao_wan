@@ -133,6 +133,9 @@ func TestExecuteNativeToolCallsFileTools(t *testing.T) {
 	if !strings.Contains(results[1].Content, "hello") {
 		t.Fatalf("expected byte read result to contain first bytes, got %s", results[1].Content)
 	}
+	if !strings.Contains(results[1].Content, `"state":"truncated"`) {
+		t.Fatalf("expected byte read result to mark truncated state, got %s", results[1].Content)
+	}
 	if !strings.Contains(results[2].Content, "2|line 2") {
 		t.Fatalf("expected line read result to contain numbered line, got %s", results[2].Content)
 	}
@@ -227,6 +230,9 @@ bye
 	}
 	if !strings.Contains(results[0].Content, `"status":"ok"`) {
 		t.Fatalf("expected successful edit result, got %s", results[0].Content)
+	}
+	if !strings.Contains(results[0].Content, `"state":"complete"`) {
+		t.Fatalf("expected successful edit result to mark complete state, got %s", results[0].Content)
 	}
 }
 
@@ -326,5 +332,36 @@ func TestExecuteNativeToolCallsRunCommand(t *testing.T) {
 	}
 	if !strings.Contains(results[0].Content, tmp) {
 		t.Fatalf("expected pwd output to mention temp dir, got %s", results[0].Content)
+	}
+	if !strings.Contains(results[0].Content, `"state":"complete"`) {
+		t.Fatalf("expected pwd result to mark complete state, got %s", results[0].Content)
+	}
+}
+
+func TestExecuteNativeToolCallsScheduledRobotTool(t *testing.T) {
+	toolCalls := []openai.ToolCall{{
+		ID:   "charge_1",
+		Type: openai.ToolTypeFunction,
+		Function: openai.FunctionCall{
+			Name:      "goCharge",
+			Arguments: `{}`,
+		},
+	}}
+
+	deferred, results, needFollowUp := executeNativeToolCalls(toolCalls, nativeToolContext{})
+	if len(deferred) != 1 {
+		t.Fatalf("expected 1 deferred action, got %d", len(deferred))
+	}
+	if needFollowUp {
+		t.Fatalf("expected scheduled robot action to skip follow-up")
+	}
+	if len(results) != 1 {
+		t.Fatalf("expected 1 tool result, got %d", len(results))
+	}
+	if !strings.Contains(results[0].Content, `"status":"scheduled"`) {
+		t.Fatalf("expected scheduled status, got %s", results[0].Content)
+	}
+	if !strings.Contains(results[0].Content, `"state":"pending"`) {
+		t.Fatalf("expected pending state, got %s", results[0].Content)
 	}
 }

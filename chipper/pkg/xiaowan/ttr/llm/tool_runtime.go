@@ -145,8 +145,8 @@ func readFileBytes(absPath string, args readFileArgs) nativeToolExecution {
 	hasMore := int64(n) > length
 	data := probe[:minInt64(int64(n), length)]
 	if len(data) == 0 {
-		return toolJSONResult(map[string]any{
-			"status":  "ok",
+		return toolSuccessResult(map[string]any{
+			"state":   "complete",
 			"path":    absPath,
 			"mode":    "bytes",
 			"content": "",
@@ -160,8 +160,12 @@ func readFileBytes(absPath string, args readFileArgs) nativeToolExecution {
 		notice = fmt.Sprintf("TRUNCATED - call readFile again with mode=bytes and offset=%d to continue.", readEnd)
 	}
 
-	return toolJSONResult(map[string]any{
-		"status":      "ok",
+	state := "complete"
+	if hasMore {
+		state = "truncated"
+	}
+	return toolSuccessResult(map[string]any{
+		"state":       state,
 		"path":        absPath,
 		"mode":        "bytes",
 		"total_bytes": info.Size(),
@@ -255,8 +259,8 @@ func readFileLines(absPath string, args readFileArgs) nativeToolExecution {
 	}
 
 	if out.Len() == 0 {
-		return toolJSONResult(map[string]any{
-			"status":  "ok",
+		return toolSuccessResult(map[string]any{
+			"state":   "complete",
 			"path":    absPath,
 			"mode":    "lines",
 			"content": "",
@@ -274,8 +278,12 @@ func readFileLines(absPath string, args readFileArgs) nativeToolExecution {
 		notice = fmt.Sprintf("PARTIAL - more content remains. Call readFile again with mode=lines and start_line=%d and max_lines=%d to continue.", startLine+linesRead, maxLines)
 	}
 
-	return toolJSONResult(map[string]any{
-		"status":     "ok",
+	state := "complete"
+	if truncated {
+		state = "truncated"
+	}
+	return toolSuccessResult(map[string]any{
+		"state":      state,
 		"path":       absPath,
 		"mode":       "lines",
 		"start_line": startLine,
@@ -331,8 +339,8 @@ func executeWriteFileTool(call openai.ToolCall, ctx nativeToolContext) nativeToo
 		return toolErrorResult(fmt.Errorf("unsupported mode: %s", mode))
 	}
 
-	return toolJSONResult(map[string]any{
-		"status":    "ok",
+	return toolSuccessResult(map[string]any{
+		"state":     "complete",
 		"path":      absPath,
 		"mode":      mode,
 		"overwrite": overwrite,
@@ -382,8 +390,8 @@ func executeEditFileTool(call openai.ToolCall, ctx nativeToolContext) nativeTool
 		return toolErrorResult(err)
 	}
 
-	return toolJSONResult(map[string]any{
-		"status":      "ok",
+	return toolSuccessResult(map[string]any{
+		"state":       "complete",
 		"path":        absPath,
 		"edited":      true,
 		"old_length":  len(args.OldText),
@@ -420,8 +428,8 @@ func executeListFilesTool(call openai.ToolCall, ctx nativeToolContext) nativeToo
 	sort.Slice(items, func(i, j int) bool {
 		return fmt.Sprint(items[i]["name"]) < fmt.Sprint(items[j]["name"])
 	})
-	return toolJSONResult(map[string]any{
-		"status":  "ok",
+	return toolSuccessResult(map[string]any{
+		"state":   "complete",
 		"path":    path,
 		"entries": items,
 	})
@@ -470,8 +478,13 @@ func executeRunCommandTool(call openai.ToolCall, ctx nativeToolContext) nativeTo
 	if err != nil {
 		status = "error"
 	}
+	state := "complete"
+	if truncated {
+		state = "truncated"
+	}
 	return toolJSONResult(map[string]any{
 		"status":    status,
+		"state":     state,
 		"command":   command,
 		"args":      cleanArgs,
 		"cwd":       cwd,
@@ -485,8 +498,20 @@ func executeRunCommandTool(call openai.ToolCall, ctx nativeToolContext) nativeTo
 func toolErrorResult(err error) nativeToolExecution {
 	return toolJSONResult(map[string]any{
 		"status": "error",
+		"state":  "failed",
 		"error":  errorString(err),
 	})
+}
+
+func toolSuccessResult(payload map[string]any) nativeToolExecution {
+	if payload == nil {
+		payload = map[string]any{}
+	}
+	payload["status"] = "ok"
+	if _, ok := payload["state"]; !ok {
+		payload["state"] = "complete"
+	}
+	return toolJSONResult(payload)
 }
 
 func toolJSONResult(payload map[string]any) nativeToolExecution {
@@ -503,6 +528,60 @@ func errorString(err error) string {
 		return ""
 	}
 	return err.Error()
+}
+
+func localToolFollowupFromResults(toolMessages []openai.ChatCompletionMessage) string {
+	if len(toolMessages) == 0 {
+		return ""
+	}
+
+	type toolPayload struct {
+		Status  string `json:"status"`
+		State   string `json:"state"`
+		Path    string `json:"path"`
+		Mode    string `json:"mode"`
+		Content string `json:"content"`
+		Notice  string `json:"notice"`
+		Error   string `json:"error"`
+	}
+
+	var snippets []string
+	for _, msg := range toolMessages {
+		var payload toolPayload
+		if err := json.Unmarshal([]byte(strings.TrimSpace(msg.Content)), &payload); err != nil {
+			continue
+		}
+		switch payload.Status {
+		case "error":
+			if strings.TrimSpace(payload.Error) != "" {
+				snippets = append(snippets, "我读取工具结果时遇到错误："+strings.TrimSpace(payload.Error)+"。")
+			}
+		case "ok":
+			base := filepath.Base(strings.TrimSpace(payload.Path))
+			text := strings.TrimSpace(payload.Content)
+			if base == "" || text == "" {
+				continue
+			}
+			if len(text) > 160 {
+				text = text[:160]
+			}
+			switch {
+			case base == "MEMORY.md":
+				snippets = append(snippets, "我查了长期记忆文件，目前内容是："+text)
+			case base == "USER.md":
+				snippets = append(snippets, "我查了用户设定文件，目前内容是："+text)
+			default:
+				snippets = append(snippets, "我查了文件 "+base+"，内容片段是："+text)
+			}
+		case "scheduled":
+			snippets = append(snippets, "我已经开始执行这个动作了。")
+		}
+	}
+
+	if len(snippets) == 0 {
+		return ""
+	}
+	return strings.Join(snippets, " ")
 }
 
 func createToolFollowup(ctx context.Context, c *openai.Client, baseReq openai.ChatCompletionRequest, messages []openai.ChatCompletionMessage) (string, error) {

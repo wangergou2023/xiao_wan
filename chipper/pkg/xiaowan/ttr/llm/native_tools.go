@@ -223,7 +223,7 @@ func scheduledActionResult(call openai.ToolCall, deferred func()) nativeToolExec
 	_ = call
 	return nativeToolExecution{
 		Deferred:      []func(){deferred},
-		ResultContent: `{"status":"scheduled"}`,
+		ResultContent: `{"status":"scheduled","state":"pending"}`,
 	}
 }
 
@@ -345,7 +345,7 @@ func executeNativeToolCalls(toolCalls []openai.ToolCall, ctx nativeToolContext) 
 					Role:       "tool",
 					ToolCallID: call.ID,
 					Name:       name,
-					Content:    `{"status":"unknown_tool"}`,
+					Content:    `{"status":"error","state":"failed","error":"unknown tool"}`,
 				})
 			}
 			continue
@@ -357,7 +357,7 @@ func executeNativeToolCalls(toolCalls []openai.ToolCall, ctx nativeToolContext) 
 		if call.ID != "" {
 			content := strings.TrimSpace(result.ResultContent)
 			if content == "" {
-				content = `{"status":"ok"}`
+				content = `{"status":"ok","state":"complete"}`
 			}
 			toolResults = append(toolResults, openai.ChatCompletionMessage{
 				Role:       "tool",
