@@ -339,6 +339,11 @@ func DoRaiseArmsHappy(robot *vector.Vector) error {
 
 // DoGoCharge 触发机器人回充电座，给 LLM 一个真正可执行的高层能力。
 func DoGoCharge(robot *vector.Vector) error {
+	if robot != nil {
+		logger.Println("LLM action executing: goCharge for " + robot.Cfg.SerialNo)
+	} else {
+		logger.Println("LLM action executing: goCharge for <nil robot>")
+	}
 	return robotpkg.GoCharge(robot)
 }
 

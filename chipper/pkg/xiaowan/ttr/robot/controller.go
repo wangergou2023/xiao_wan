@@ -5,6 +5,7 @@ import (
 	"errors"
 	"time"
 
+	"github.com/wangergou2023/xiao_wan/chipper/pkg/logger"
 	sdk_wrapper "github.com/wangergou2023/xiao_wan/chipper/pkg/sdk-wrapper"
 	"github.com/wangergou2023/xiao_wan/chipper/pkg/vector"
 	"github.com/wangergou2023/xiao_wan/chipper/pkg/vectorpb"
@@ -166,7 +167,13 @@ func GoCharge(robot *vector.Vector) error {
 	if robot == nil {
 		return errors.New("robot is nil")
 	}
+	logger.Println("Robot app intent sending: intent_system_charger for " + robot.Cfg.SerialNo)
 	_, err := robot.Conn.AppIntent(context.Background(), &vectorpb.AppIntentRequest{Intent: "intent_system_charger"})
+	if err != nil {
+		logger.Println("Robot app intent failed: intent_system_charger for " + robot.Cfg.SerialNo + ": " + err.Error())
+		return err
+	}
+	logger.Println("Robot app intent sent: intent_system_charger for " + robot.Cfg.SerialNo)
 	return err
 }
 

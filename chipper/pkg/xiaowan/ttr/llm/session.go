@@ -9,7 +9,6 @@ import (
 
 	"github.com/sashabaranov/go-openai"
 	"github.com/wangergou2023/xiao_wan/chipper/pkg/vars"
-	memorypkg "github.com/wangergou2023/xiao_wan/chipper/pkg/xiaowan/memory"
 )
 
 const maxRememberedMessages = 16
@@ -68,7 +67,6 @@ func Remember(user, ai openai.ChatCompletionMessage, esn string) {
 	currentChat.ESN = esn
 	currentChat.Chats = append(currentChat.Chats, chatAppend...)
 	PlaceChat(currentChat)
-	memorypkg.UpdateProfileFromConversation(esn, user.Content, ai.Content)
 }
 
 func trimRememberedChat(chat vars.RememberedChat) vars.RememberedChat {
