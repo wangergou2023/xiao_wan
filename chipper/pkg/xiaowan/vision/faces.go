@@ -21,6 +21,7 @@ const autoGreetCooldown = 20 * time.Second
 const faceReappearanceWindow = 10 * time.Second
 const repeatedFaceLogInterval = 15 * time.Second
 const repeatedDecisionLogInterval = 8 * time.Second
+const activeGreetingHoldWindow = 12 * time.Second
 
 type observedFaceState struct {
 	Name        string
@@ -36,6 +37,11 @@ type pendingGreetingState struct {
 	Watching bool
 }
 
+type activeGreetingState struct {
+	Name      string
+	StartedAt time.Time
+}
+
 var (
 	faceWatcherMu     sync.Mutex
 	faceWatchers      = map[string]bool{}
@@ -45,6 +51,8 @@ var (
 	lastAutoGreets    = map[string]time.Time{}
 	pendingGreetMu    sync.Mutex
 	pendingGreets     = map[string]pendingGreetingState{}
+	activeGreetMu     sync.Mutex
+	activeGreets      = map[string]activeGreetingState{}
 	faceLogMu         sync.Mutex
 	lastFaceEventLogs = map[string]time.Time{}
 	lastFaceMapLogs   = map[string]time.Time{}
@@ -246,6 +254,10 @@ func maybeAutoGreetKnownFace(esn, name string) {
 		logDecisionOnce(esn, "feature-disabled:"+strings.ToLower(name), fmt.Sprintf("Auto face greeting skipped for %s name=%q: feature disabled", esn, name))
 		return
 	}
+	if isGreetingActiveForFace(esn, name) {
+		logDecisionOnce(esn, "active-same-face:"+strings.ToLower(name), fmt.Sprintf("Auto face greeting skipped for %s name=%q: same-face greeting already active", esn, name))
+		return
+	}
 	if reason := robotpkg.PassiveGreetingBlockReason(esn); reason != "" {
 		logDecisionOnce(esn, "delayed:"+strings.ToLower(name)+":"+reason, fmt.Sprintf("Auto face greeting delayed for %s name=%q: %s", esn, name, reason))
 		queuePendingAutoGreeting(esn, name)
@@ -331,6 +343,9 @@ func logDecisionOnce(esn, key, msg string) {
 }
 
 func speakAutoGreeting(esn, name string) error {
+	markGreetingActive(esn, name)
+	defer clearGreetingActive(esn, name)
+
 	profile := memorypkg.LoadProfile(esn)
 	kind := identityKind(profile, name)
 	if kind == "owner" && ownerGreetingFunc != nil {
@@ -350,6 +365,7 @@ func speakAutoGreeting(esn, name string) error {
 		logger.Println(fmt.Sprintf("Auto face greeting branch for %s name=%q: %s -> empty template", esn, name, kind))
 		return nil
 	}
+	logger.Println(fmt.Sprintf("Auto face greeting speaking text for %s name=%q: %s", esn, name, text))
 	logger.Println(fmt.Sprintf("Auto face greeting branch for %s name=%q: %s -> template greeting", esn, name, kind))
 	return robotpkg.KGSim(esn, text)
 }
@@ -427,6 +443,11 @@ func flushPendingAutoGreeting(esn string) {
 		delete(pendingGreets, esn)
 		pendingGreetMu.Unlock()
 
+		if isGreetingActiveForFace(esn, name) {
+			logger.Println(fmt.Sprintf("Pending auto face greeting dropped for %s name=%q: same-face greeting still active", esn, name))
+			return
+		}
+
 		if !isFaceStillPresent(esn, name) {
 			logger.Println(fmt.Sprintf("Pending auto face greeting dropped for %s name=%q: face no longer present", esn, name))
 			return
@@ -469,6 +490,45 @@ func hasFaceReappeared(esn, name string) bool {
 		return false
 	}
 	return state.Reappeared
+}
+
+func isGreetingActiveForFace(esn, name string) bool {
+	activeGreetMu.Lock()
+	defer activeGreetMu.Unlock()
+
+	state, ok := activeGreets[esn]
+	if !ok {
+		return false
+	}
+	if time.Since(state.StartedAt) > activeGreetingHoldWindow {
+		delete(activeGreets, esn)
+		return false
+	}
+	return strings.EqualFold(strings.TrimSpace(state.Name), strings.TrimSpace(name))
+}
+
+func markGreetingActive(esn, name string) {
+	activeGreetMu.Lock()
+	defer activeGreetMu.Unlock()
+
+	activeGreets[esn] = activeGreetingState{
+		Name:      strings.TrimSpace(name),
+		StartedAt: time.Now(),
+	}
+}
+
+func clearGreetingActive(esn, name string) {
+	activeGreetMu.Lock()
+	defer activeGreetMu.Unlock()
+
+	state, ok := activeGreets[esn]
+	if !ok {
+		return
+	}
+	if !strings.EqualFold(strings.TrimSpace(state.Name), strings.TrimSpace(name)) {
+		return
+	}
+	delete(activeGreets, esn)
 }
 
 func buildAutoGreetingText(profile memorypkg.UserProfile, name string) string {

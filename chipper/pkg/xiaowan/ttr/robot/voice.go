@@ -15,6 +15,7 @@ import (
 // KGSim 用于在不经过完整 LLM 流程时，让机器人直接播报一段短文本。
 func KGSim(esn string, textToSay string) error {
 	endActivity := BeginForegroundActivity(esn, "kgsim_voice")
+	logger.Println("KGSim: requested speech for " + esn + ": " + strings.TrimSpace(textToSay))
 	ctx := context.Background()
 	matched := false
 	var robot *vector.Vector
@@ -33,6 +34,7 @@ func KGSim(esn string, textToSay string) error {
 		robot, err = vector.New(vector.WithSerialNo(esn), vector.WithToken(guid), vector.WithTarget(target))
 		if err != nil {
 			endActivity()
+			logger.Println("KGSim: failed to create robot connection for " + esn + ": " + err.Error())
 			return err
 		}
 	}
@@ -52,11 +54,13 @@ func KGSim(esn string, textToSay string) error {
 		go func() {
 			r, err := robot.Conn.BehaviorControl(ctx)
 			if err != nil {
+				logger.Println("KGSim: behavior control failed for " + esn + ": " + err.Error())
 				log.Println(err)
 				return
 			}
 
 			if err := r.Send(controlRequest); err != nil {
+				logger.Println("KGSim: control request send failed for " + esn + ": " + err.Error())
 				log.Println(err)
 				return
 			}
@@ -64,6 +68,7 @@ func KGSim(esn string, textToSay string) error {
 			for {
 				ctrlresp, err := r.Recv()
 				if err != nil {
+					logger.Println("KGSim: behavior control recv failed for " + esn + ": " + err.Error())
 					log.Println(err)
 					return
 				}
@@ -118,13 +123,21 @@ func KGSim(esn string, textToSay string) error {
 			}()
 			textToSaySplit := strings.Split(textToSay, ". ")
 			for _, str := range textToSaySplit {
+				str = strings.TrimSpace(str)
+				if str == "" {
+					continue
+				}
+				logger.Println("KGSim: SayText sending for " + esn + ": " + str)
 				_, err := robot.Conn.SayText(ctx, &vectorpb.SayTextRequest{
 					Text:           str,
 					UseVectorVoice: true,
 					DurationScalar: 0.95,
 				})
 				if err != nil {
+					logger.Println("KGSim: SayText failed for " + esn + ": " + err.Error())
 					log.Println(err)
+				} else {
+					logger.Println("KGSim: SayText finished for " + esn + ": " + str)
 				}
 			}
 			stopTTSLoop = true
