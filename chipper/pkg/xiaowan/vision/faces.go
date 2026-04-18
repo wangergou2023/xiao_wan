@@ -360,6 +360,10 @@ func speakAutoGreeting(esn, name string) error {
 		logger.Println(fmt.Sprintf("Auto face greeting branch for %s name=%q: nickname -> llm greeting", esn, name))
 		return knownGreetingFunc(esn, name)
 	}
+	if kind == "known_face" && knownGreetingFunc != nil {
+		logger.Println(fmt.Sprintf("Auto face greeting branch for %s name=%q: known_face -> tts greeting", esn, name))
+		return knownGreetingFunc(esn, name)
+	}
 	text := buildAutoGreetingText(profile, name)
 	if strings.TrimSpace(text) == "" {
 		logger.Println(fmt.Sprintf("Auto face greeting branch for %s name=%q: %s -> empty template", esn, name, kind))

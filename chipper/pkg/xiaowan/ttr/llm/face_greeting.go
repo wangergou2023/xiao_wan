@@ -43,9 +43,15 @@ func GenerateOwnerGreeting(esn, name string) error {
 func GenerateKnownFaceGreeting(esn, name string) error {
 	kind := visionpkg.IdentityKindForGreeting(esn, name)
 	logger.Println(fmt.Sprintf("Known face greeting requested for %s name=%q kind=%s", esn, name, kind))
-	text, err := requestPassiveFaceGreeting(esn, name, kind)
-	if err != nil {
-		return err
+	text := ""
+	if kind == "known_face" {
+		text = buildKnownFaceGreetingText(name)
+	} else {
+		var err error
+		text, err = requestPassiveFaceGreeting(esn, name, kind)
+		if err != nil {
+			return err
+		}
 	}
 	text = normalizeSpeechText(text)
 	if text == "" {
@@ -120,6 +126,14 @@ func passiveGreetingLogLabel(kind string) string {
 		return "Known"
 	}
 	return "Owner"
+}
+
+func buildKnownFaceGreetingText(name string) string {
+	name = strings.TrimSpace(name)
+	if name == "" {
+		return "你好呀，又见到你啦。"
+	}
+	return name + "，你好呀，又见到你啦。"
 }
 
 func speakPassiveGreeting(esn, text string) error {
