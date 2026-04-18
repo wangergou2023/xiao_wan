@@ -91,6 +91,27 @@ func builtinToolSpecs() []ToolSpec {
 			SupportedModels: []string{"all"},
 		},
 		{
+			Name:            "takePhoto",
+			Description:     "Makes the robot take a real photo and save it to the robot photo gallery. Use this for actual photo-taking requests, not for camera analysis.",
+			ParamChoices:    "now",
+			Action:          ActionTakePhoto,
+			SupportedModels: []string{"all"},
+		},
+		{
+			Name:            "celebrateFireworks",
+			Description:     "Plays a festive fireworks celebration animation. Use this for celebration, new year, fireworks, party, or strong congratulations.",
+			ParamChoices:    "now",
+			Action:          ActionCelebrateFireworks,
+			SupportedModels: []string{"all"},
+		},
+		{
+			Name:            "backAway",
+			Description:     "Makes the robot back away a short distance. Use this when the user asks the robot to move back, scoot back, give space, or get away a little.",
+			ParamChoices:    "now",
+			Action:          ActionBackAway,
+			SupportedModels: []string{"all"},
+		},
+		{
 			Name:            "newVoiceRequest",
 			Description:     "Starts a new voice command from the robot. Use this if you want more input from the user after your response/if you want to carry out a conversation. Below this, there should be a NOTE telling you whether you are in conversation mode or not. If you are, DONT BE AFRAID TO USE THIS COMMAND! This goes at the end of your response, if you use it.",
 			ParamChoices:    "now",

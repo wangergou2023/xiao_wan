@@ -12,8 +12,10 @@ import (
 )
 
 const (
-	defaultLiftSpeed = 4.0
-	defaultHeadSpeed = 1.5
+	defaultLiftSpeed   = 4.0
+	defaultHeadSpeed   = 1.5
+	backAwayWheelSpeed = -60.0
+	backAwayDuration   = 850 * time.Millisecond
 )
 
 // ensureSDKForRobot 确保 sdk-wrapper 已绑定到当前机器人，方便复用更高层的控制封装。
@@ -160,6 +162,35 @@ func SayTextWithSDK(robot *vector.Vector, text string) error {
 	}
 	sdk_wrapper.SayText(text)
 	return nil
+}
+
+// TakePhoto 触发系统拍照意图，让机器人执行真实拍照流程并保存到相册。
+func TakePhoto(robot *vector.Vector) error {
+	if robot == nil {
+		return errors.New("robot is nil")
+	}
+	logger.Println("Robot app intent sending: intent_photo_take_extend for " + robot.Cfg.SerialNo)
+	_, err := robot.Conn.AppIntent(context.Background(), &vectorpb.AppIntentRequest{Intent: "intent_photo_take_extend"})
+	if err != nil {
+		logger.Println("Robot app intent failed: intent_photo_take_extend for " + robot.Cfg.SerialNo + ": " + err.Error())
+		return err
+	}
+	logger.Println("Robot app intent sent: intent_photo_take_extend for " + robot.Cfg.SerialNo)
+	return nil
+}
+
+// CelebrateFireworks 播放一个固定的烟花庆祝动画。
+func CelebrateFireworks(robot *vector.Vector) error {
+	return PlayAnimationWithSDK(robot, "anim_holiday_hny_fireworks_01", 1, false, false, false)
+}
+
+// BackAway 让机器人短暂后退一下，适合“离远点/往后退一点”这种请求。
+func BackAway(robot *vector.Vector) error {
+	if err := DriveWheels(robot, backAwayWheelSpeed, backAwayWheelSpeed, backAwayWheelSpeed, backAwayWheelSpeed); err != nil {
+		return err
+	}
+	time.Sleep(backAwayDuration)
+	return DriveWheels(robot, 0, 0, 0, 0)
 }
 
 // GoCharge 触发系统级“回家充电”意图，让机器人自行处理找桩与回充行为。

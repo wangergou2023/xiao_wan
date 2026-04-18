@@ -40,14 +40,17 @@ const (
 	// arg: sound file
 	ActionPlaySound = 5
 	// arg: now
-	ActionHeadUp         = 6
-	ActionHeadDown       = 7
-	ActionLiftUp         = 8
-	ActionLiftDown       = 9
-	ActionNod            = 10
-	ActionLookDownShy    = 11
-	ActionRaiseArmsHappy = 12
-	ActionGoCharge       = 13
+	ActionHeadUp             = 6
+	ActionHeadDown           = 7
+	ActionLiftUp             = 8
+	ActionLiftDown           = 9
+	ActionNod                = 10
+	ActionLookDownShy        = 11
+	ActionRaiseArmsHappy     = 12
+	ActionGoCharge           = 13
+	ActionTakePhoto          = 14
+	ActionCelebrateFireworks = 15
+	ActionBackAway           = 16
 )
 
 const (
@@ -148,7 +151,7 @@ func CreatePrompt(origPrompt string, model string, isKG bool) string {
 		prompt = prompt + "\n\n" + "Additional active skills:\n" + skillPrompt
 	}
 	if vars.APIConfig.Knowledge.CommandsEnable {
-		prompt = prompt + "\n\n" + "You are running ON an Anki Vector robot. You have a set of commands. If you include an emoji, I will make you start over. If you want to use a command but it doesn't exist or your desired parameter isn't in the list, avoid using the command. The format is {{command||parameter}}. You can embed these in sentences. Example: \"User: How are you feeling? | Response: \"{{playAnimationWI||sad}} I'm feeling sad...\". Square brackets ([]) are not valid.\n\nUse the playAnimation or playAnimationWI commands if you want to express emotion! You are very animated and good at following instructions. Animation takes precendence over words. You are to include many animations in your response. Head and lift commands are only for subtle physical gestures. Use at most one small motor gesture near a sentence, and do not chain them repeatedly. Prefer higher-level gestures like nod or raiseArmsHappy when they fit. For physical task requests, the real task command is more important than emotional gestures.\n\nImportant rule: if the user asks you to go home, return to the charger, go charge, go back to charge, head to the charger, or similar, you MUST include {{goCharge||now}} in your response. Only saying that you will charge is not enough.\n\nExamples:\nUser: 回家去充电\nResponse: 好的，我现在回充电座。{{goCharge||now}}\nUser: 去充电吧\nResponse: 好的，我这就去充电。{{goCharge||now}}\nUser: 回家吧\nResponse: 好的，我先回家休息充电。{{goCharge||now}}\n\nHere is every valid command:"
+		prompt = prompt + "\n\n" + "You are running ON an Anki Vector robot. You have a set of commands. If you include an emoji, I will make you start over. If you want to use a command but it doesn't exist or your desired parameter isn't in the list, avoid using the command. The format is {{command||parameter}}. You can embed these in sentences. Example: \"User: How are you feeling? | Response: \"{{playAnimationWI||sad}} I'm feeling sad...\". Square brackets ([]) are not valid.\n\nUse the playAnimation or playAnimationWI commands if you want to express emotion! You are very animated and good at following instructions. Animation takes precendence over words. You are to include many animations in your response. Head and lift commands are only for subtle physical gestures. Use at most one small motor gesture near a sentence, and do not chain them repeatedly. Prefer higher-level gestures like nod or raiseArmsHappy when they fit. For physical task requests, the real task command is more important than emotional gestures.\n\nImportant rules:\n- If the user asks you to go home, return to the charger, go charge, go back to charge, head to the charger, or similar, you MUST include {{goCharge||now}} in your response.\n- If the user asks you to actually take a photo, snap a picture, or capture a photo, use {{takePhoto||now}}. If the user wants visual analysis of the current scene, use getImage instead.\n- If the user asks for fireworks, celebration, or new year style celebration, prefer {{celebrateFireworks||now}}.\n- If the user asks the robot to move back or give space, use {{backAway||now}}.\n\nExamples:\nUser: 回家去充电\nResponse: 好的，我现在回充电座。{{goCharge||now}}\nUser: 给我拍张照\nResponse: 好的，我来拍一张。{{takePhoto||now}}\nUser: 放个烟花庆祝一下\nResponse: 好呀，我们庆祝一下。{{celebrateFireworks||now}}\nUser: 你往后退一点\nResponse: 好的，我退后一点。{{backAway||now}}\n\nHere is every valid command:"
 		for _, cmd := range ValidLLMCommands {
 			if ModelIsSupported(cmd, model) {
 				promptAppendage := "\n\nCommand Name: " + cmd.Command + "\nDescription: " + cmd.Description + "\nParameter choices: " + cmd.ParamChoices
@@ -345,6 +348,30 @@ func DoGoCharge(robot *vector.Vector) error {
 		logger.Println("LLM action executing: goCharge for <nil robot>")
 	}
 	return robotpkg.GoCharge(robot)
+}
+
+// DoTakePhoto 触发机器人执行真实拍照。
+func DoTakePhoto(robot *vector.Vector) error {
+	if robot != nil {
+		logger.Println("LLM action executing: takePhoto for " + robot.Cfg.SerialNo)
+	}
+	return robotpkg.TakePhoto(robot)
+}
+
+// DoCelebrateFireworks 播放一个固定烟花庆祝动画。
+func DoCelebrateFireworks(robot *vector.Vector) error {
+	if robot != nil {
+		logger.Println("LLM action executing: celebrateFireworks for " + robot.Cfg.SerialNo)
+	}
+	return robotpkg.CelebrateFireworks(robot)
+}
+
+// DoBackAway 让机器人后退一点。
+func DoBackAway(robot *vector.Vector) error {
+	if robot != nil {
+		logger.Println("LLM action executing: backAway for " + robot.Cfg.SerialNo)
+	}
+	return robotpkg.BackAway(robot)
 }
 
 // DoSayText 统一走文本播报入口，优先复用预生成好的智谱 TTS，失败时再回退到机器人原生播报。
@@ -641,6 +668,12 @@ func PerformActions(msgs []openai.ChatCompletionMessage, actions []RobotAction, 
 			}
 		case action.Action == ActionGoCharge:
 			DoGoCharge(robot)
+		case action.Action == ActionTakePhoto:
+			DoTakePhoto(robot)
+		case action.Action == ActionCelebrateFireworks:
+			DoCelebrateFireworks(robot)
+		case action.Action == ActionBackAway:
+			DoBackAway(robot)
 		case action.Action == ActionNewRequest:
 			go DoNewRequest(robot)
 			return true
