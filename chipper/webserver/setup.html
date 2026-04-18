@@ -2,7 +2,7 @@
 <html>
 
 <head>
-  <title>Wire-Pod 设置</title>
+  <title>小湾设置台</title>
   <!-- Meta Apple tags for a PWA like experience. -->
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
@@ -18,34 +18,63 @@
 <body>
   <div id="outer">
     <div id="content" class="">
-      <h1>Wire-Pod 设置</h1>
-      <hr />
-      <div class="main-nav-parent">
-        <div class="main-nav-child">
-          <a href="index.html"><i class="fa-solid fa-reply"></i><br />返回</a>
+      <section class="home-hero">
+        <div class="hero-copy">
+          <p class="hero-badge">Xiao Wan Settings</p>
+          <h1>小湾设置台</h1>
+          <p class="hero-subtitle">把常用配置收拢到一个页面里，重点保留大模型、长期记忆、天气和语言几个高频区域。</p>
         </div>
-        <div class="main-nav-child">
-          <a href="#" onclick="showWeather(); return false;"><i class="fa solid fa-cloud-sun" id="icon-Weather"
-              name="icon"></i><br />天气</a>
+        <div class="hero-status-card setup-status-card">
+          <p class="hero-status-label">页面导航</p>
+          <a class="setup-back-link" href="index.html">
+            <i class="fa-solid fa-reply"></i>
+            <span>返回控制台首页</span>
+          </a>
+          <p class="panel-subtitle">建议优先配置“大模型”和“长期记忆”，其余按需启用。</p>
         </div>
-        <div class="main-nav-child">
-          <a href="#" onclick="showKG(); return false;"><i class="fa solid fa-diagram-project" id="icon-KG"
-              name="icon"></i><br />大模型</a>
+      </section>
+
+      <section class="home-section">
+        <div class="section-heading">
+          <h2>设置分类</h2>
+          <p>按类别切换页面区域，避免把所有输入项堆在同一屏里。</p>
         </div>
-        <div class="main-nav-child">
-          <a href="#" onclick="showMemory(); return false;"><i class="fa-solid fa-brain" id="icon-Memory"
-              name="icon"></i><br />长期记忆</a>
+        <div class="main-nav-parent">
+          <div class="main-nav-child">
+            <a href="#" onclick="showKG(); return false;">
+              <i class="fa solid fa-diagram-project" id="icon-KG" name="icon"></i>
+              <span class="nav-title">大模型</span>
+              <span class="nav-desc">配置 OpenAI、BigModel 或自定义兼容接口</span>
+            </a>
+          </div>
+          <div class="main-nav-child">
+            <a href="#" onclick="showMemory(); return false;">
+              <i class="fa-solid fa-brain" id="icon-Memory" name="icon"></i>
+              <span class="nav-title">长期记忆</span>
+              <span class="nav-desc">管理身份、偏好、长期事实和手工备注</span>
+            </a>
+          </div>
+          <div class="main-nav-child">
+            <a href="#" onclick="showWeather(); return false;">
+              <i class="fa solid fa-cloud-sun" id="icon-Weather" name="icon"></i>
+              <span class="nav-title">天气</span>
+              <span class="nav-desc">按需接入天气服务提供商和 API Key</span>
+            </a>
+          </div>
+          <div class="main-nav-child">
+            <a href="#" onclick="showLanguage(); return false;">
+              <i class="fa-solid fa-language" id="icon-Language" name="icon"></i>
+              <span class="nav-title">识别语言</span>
+              <span class="nav-desc">切换语音识别语言与模型下载流程</span>
+            </a>
+          </div>
         </div>
-        <div class="main-nav-child">
-          <a href="#" onclick="showLanguage(); return false;"><i class="fa-solid fa-language" id="icon-Language"
-              name="icon"></i><br />设置语言</a>
-        </div>
-        <!--<div class="main-nav-child"><a href="#" onclick="showRestart(); return false;"><i class="fa solid fa-arrow-rotate-right" id="icon-Restart" name="icon"></i><br/>Restart Wire-Pod</a></div> -->
-      </div>
-      <hr />
+      </section>
 
       <div id="section-weather" style="display: none">
+        <div class="section-panel">
         <h3>天气接口设置</h3>
+        <p class="panel-subtitle">如果你希望机器人能回答天气问题，就在这里接入天气服务。</p>
         <hr class="small-hr">
         <div>
           <p>请选择你要使用的天气服务提供商。</p>
@@ -72,10 +101,13 @@
           <div id="addWeatherProviderAPIStatus"></div>
           <hr />
         </div>
+        </div>
       </div>
 
       <div id="section-kg" style="display: none">
+        <div class="section-panel">
         <h3>大模型设置</h3>
+        <p class="panel-subtitle">这里决定机器人在普通意图未命中时，如何接入对话模型、TTS 和视觉上下文。</p>
         <hr class="small-hr">
         <div>
           <p>当语音请求未被普通意图匹配命中时，会转交给这里配置的大模型。请选择提供商，并只填写该提供商需要的字段。</p>
@@ -184,9 +216,11 @@
         <div id="bigModelConfigStatus"></div>
         <div id="visionConfigStatus"></div>
         <hr />
+        </div>
       </div>
 
       <div id="section-memory" style="display: none">
+        <div class="section-panel">
         <h3>长期记忆</h3>
         <hr class="small-hr">
         <div class="setup-note">
@@ -228,6 +262,7 @@
         <button onclick="saveLongTermMemory()">保存长期记忆</button>
         <div id="memoryStatus"></div>
         <hr />
+        </div>
       </div>
 
       <div id="section-restart" style="display: none">
@@ -246,7 +281,9 @@
       </div>
 
       <div id="section-language" style="display: none">
+        <div class="section-panel">
         <h2>语音识别语言</h2>
+        <p class="panel-subtitle">只影响 STT 侧语音识别，不会改变大模型的默认回答语言。</p>
         <hr class="small-hr">
         <p>设置 wire-pod 使用的语音识别语言。</p>
         <hr class="small-hr">
@@ -278,6 +315,7 @@
           </div>
         </div>
         <hr />
+        </div>
       </div>
     </div>
   </div>

@@ -2,7 +2,7 @@
 <html>
 
 <head>
-  <title>Wire-Pod</title>
+  <title>小湾控制台</title>
   <!-- Meta Apple tags for a PWA like experience. -->
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
@@ -18,45 +18,59 @@
 <body>
   <div id="outer">
     <div id="content" class="">
-      <h1>Wire-Pod</h1>
-      <!-- Bot stats, connected and battery -->
-      <div id="botStats"></div>
-      <hr />
+      <section class="home-hero">
+        <div class="hero-copy">
+          <p class="hero-badge">Xiao Wan Console</p>
+          <h1>小湾控制台</h1>
+          <p class="hero-subtitle">把机器人配置、配网和日志入口收拢到一个更干净的首页。</p>
+        </div>
+        <div class="hero-status-card">
+          <p class="hero-status-label">机器人状态</p>
+          <div id="botStats"></div>
+        </div>
+      </section>
 
-      <div class="main-nav-parent">
-        <!--WP settings-->
-        <div class="main-nav-child">
-          <a href="setup.html"><i class="fa-solid fa-gear"></i><br />Server Settings</a>
+      <section class="home-section">
+        <div class="section-heading">
+          <h2>常用入口</h2>
+          <p>保留最常用的 4 个入口，其他能力都放到对应页面里。</p>
         </div>
-        <!--Bot Settings-->
-        <div class="main-nav-child">
-          <a href="/sdkapp"><i class="fa solid fa-toolbox"></i><br />Bot Settings</a>
+        <div class="main-nav-parent">
+          <div class="main-nav-child">
+            <a href="setup.html">
+              <i class="fa-solid fa-gear"></i>
+              <span class="nav-title">服务设置</span>
+              <span class="nav-desc">大模型、语音和记忆配置</span>
+            </a>
+          </div>
+          <div class="main-nav-child">
+            <a href="/sdkapp">
+              <i class="fa solid fa-toolbox"></i>
+              <span class="nav-title">机器人设置</span>
+              <span class="nav-desc">动作、SDK 和设备侧选项</span>
+            </a>
+          </div>
+          <div class="main-nav-child">
+            <a href="#" onclick="showBotAuth(); return false;">
+              <i class="fa solid fa-robot" id="icon-BotAuth" name="icon"></i>
+              <span class="nav-title">机器人接入</span>
+              <span class="nav-desc">配网、认证和 OSKR 接入</span>
+            </a>
+          </div>
+          <div class="main-nav-child">
+            <a href="#" onclick="showLog(); return false;">
+              <i class="fa-solid fa-file-lines" id="icon-Logs" name="icon"></i>
+              <span class="nav-title">运行日志</span>
+              <span class="nav-desc">看对话、动作和调试输出</span>
+            </a>
+          </div>
         </div>
-        <!--Bot Setup-->
-        <div class="main-nav-child">
-          <a href="#" onclick="showBotAuth(); return false;"><i class="fa solid fa-robot" id="icon-BotAuth"
-              name="icon"></i><br />Bot Setup</a>
-        </div>
-        <!--Logs-->
-        <div class="main-nav-child">
-          <a href="#" onclick="showLog(); return false;"><i class="fa-solid fa-file-lines" id="icon-Logs"
-              name="icon"></i><br />Log</a>
-        </div>
-        <!--Version-->
-        <div class="main-nav-child">
-          <a href="#" onclick="showVersion(); return false;"><i class="fa-solid fa-code-compare" id="icon-Version"
-              name="icon"></i><br />Version Info</a>
-        </div>
-        <!--UI Customizer-->
-        <div class="main-nav-child">
-          <a href="#" onclick="showUICustomizer(); return false;"><i class="fa-solid fa-pen-nib" id="icon-Customizer"
-              name="icon"></i><br />UI Settings</a>
-        </div>
-      </div>
-      <hr />
+      </section>
 
       <div id="section-botauth" style="display: none">
-        <h2>Authentication</h2>
+        <div class="section-panel">
+        <h2>机器人接入</h2>
+        <p class="panel-subtitle">给机器人做认证，或者接入一台 OSKR / Dev 解锁设备。</p>
         <hr class="small-hr">
         <div>
           <div id="disconnectButton"></div>
@@ -83,62 +97,27 @@
           </div>
         </div>
         <hr />
+        </div>
       </div>
 
       <div id="section-log" style="display: none">
-        <h2>Log</h2>
+        <div class="section-panel">
+        <h2>运行日志</h2>
+        <p class="panel-subtitle">这里会实时显示语音、LLM、动作执行和设备连接日志。</p>
         <hr class="small-hr">
         <div class="center">
           <div style="text-align:left">
             <input id="logdebug" name="logdebug" type="checkbox" />
-            <label class="checkbox-label" for="logdebug">Show all logs</label><br />
+            <label class="checkbox-label" for="logdebug">显示全部日志</label><br />
             <input id="logscrollbottom" name="logscrollbottom" type="checkbox" />
-            <label class="checkbox-label" for="logscrollbottom">Scroll to bottom</label>
+            <label class="checkbox-label" for="logscrollbottom">自动滚动到底部</label>
           </div>
         </div>
         <textarea id="botTranscriptedTextArea" rows="7" cols="50">
-          loading log...
+          正在加载日志...
         </textarea>
         <hr class="log-hr" />
-      </div>
-
-      <div id="section-version" style="display: none">
-        <h2>Version</h2>
-        <hr class="small-hr">
-        <div id="versionDiv">
-          <button onclick="checkUpdate()">
-            Check For Update
-          </button>
-          <hr class="small-hr">
-          <p id="cVersion"></p>
-          <small class="desc" style="display: none;" id="cCommit"></small>
-          <p id="aUpdate"></p>
-          <a id="updateGuideLink" style="display: none" target="_blank"
-            href="https://github.com/kercre123/wire-pod/wiki/Things-to-Know#updating-wire-pod">Update Guide</a>
         </div>
-        <hr />
-      </div>
-
-      <div id="section-uicustomizer" style="display: none">
-        <h2>UI Customizer</h2>
-        <hr class="small-hr">
-        <p>Accent Color</p>
-        <select onchange="setUIColor()" id="accent-color-choose">
-          <option value="teal" selected="selected">Teal (default)</option>
-          <option value="orange">Orange</option>
-          <option value="yellow">Yellow</option>
-          <option value="lime">Lime</option>
-          <option value="sapphire">Sapphire</option>
-          <option value="purple">Purple</option>
-          <option value="green">Green</option>
-        </select>
-        <hr class="small-hr">
-        <p>Body Font</p>
-        <select onchange="setUIFont()" id="body-font-choose">
-          <option style="font-family: 'DroidSans';" value="droidsans" selected="selected">Droid Sans (default)</option>
-          <option style="font-family: 'IBMVGA';" value="ibmvga">IBM VGA 8x16 (retro)</option>
-        </select>
-        <hr />
       </div>
 
     </div>
@@ -148,7 +127,6 @@
 <script src="./js/main.js"></script>
 <script src="./js/ble.js"></script>
 <script src="./js/ssh.js"></script>
-<script src="./js/ui.js"></script>
 <script src="./sdkapp/js/common.js"></script>
 <script src="./js/battery.js"></script>
 <!-- <script src="./sdkapp/js/main.js"></script> -->
