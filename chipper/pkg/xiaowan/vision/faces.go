@@ -17,12 +17,16 @@ import (
 )
 
 const recentFaceTTL = 45 * time.Second
-const autoGreetCooldown = 3 * time.Minute
+const autoGreetCooldown = 20 * time.Second
+const faceReappearanceWindow = 10 * time.Second
+const repeatedFaceLogInterval = 15 * time.Second
+const repeatedDecisionLogInterval = 8 * time.Second
 
 type observedFaceState struct {
-	Name       string
-	FaceID     int32
-	LastSeenAt time.Time
+	Name        string
+	FaceID      int32
+	LastSeenAt  time.Time
+	FirstSeenAt time.Time
 }
 
 type pendingGreetingState struct {
@@ -40,6 +44,11 @@ var (
 	lastAutoGreets    = map[string]time.Time{}
 	pendingGreetMu    sync.Mutex
 	pendingGreets     = map[string]pendingGreetingState{}
+	faceLogMu         sync.Mutex
+	lastFaceEventLogs = map[string]time.Time{}
+	lastFaceMapLogs   = map[string]time.Time{}
+	decisionLogMu     sync.Mutex
+	lastDecisionLogs  = map[string]time.Time{}
 	ownerGreetingFunc func(esn, name string) error
 	knownGreetingFunc func(esn, name string) error
 )
@@ -183,7 +192,7 @@ func watchFacesOnce(esn string) error {
 			if face == nil {
 				continue
 			}
-			logger.Println(fmt.Sprintf("Face watcher for %s observed face event: id=%d, name=%q", esn, face.GetFaceId(), strings.TrimSpace(face.GetName())))
+			maybeLogFaceEvent(esn, face.GetFaceId(), strings.TrimSpace(face.GetName()))
 			updateObservedFace(esn, face.GetFaceId(), face.GetName())
 		case *vectorpb.Event_VisionModesAutoDisabled:
 			// 某些情况下机器人会自动关掉视觉能力，这里立刻退出并走外层重连重开。
@@ -196,20 +205,30 @@ func updateObservedFace(esn string, faceID int32, name string) {
 	name = strings.TrimSpace(name)
 
 	observedFacesMu.Lock()
+	prev := observedFaces[esn]
+	now := time.Now()
+	firstSeenAt := now
+	if strings.EqualFold(strings.TrimSpace(prev.Name), name) && !prev.LastSeenAt.IsZero() && now.Sub(prev.LastSeenAt) < faceReappearanceWindow {
+		firstSeenAt = prev.FirstSeenAt
+		if firstSeenAt.IsZero() {
+			firstSeenAt = prev.LastSeenAt
+		}
+	}
 	observedFaces[esn] = observedFaceState{
-		Name:       name,
-		FaceID:     faceID,
-		LastSeenAt: time.Now(),
+		Name:        name,
+		FaceID:      faceID,
+		LastSeenAt:  now,
+		FirstSeenAt: firstSeenAt,
 	}
 	observedFacesMu.Unlock()
 
 	if name == "" {
-		logger.Println(fmt.Sprintf("Face watcher for %s saw face id=%d but did not match a saved name", esn, faceID))
+		logDecisionOnce(esn, fmt.Sprintf("unknown-face:%d", faceID), fmt.Sprintf("Face watcher for %s saw face id=%d but did not match a saved name", esn, faceID))
 		return
 	}
 
 	profile := memorypkg.LoadProfile(esn)
-	logger.Println(fmt.Sprintf("Face watcher for %s mapped face id=%d name=%q as %s", esn, faceID, name, identityKind(profile, name)))
+	maybeLogFaceMapping(esn, faceID, name, identityKind(profile, name))
 
 	if name != "" {
 		maybeAutoGreetKnownFace(esn, name)
@@ -219,11 +238,11 @@ func updateObservedFace(esn string, faceID int32, name string) {
 // maybeAutoGreetKnownFace 对已命名人脸做低频自动问候，避免重复路过时一直说话。
 func maybeAutoGreetKnownFace(esn, name string) {
 	if !vars.APIConfig.Vision.AutoGreetKnownFaces {
-		logger.Println(fmt.Sprintf("Auto face greeting skipped for %s name=%q: feature disabled", esn, name))
+		logDecisionOnce(esn, "feature-disabled:"+strings.ToLower(name), fmt.Sprintf("Auto face greeting skipped for %s name=%q: feature disabled", esn, name))
 		return
 	}
 	if reason := robotpkg.PassiveGreetingBlockReason(esn); reason != "" {
-		logger.Println(fmt.Sprintf("Auto face greeting delayed for %s name=%q: %s", esn, name, reason))
+		logDecisionOnce(esn, "delayed:"+strings.ToLower(name)+":"+reason, fmt.Sprintf("Auto face greeting delayed for %s name=%q: %s", esn, name, reason))
 		queuePendingAutoGreeting(esn, name)
 		return
 	}
@@ -236,20 +255,74 @@ func maybeAutoGreetKnownFace(esn, name string) {
 func shouldAutoGreet(esn, name string) bool {
 	key := strings.ToLower(strings.TrimSpace(esn)) + "::" + strings.ToLower(strings.TrimSpace(name))
 	if key == "::" || strings.HasSuffix(key, "::") {
-		logger.Println(fmt.Sprintf("Auto face greeting skipped for %s name=%q: invalid identity key", esn, name))
+		logDecisionOnce(esn, "invalid-key:"+strings.ToLower(name), fmt.Sprintf("Auto face greeting skipped for %s name=%q: invalid identity key", esn, name))
 		return false
 	}
+
+	isReappeared := hasFaceReappeared(esn, name)
 
 	autoGreetMu.Lock()
 	defer autoGreetMu.Unlock()
 
 	lastAt := lastAutoGreets[key]
 	if !lastAt.IsZero() && time.Since(lastAt) < autoGreetCooldown {
-		logger.Println(fmt.Sprintf("Auto face greeting skipped for %s name=%q: cooldown active", esn, name))
+		if !isReappeared {
+			logDecisionOnce(esn, "cooldown:"+strings.ToLower(name), fmt.Sprintf("Auto face greeting skipped for %s name=%q: cooldown active", esn, name))
+			return false
+		}
+		logDecisionOnce(esn, "reappear-allow:"+strings.ToLower(name), fmt.Sprintf("Auto face greeting allowed for %s name=%q: face reappeared after cooldown gap", esn, name))
+	}
+	if isReappeared {
+		logDecisionOnce(esn, "reappeared:"+strings.ToLower(name), fmt.Sprintf("Auto face greeting treating %s name=%q as reappeared", esn, name))
+	}
+	if !lastAt.IsZero() && time.Since(lastAt) < 2*time.Second {
+		logDecisionOnce(esn, "duplicate:"+strings.ToLower(name), fmt.Sprintf("Auto face greeting skipped for %s name=%q: duplicate trigger guard", esn, name))
 		return false
 	}
 	lastAutoGreets[key] = time.Now()
 	return true
+}
+
+func maybeLogFaceEvent(esn string, faceID int32, name string) {
+	key := fmt.Sprintf("%s:%d:%s", esn, faceID, strings.ToLower(strings.TrimSpace(name)))
+
+	faceLogMu.Lock()
+	defer faceLogMu.Unlock()
+
+	lastAt := lastFaceEventLogs[key]
+	if !lastAt.IsZero() && time.Since(lastAt) < repeatedFaceLogInterval {
+		return
+	}
+	lastFaceEventLogs[key] = time.Now()
+	logger.Println(fmt.Sprintf("Face watcher for %s observed face event: id=%d, name=%q", esn, faceID, name))
+}
+
+func maybeLogFaceMapping(esn string, faceID int32, name, kind string) {
+	key := fmt.Sprintf("%s:%d:%s:%s", esn, faceID, strings.ToLower(strings.TrimSpace(name)), kind)
+
+	faceLogMu.Lock()
+	defer faceLogMu.Unlock()
+
+	lastAt := lastFaceMapLogs[key]
+	if !lastAt.IsZero() && time.Since(lastAt) < repeatedFaceLogInterval {
+		return
+	}
+	lastFaceMapLogs[key] = time.Now()
+	logger.Println(fmt.Sprintf("Face watcher for %s mapped face id=%d name=%q as %s", esn, faceID, name, kind))
+}
+
+func logDecisionOnce(esn, key, msg string) {
+	fullKey := esn + "::" + key
+
+	decisionLogMu.Lock()
+	defer decisionLogMu.Unlock()
+
+	lastAt := lastDecisionLogs[fullKey]
+	if !lastAt.IsZero() && time.Since(lastAt) < repeatedDecisionLogInterval {
+		return
+	}
+	lastDecisionLogs[fullKey] = time.Now()
+	logger.Println(msg)
 }
 
 func speakAutoGreeting(esn, name string) error {
@@ -381,6 +454,23 @@ func isFaceStillPresent(esn, name string) bool {
 		return false
 	}
 	return strings.EqualFold(strings.TrimSpace(state.Name), strings.TrimSpace(name))
+}
+
+func hasFaceReappeared(esn, name string) bool {
+	observedFacesMu.Lock()
+	defer observedFacesMu.Unlock()
+
+	state, ok := observedFaces[esn]
+	if !ok {
+		return false
+	}
+	if !strings.EqualFold(strings.TrimSpace(state.Name), strings.TrimSpace(name)) {
+		return false
+	}
+	if state.FirstSeenAt.IsZero() {
+		return false
+	}
+	return time.Since(state.FirstSeenAt) < 2*time.Second
 }
 
 func buildAutoGreetingText(profile memorypkg.UserProfile, name string) string {
