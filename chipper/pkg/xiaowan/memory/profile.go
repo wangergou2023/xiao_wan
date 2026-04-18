@@ -1,15 +1,12 @@
 package memory
 
 import (
-	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
 	"sync"
 
-	"github.com/wangergou2023/xiao_wan/chipper/pkg/logger"
-	"github.com/wangergou2023/xiao_wan/chipper/pkg/vars"
 	workspacepkg "github.com/wangergou2023/xiao_wan/chipper/pkg/xiaowan/workspace"
 )
 
@@ -25,7 +22,16 @@ type EditableProfile struct {
 
 var profileMu sync.Mutex
 
-// LoadProfile 读取指定机器人的自由长期记忆。
+const (
+	memoryDocTitle         = "# Long-term Memory"
+	memoryDocEmptyText     = "No durable user facts have been confirmed yet."
+	memoryDocFactsHeader   = "## Durable Remembered Context"
+	memoryDocGuideHeader   = "## Memory Writing Guidance"
+	memoryDocSyncHeader    = "## Sync Info"
+	memoryDocSourceOfTruth = "- Source of truth: workspace/memory/MEMORY.md"
+)
+
+// LoadProfile 从 workspace/memory/MEMORY.md 读取自由长期记忆。
 func LoadProfile(esn string) UserProfile {
 	profileMu.Lock()
 	defer profileMu.Unlock()
@@ -35,26 +41,11 @@ func LoadProfile(esn string) UserProfile {
 
 func loadProfileUnlocked(esn string) UserProfile {
 	esn = strings.TrimSpace(esn)
-	if esn == "" {
-		return UserProfile{}
+	text := loadMemoryTextUnlocked()
+	return UserProfile{
+		ESN:        esn,
+		MemoryText: text,
 	}
-
-	path := profilePath(esn)
-	data, err := os.ReadFile(path)
-	if err != nil {
-		return UserProfile{ESN: esn}
-	}
-
-	var profile UserProfile
-	if err := json.Unmarshal(data, &profile); err != nil {
-		logger.Println("Failed to unmarshal long-term memory: " + err.Error())
-		return UserProfile{ESN: esn}
-	}
-	if strings.TrimSpace(profile.ESN) == "" {
-		profile.ESN = esn
-	}
-	profile.MemoryText = strings.TrimSpace(profile.MemoryText)
-	return profile
 }
 
 func SaveProfile(profile UserProfile) {
@@ -65,29 +56,6 @@ func SaveProfile(profile UserProfile) {
 func BuildPromptContext(esn string) string {
 	_ = esn
 	return ""
-}
-
-// EnsureWorkspaceMemoryDoc 从长期记忆 json 源数据恢复并同步 workspace/memory/MEMORY.md。
-// 这样即使进程重启，只要 json 还在，下一次请求组 prompt 时也能重新读到长期记忆。
-func EnsureWorkspaceMemoryDoc(esn string) {
-	profileMu.Lock()
-	defer profileMu.Unlock()
-
-	profile := loadProfileUnlocked(esn)
-	if strings.TrimSpace(profile.ESN) == "" {
-		return
-	}
-	syncProfileToMemoryDoc(profile)
-}
-
-func profilesDir() string {
-	return filepath.Join(filepath.Dir(vars.ApiConfigPath), "memory_profiles")
-}
-
-func profilePath(esn string) string {
-	safe := strings.ToLower(strings.TrimSpace(esn))
-	safe = strings.ReplaceAll(safe, "/", "_")
-	return filepath.Join(profilesDir(), safe+".json")
 }
 
 func LoadEditableProfile(esn string) EditableProfile {
@@ -109,63 +77,69 @@ func saveProfile(profile UserProfile) {
 	profileMu.Lock()
 	defer profileMu.Unlock()
 
-	profile.ESN = strings.TrimSpace(profile.ESN)
-	profile.MemoryText = strings.TrimSpace(profile.MemoryText)
-	if profile.ESN == "" {
-		return
-	}
-
-	if err := os.MkdirAll(profilesDir(), 0o755); err != nil {
-		logger.Println("Failed to create profile dir: " + err.Error())
-		return
-	}
-
-	data, err := json.MarshalIndent(profile, "", "  ")
-	if err != nil {
-		logger.Println("Failed to marshal long-term memory: " + err.Error())
-		return
-	}
-	if err := os.WriteFile(profilePath(profile.ESN), data, 0o644); err != nil {
-		logger.Println("Failed to write long-term memory: " + err.Error())
-		return
-	}
-
-	syncProfileToMemoryDoc(profile)
-}
-
-func syncProfileToMemoryDoc(profile UserProfile) {
-	path := workspacepkg.ResolveWritableDocPath(filepath.Join("memory", "MEMORY.md"))
+	path := memoryDocPath()
 	if strings.TrimSpace(path) == "" {
 		return
 	}
 	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
-		logger.Println("Failed to create workspace memory dir: " + err.Error())
 		return
 	}
-	if err := os.WriteFile(path, []byte(buildMemoryDoc(profile)), 0o644); err != nil {
-		logger.Println("Failed to sync MEMORY.md: " + err.Error())
+	_ = os.WriteFile(path, []byte(buildMemoryDoc(profile)), 0o644)
+}
+
+func memoryDocPath() string {
+	return workspacepkg.ResolveWritableDocPath(filepath.Join("memory", "MEMORY.md"))
+}
+
+func loadMemoryTextUnlocked() string {
+	path := memoryDocPath()
+	if strings.TrimSpace(path) == "" {
+		return ""
 	}
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return ""
+	}
+	return extractDurableRememberedContext(string(data))
+}
+
+func extractDurableRememberedContext(doc string) string {
+	doc = strings.ReplaceAll(doc, "\r\n", "\n")
+	start := strings.Index(doc, memoryDocFactsHeader)
+	if start < 0 {
+		return ""
+	}
+	body := doc[start+len(memoryDocFactsHeader):]
+	end := strings.Index(body, "\n## ")
+	if end >= 0 {
+		body = body[:end]
+	}
+	body = strings.TrimSpace(body)
+	if body == "" || body == memoryDocEmptyText {
+		return ""
+	}
+	return body
 }
 
 func buildMemoryDoc(profile UserProfile) string {
 	var b strings.Builder
-	b.WriteString("# Long-term Memory\n\n")
+	b.WriteString(memoryDocTitle + "\n\n")
 	b.WriteString("This file stores freeform durable memory that may matter across conversations.\n\n")
 	b.WriteString("## How To Read This File\n\n")
 	b.WriteString("- Treat this as living memory, not a rigid database.\n")
 	b.WriteString("- Prefer facts that are stable, user-confirmed, and likely to matter later.\n")
 	b.WriteString("- Prefer concise summaries over chat transcripts.\n")
 	b.WriteString("- If something is uncertain or old, keep the uncertainty visible instead of pretending it is fresh.\n\n")
-	b.WriteString("## Durable Remembered Context\n\n")
+	b.WriteString(memoryDocFactsHeader + "\n\n")
 	if strings.TrimSpace(profile.MemoryText) == "" {
-		b.WriteString("No durable user facts have been confirmed yet.\n")
+		b.WriteString(memoryDocEmptyText + "\n")
 	} else {
-		b.WriteString(profile.MemoryText)
-		if !strings.HasSuffix(profile.MemoryText, "\n") {
+		b.WriteString(strings.TrimSpace(profile.MemoryText))
+		if !strings.HasSuffix(strings.TrimSpace(profile.MemoryText), "\n") {
 			b.WriteString("\n")
 		}
 	}
-	b.WriteString("\n## Memory Writing Guidance\n\n")
+	b.WriteString("\n" + memoryDocGuideHeader + "\n\n")
 	b.WriteString("Good long-term memory includes:\n")
 	b.WriteString("- how the user wants to be addressed\n")
 	b.WriteString("- stable relationship facts\n")
@@ -178,8 +152,8 @@ func buildMemoryDoc(profile UserProfile) string {
 	b.WriteString("- raw multi-turn chat logs\n")
 	b.WriteString("- sensitive details unless the user clearly wants them remembered\n")
 	b.WriteString("- guesses inferred without confirmation\n\n")
-	b.WriteString("## Sync Info\n\n")
-	b.WriteString(fmt.Sprintf("- Robot ESN: %s\n", profile.ESN))
-	b.WriteString("- Source of truth: confirmed freeform memory saved by the system\n")
+	b.WriteString(memoryDocSyncHeader + "\n\n")
+	b.WriteString(fmt.Sprintf("- Robot ESN: %s\n", strings.TrimSpace(profile.ESN)))
+	b.WriteString(memoryDocSourceOfTruth + "\n")
 	return b.String()
 }

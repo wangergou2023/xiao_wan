@@ -231,10 +231,6 @@ func compactPromptSections(sections []string) []string {
 }
 
 func createPromptWithMemory(origPrompt, model, esn string, isKG bool) string {
-	// Long-term memory is persisted in json and mirrored into workspace docs.
-	// Re-sync before building the prompt so restart/startup does not lose memory context.
-	memorypkg.EnsureWorkspaceMemoryDoc(esn)
-
 	sections := []string{CreatePrompt(origPrompt, model, isKG)}
 	if profilePrompt := strings.TrimSpace(memorypkg.BuildPromptContext(esn)); profilePrompt != "" {
 		sections = append(sections, "Long-term user profile:\n"+profilePrompt)

@@ -11,7 +11,8 @@ This file stores freeform durable memory that may matter across conversations.
 
 ## Durable Remembered Context
 
-- The user lives in northeast China.
+- 用户是小丸的主人
+- 用户喜欢吃苹果
 
 ## Memory Writing Guidance
 
@@ -32,4 +33,4 @@ Do not store as long-term memory:
 ## Sync Info
 
 - Robot ESN: 0dd1c497
-- Source of truth: confirmed freeform memory saved by the system
+- Source of truth: workspace/memory/MEMORY.md
