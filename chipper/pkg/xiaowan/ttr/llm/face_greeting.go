@@ -2,12 +2,14 @@ package llm
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 
 	"github.com/sashabaranov/go-openai"
 	"github.com/wangergou2023/xiao_wan/chipper/pkg/logger"
 	"github.com/wangergou2023/xiao_wan/chipper/pkg/vars"
+	"github.com/wangergou2023/xiao_wan/chipper/pkg/vector"
 	memorypkg "github.com/wangergou2023/xiao_wan/chipper/pkg/xiaowan/memory"
 	robotpkg "github.com/wangergou2023/xiao_wan/chipper/pkg/xiaowan/ttr/robot"
 	visionpkg "github.com/wangergou2023/xiao_wan/chipper/pkg/xiaowan/vision"
@@ -34,7 +36,7 @@ func GenerateOwnerGreeting(esn, name string) error {
 		return nil
 	}
 	logger.Println(fmt.Sprintf("Owner face greeting generated for %s name=%q: %q", esn, name, text))
-	return robotpkg.KGSim(esn, text)
+	return speakPassiveGreeting(esn, text)
 }
 
 // GenerateKnownFaceGreeting 在识别到普通已命名人脸时，用 LLM 生成一句更自然的短问候。
@@ -51,7 +53,7 @@ func GenerateKnownFaceGreeting(esn, name string) error {
 		return nil
 	}
 	logger.Println(fmt.Sprintf("Known face greeting generated for %s name=%q kind=%s: %q", esn, name, kind, text))
-	return robotpkg.KGSim(esn, text)
+	return speakPassiveGreeting(esn, text)
 }
 
 func requestPassiveFaceGreeting(esn, name, kind string) (string, error) {
@@ -118,4 +120,41 @@ func passiveGreetingLogLabel(kind string) string {
 		return "Known"
 	}
 	return "Owner"
+}
+
+func speakPassiveGreeting(esn, text string) error {
+	text = normalizeSpeechText(text)
+	if text == "" {
+		return nil
+	}
+
+	endActivity := robotpkg.BeginForegroundActivity(esn, "face_greeting_tts")
+	defer endActivity()
+
+	robot, err := connectRobotForPassiveGreeting(esn)
+	if err != nil {
+		logger.Println(fmt.Sprintf("Passive face greeting connection failed for %s: %v", esn, err))
+		return err
+	}
+
+	logger.Println(fmt.Sprintf("Passive face greeting speaking via TTS for %s: %q", esn, text))
+	if err := DoSayText(text, robot, newTTSPrefetchSession()); err != nil {
+		logger.Println(fmt.Sprintf("Passive face greeting TTS failed for %s: %v", esn, err))
+		return err
+	}
+	logger.Println(fmt.Sprintf("Passive face greeting TTS finished for %s", esn))
+	return nil
+}
+
+func connectRobotForPassiveGreeting(esn string) (*vector.Vector, error) {
+	for _, bot := range vars.BotInfo.Robots {
+		if esn == bot.Esn {
+			return vector.New(
+				vector.WithSerialNo(esn),
+				vector.WithToken(bot.GUID),
+				vector.WithTarget(bot.IPAddress+":443"),
+			)
+		}
+	}
+	return nil, errors.New("robot not found in bot info")
 }
