@@ -1,28 +1,12 @@
 # Long-term Memory
 
-This file is synchronized from structured long-term profile memory.
+This file stores freeform durable memory for the robot.
 
-## User Information
+## Remembered Notes
 
-- No confirmed user identity facts yet.
-
-## Preferences
-
-- No confirmed greeting preference yet.
-
-## Important Notes
-
-- No additional confirmed long-term notes yet.
+- No durable memory has been confirmed yet.
 
 ## Sync Info
 
 - Robot ESN: 0dd1c497
-- Source of truth: structured profile JSON + confirmed user statements
-
-## Manual Notes
-
-Anything between the markers below is preserved during automatic sync.
-
-<!-- MANUAL_NOTES_BEGIN -->
-- Add hand-written long-term notes here.
-<!-- MANUAL_NOTES_END -->
+- Source of truth: freeform long-term memory saved by web settings or confirmed remembered facts

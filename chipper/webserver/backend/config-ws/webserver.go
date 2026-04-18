@@ -151,15 +151,13 @@ func handleGetLongTermMemory(w http.ResponseWriter, r *http.Request) {
 	}
 	editable := memorypkg.LoadEditableProfile(esn)
 	resp := struct {
-		ESN         string                `json:"esn"`
-		Robots      []string              `json:"robots"`
-		Profile     memorypkg.UserProfile `json:"profile"`
-		ManualNotes string                `json:"manual_notes"`
+		ESN        string   `json:"esn"`
+		Robots     []string `json:"robots"`
+		MemoryText string   `json:"memory_text"`
 	}{
-		ESN:         esn,
-		Robots:      memoryRobotESNs(),
-		Profile:     editable.Profile,
-		ManualNotes: editable.ManualNotes,
+		ESN:        esn,
+		Robots:     memoryRobotESNs(),
+		MemoryText: editable.MemoryText,
 	}
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(resp)
@@ -167,9 +165,8 @@ func handleGetLongTermMemory(w http.ResponseWriter, r *http.Request) {
 
 func handleSetLongTermMemory(w http.ResponseWriter, r *http.Request) {
 	var req struct {
-		ESN         string                `json:"esn"`
-		Profile     memorypkg.UserProfile `json:"profile"`
-		ManualNotes string                `json:"manual_notes"`
+		ESN        string `json:"esn"`
+		MemoryText string `json:"memory_text"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, "invalid request body", http.StatusBadRequest)
@@ -177,19 +174,15 @@ func handleSetLongTermMemory(w http.ResponseWriter, r *http.Request) {
 	}
 	esn := strings.TrimSpace(req.ESN)
 	if esn == "" {
-		esn = strings.TrimSpace(req.Profile.ESN)
-	}
-	if esn == "" {
 		esn = defaultMemoryESN()
 	}
 	if esn == "" {
 		http.Error(w, "missing robot esn", http.StatusBadRequest)
 		return
 	}
-	req.Profile.ESN = esn
 	memorypkg.SaveEditableProfile(memorypkg.EditableProfile{
-		Profile:     req.Profile,
-		ManualNotes: req.ManualNotes,
+		ESN:        esn,
+		MemoryText: req.MemoryText,
 	})
 	fmt.Fprint(w, "长期记忆已保存。")
 }

@@ -2,7 +2,7 @@
 <html>
 
 <head>
-  <title>Vector Web App</title>
+  <title>小丸设备控制</title>
   <!-- Meta Apple tags for a PWA like experience. -->
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
@@ -18,80 +18,87 @@
 <body onload="updateControlButtons()">
   <div id="outer">
     <div id="content">
-      <h1 class="center">Vector control (beta)</h1>
-      <hr />
-      <div class="main-nav-parent">
-        <div class="main-nav-child">
-          <a href="#" onclick="goBackToSettings()"><i class="fa-solid fa-reply"></i><br />Back</a>
+      <section class="home-hero">
+        <div class="hero-copy">
+          <p class="hero-badge">Xiao Wan Device Control</p>
+          <h1>小丸设备控制</h1>
+          <p class="hero-subtitle">这里是偏底层的设备控制页，适合调试摄像头、行为控制和直接播报。</p>
         </div>
-      </div>
-      <hr />
+        <div class="hero-status-card setup-status-card">
+          <p class="hero-status-label">返回入口</p>
+          <a class="setup-back-link" href="#" onclick="goBackToSettings()">
+            <i class="fa-solid fa-reply"></i>
+            <span>返回设备设置页</span>
+          </a>
+          <p class="panel-subtitle">多数动作前需要先接管 behavior control。</p>
+        </div>
+      </section>
 
+      <div class="section-panel">
       <div id="sdkActions">
-        <h2 class="center">Camera Feed</h2>
+        <h2 class="center">摄像头画面</h2>
         <hr class="small-hr">
         <div class="center" id="camStream"></div>
         <div style="text-align: left;" class="center">
           <label>
-            <input type="radio" name="cam" id="cam" onclick="showCamStream()">Begin Camera Stream<br>
+            <input type="radio" name="cam" id="cam" onclick="showCamStream()">开始视频流<br>
           </label>
           <label>
-            <input type="radio" name="cam" id="cam" onclick="stopCamStream()" checked>Stop Camera Stream<br>
+            <input type="radio" name="cam" id="cam" onclick="stopCamStream()" checked>停止视频流<br>
           </label>
         </div>
         <hr />
 
-        <h2 class="center">Behavior Control</h2>
+        <h2 class="center">行为控制</h2>
         <hr class="small-hr">
-        <small class="center">You must assume behavior control before performing any action</small>
+        <small class="center">执行大部分动作前，需要先接管行为控制。</small>
         <div style="text-align: left;" class="center">
           <label>
             <input type="radio" name="control" id="assume_control"
-              onclick="sendForm('/api-sdk/assume_behavior_control?priority=high'); updateControlButtons();">Assume<br>
+              onclick="sendForm('/api-sdk/assume_behavior_control?priority=high'); updateControlButtons();">接管<br>
           </label>
           <label>
             <input type="radio" name="control" id="release_control"
-              onclick="sendForm('/api-sdk/release_behavior_control'); updateControlButtons();" checked>Release<br>
+              onclick="sendForm('/api-sdk/release_behavior_control'); updateControlButtons();" checked>释放<br>
           </label>
         </div>
         <hr />
 
-        <h2 class="center">Move Motors</h2>
+        <h2 class="center">电机控制</h2>
         <hr class="small-hr">
-        <small class="center">Toggle Keyboard Controls (unstable) <br> WASD for wheels, R-lift up, F-lift down, T-head
-          up, G-head down</small>
+        <small class="center">键盘控制还比较实验性。<br>WASD 控轮子，R/F 控手臂，T/G 控头部。</small>
         <div style="text-align: left;" class="center">
           <label>
-            <input type="radio" name="keycontrol" id="key_control_on" onclick="toggleKeyboard()" disabled>On<br>
+            <input type="radio" name="keycontrol" id="key_control_on" onclick="toggleKeyboard()" disabled>开启<br>
           </label>
           <label>
             <input type="radio" name="keycontrol" id="key_control_off" onclick="toggleKeyboard()" checked
-              disabled>Off<br>
+              disabled>关闭<br>
           </label>
         </div>
         <hr />
 
-        <h2 class="center">Mirror Mode</h2>
+        <h2 class="center">镜像模式</h2>
         <hr class="small-hr">
         <div style="text-align: left;" class="center">
           <label>
             <input type="radio" name="mirror" id="mirror_on" onclick="sendForm('/api-sdk/mirror_mode?enable=true')"
-              disabled>On<br>
+              disabled>开启<br>
           </label>
           <label>
             <input type="radio" name="mirror" id="mirror_off" onclick="sendForm('/api-sdk/mirror_mode?enable=false')"
-              checked disabled>Off<br>
+              checked disabled>关闭<br>
           </label>
         </div>
         <hr />
 
-        <h2 class="center">Say Text</h2>
+        <h2 class="center">文本播报</h2>
         <div class="center">
-          <input class="tinput" name="textSay" id="textSay" type="text" placeholder="Put text here" disabled />
+          <input class="tinput" name="textSay" id="textSay" type="text" placeholder="输入要让机器人说的话" disabled />
         </div>
-        <button onclick="sayText()" type="submit">Submit</button>
+        <button onclick="sayText()" type="submit">发送播报</button>
       <hr />
-      <h2 class="center">Play Audio</h2>
+      <h2 class="center">播放音频</h2>
         <div class="center">
           <input type="file" id="fileInput" accept=".wav">
         </div>
@@ -101,6 +108,7 @@
         </div>
       </div>
       <hr />
+      </div>
     </div>
     </div>
   </div>

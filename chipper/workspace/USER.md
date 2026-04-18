@@ -18,6 +18,6 @@ This file stores stable user-facing preferences and operating assumptions.
 
 ## Memory Guidance
 
-- Combine this file with structured long-term profile memory.
+- Combine this file with freeform long-term memory from workspace/memory/MEMORY.md.
 - Stable facts about identity, role, and greeting style should be treated as important.
 - Temporary chat content should not be confused with long-term preferences.

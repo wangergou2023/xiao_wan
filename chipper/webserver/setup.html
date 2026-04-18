@@ -2,7 +2,7 @@
 <html>
 
 <head>
-  <title>小湾设置台</title>
+  <title>小丸设置台</title>
   <!-- Meta Apple tags for a PWA like experience. -->
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
@@ -21,7 +21,7 @@
       <section class="home-hero">
         <div class="hero-copy">
           <p class="hero-badge">Xiao Wan Settings</p>
-          <h1>小湾设置台</h1>
+          <h1>小丸设置台</h1>
           <p class="hero-subtitle">把常用配置收拢到一个页面里，重点保留大模型、长期记忆、天气和语言几个高频区域。</p>
         </div>
         <div class="hero-status-card setup-status-card">
@@ -224,40 +224,17 @@
         <h3>长期记忆</h3>
         <hr class="small-hr">
         <div class="setup-note">
-          <strong>说明：</strong>这里可以查看和编辑机器人记住的长期信息。
-          上半部分是结构化长期记忆，下半部分是不会被自动同步覆盖的手工备注区。
+          <strong>说明：</strong>这里直接维护自由文本长期记忆。
+          机器人以后看到的就是这段内容，不再限制成固定字段。
         </div>
         <hr class="small-hr">
         <form id="memoryProfileForm">
           <label for="memoryRobotESN">机器人：</label>
           <select id="memoryRobotESN" onchange="updateLongTermMemory()"></select><br />
 
-          <label for="memoryUserName">用户名称：</label>
-          <input type="text" id="memoryUserName" placeholder="例如 王二狗" /><br />
-
-          <label for="memoryOwnerName">主要联系人：</label>
-          <input type="text" id="memoryOwnerName" placeholder="例如 王二狗" /><br />
-
-          <label for="memoryNickname">偏好称呼：</label>
-          <input type="text" id="memoryNickname" placeholder="例如 老王 / 阿狗" /><br />
-
-          <label for="memoryPreferredLanguage">偏好语言：</label>
-          <input type="text" id="memoryPreferredLanguage" placeholder="例如 Chinese / Japanese" /><br />
-
-          <label for="memoryPreferredGreeting">问候风格：</label>
-          <input type="text" id="memoryPreferredGreeting" placeholder="例如 用日语打招呼，称呼对方昵称" /><br />
-
-          <label for="memoryFavoriteTopics">喜欢的话题 <small class="desc">（逗号分隔）</small>：</label>
-          <input type="text" id="memoryFavoriteTopics" placeholder="例如 jokes,cooking" /><br />
-
-          <label for="memoryForbiddenTopics">避免的话题 <small class="desc">（逗号分隔）</small>：</label>
-          <input type="text" id="memoryForbiddenTopics" placeholder="例如 politics" /><br />
-
-          <label for="memoryFacts">长期事实 <small class="desc">（每行一条）</small>：</label><br />
-          <textarea id="memoryFacts" rows="6" placeholder="例如&#10;对方喜欢被叫作阿狗&#10;对方家住东北"></textarea><br />
-
-          <label for="memoryManualNotes">手工备注 <small class="desc">（不会被自动同步覆盖）</small>：</label><br />
-          <textarea id="memoryManualNotes" rows="8" placeholder="这里可以手写长期备注"></textarea><br />
+          <label for="memoryText">长期记忆内容：</label><br />
+          <textarea id="memoryText" rows="14" placeholder="例如&#10;- 主人叫王二狗&#10;- 家住东北&#10;- 打招呼时可以自然一点&#10;- 喜欢聊做饭、日常、机器人"></textarea><br />
+          <small class="desc">写成自然语言、列表、备忘录都可以。这里只放值得长期记住的内容。</small><br />
         </form>
         <button onclick="saveLongTermMemory()">保存长期记忆</button>
         <div id="memoryStatus"></div>

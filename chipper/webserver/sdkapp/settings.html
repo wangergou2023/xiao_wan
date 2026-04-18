@@ -2,7 +2,7 @@
 <html>
 
 <head>
-  <title>Vector Web App</title>
+  <title>小丸设备设置</title>
   <!-- Meta Apple tags for a PWA like experience. -->
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
@@ -19,43 +19,57 @@
 
   <div id="outer">
     <div id="content" class="">
-      <h1 class="center">Vector Configuration</h1>
-      <div id="botStats"></div>
-      <hr>
-      <div class="main-nav-parent">
-        <div class="main-nav-child"><a href="/sdkapp"><i class="fa-solid fa-reply"></i><br />Back</a></div>
-        <div class="main-nav-child"><a href="#" onclick="goToControlPage()"><i
-              class="fa-solid fa-gamepad"></i><br />Control<br /></a></div>
-        <div class="main-nav-child"><a href="#" onclick="showSection('section-volume'); return false;"><i
-              class="fa-solid fa-volume-high" id="icon-volume" name="icon"></i><br />Volume</a></div>
-        <div class="main-nav-child"><a href="#" onclick="showSection('section-eyes'); return false;"><i
-              class="fa-solid fa-eye" id="icon-eyes" name="icon"></i><br />Eye Color</a></div>
-        <div class="main-nav-child"><a href="#" onclick="showSection('section-face'); return false;"><i
-              class="fa-solid fa-user" id="icon-face" name="icon"></i><br />Faces</a></div>
-        <div class="main-nav-child"><a href="#" onclick="showSection('section-actions'); return false;"><i
-              class="fa-solid fa-person-running" id="icon-actions" name="icon"></i><br />Actions</a></div>
-        <div class="main-nav-child"><a href="#" onclick="showSection('section-stim'); return false;"><i
-              class="fa-solid fa-face-laugh-beam" id="icon-stim" name="icon"></i><br />Stim</a></div>
-        <div class="main-nav-child"><a href="#" onclick="showSection('section-stats'); return false;"><i
-              class="fa-solid fa-chart-simple" id="icon-stim" name="icon"></i><br />Statistics</a></div>
-        <div class="main-nav-child"><a href="#" onclick="showSection('section-photos'); getPhotos(); return false;"><i
-              class="fa-solid fa-images" id="icon-photos" name="icon"></i><br />Photos</a></div>
-        <div class="main-nav-child"><a href="#" onclick="showSection('section-locale'); return false;"><i
-              class="fa-solid fa-earth-americas" id="icon-locale" name="icon"></i><br />Locale</a></div>
-        <div class="main-nav-child"><a href="#" onclick="showSection('section-time'); return false;"><i
-              class="fa-solid fa-clock" id="icon-time" name="icon"></i><br />Time</a></div>
-        <div class="main-nav-child"><a href="#" onclick="showSection('section-temp'); return false;"><i
-              class="fa-solid fa-temperature-half" id="icon-temp" name="icon"></i><br />Units</a></div>
-        <div class="main-nav-child"><a href="#" onclick="showSection('section-button'); return false;"><i
-              class="fa-solid fa-circle-dot" id="icon-button" name="icon"></i><br />Button</a></div>
-        <div class="main-nav-child"><a href="#" onclick="showSection('section-alexa'); return false;"><i
-              class="fa-solid fa-house-signal" id="icon-alexa" name="icon"></i><br />Alexa</a></div>
-        <div class="main-nav-child"><a href="#" onclick="showSection('section-location'); return false;"><i
-              class="fa-solid fa-location-crosshairs" id="icon-location" name="icon"></i><br />Location</a></div>
-        <div class="main-nav-child"><a href="#" onclick="showSection('section-timezone'); return false;"><i
-              class="fa-solid fa-hourglass" id="icon-timezone" name="icon"></i><br />Time Zone</a></div>
-      </div>
-      <hr>
+      <section class="home-hero">
+        <div class="hero-copy">
+          <p class="hero-badge">Xiao Wan Device Settings</p>
+          <h1>小丸设备设置</h1>
+          <p class="hero-subtitle">这里是机器人本体的设置面板，适合改音量、眼睛颜色、照片、人脸和区域时间等设备侧选项。</p>
+        </div>
+        <div class="hero-status-card">
+          <p class="hero-status-label">设备状态</p>
+          <div id="botStats"></div>
+        </div>
+      </section>
+
+      <section class="home-section">
+        <div class="section-heading">
+          <h2>设备面板</h2>
+          <p>入口很多，但都属于设备本体设置；控制页单独放在最前面，方便快速切换。</p>
+        </div>
+        <div class="main-nav-parent">
+          <div class="main-nav-child"><a href="/sdkapp"><i class="fa-solid fa-reply"></i><span class="nav-title">返回</span><span class="nav-desc">回到设备接入页</span></a></div>
+          <div class="main-nav-child"><a href="#" onclick="goToControlPage()"><i
+                class="fa-solid fa-gamepad"></i><span class="nav-title">设备控制</span><span class="nav-desc">进入摄像头、电机与行为控制页</span></a></div>
+          <div class="main-nav-child"><a href="#" onclick="showSection('section-volume'); return false;"><i
+                class="fa-solid fa-volume-high" id="icon-volume" name="icon"></i><span class="nav-title">音量</span><span class="nav-desc">切换设备播报音量档位</span></a></div>
+          <div class="main-nav-child"><a href="#" onclick="showSection('section-eyes'); return false;"><i
+                class="fa-solid fa-eye" id="icon-eyes" name="icon"></i><span class="nav-title">眼睛颜色</span><span class="nav-desc">预设或自定义眼睛颜色</span></a></div>
+          <div class="main-nav-child"><a href="#" onclick="showSection('section-face'); return false;"><i
+                class="fa-solid fa-user" id="icon-face" name="icon"></i><span class="nav-title">人脸</span><span class="nav-desc">管理设备本地的人脸数据</span></a></div>
+          <div class="main-nav-child"><a href="#" onclick="showSection('section-actions'); return false;"><i
+                class="fa-solid fa-person-running" id="icon-actions" name="icon"></i><span class="nav-title">快捷动作</span><span class="nav-desc">触发探索、回家和唤醒词</span></a></div>
+          <div class="main-nav-child"><a href="#" onclick="showSection('section-stim'); return false;"><i
+                class="fa-solid fa-face-laugh-beam" id="icon-stim" name="icon"></i><span class="nav-title">情绪</span><span class="nav-desc">查看设备刺激值曲线</span></a></div>
+          <div class="main-nav-child"><a href="#" onclick="showSection('section-stats'); return false;"><i
+                class="fa-solid fa-chart-simple" id="icon-stats" name="icon"></i><span class="nav-title">统计</span><span class="nav-desc">读取设备统计信息</span></a></div>
+          <div class="main-nav-child"><a href="#" onclick="showSection('section-photos'); getPhotos(); return false;"><i
+                class="fa-solid fa-images" id="icon-photos" name="icon"></i><span class="nav-title">照片</span><span class="nav-desc">查看和刷新设备拍摄照片</span></a></div>
+          <div class="main-nav-child"><a href="#" onclick="showSection('section-locale'); return false;"><i
+                class="fa-solid fa-earth-americas" id="icon-locale" name="icon"></i><span class="nav-title">区域</span><span class="nav-desc">切换 locale 语言区域</span></a></div>
+          <div class="main-nav-child"><a href="#" onclick="showSection('section-time'); return false;"><i
+                class="fa-solid fa-clock" id="icon-time" name="icon"></i><span class="nav-title">时间格式</span><span class="nav-desc">12 小时或 24 小时制</span></a></div>
+          <div class="main-nav-child"><a href="#" onclick="showSection('section-temp'); return false;"><i
+                class="fa-solid fa-temperature-half" id="icon-temp" name="icon"></i><span class="nav-title">温度单位</span><span class="nav-desc">摄氏或华氏显示</span></a></div>
+          <div class="main-nav-child"><a href="#" onclick="showSection('section-button'); return false;"><i
+                class="fa-solid fa-circle-dot" id="icon-button" name="icon"></i><span class="nav-title">按钮功能</span><span class="nav-desc">设置顶部按键行为</span></a></div>
+          <div class="main-nav-child"><a href="#" onclick="showSection('section-alexa'); return false;"><i
+                class="fa-solid fa-house-signal" id="icon-alexa" name="icon"></i><span class="nav-title">Alexa</span><span class="nav-desc">登录或退出 Alexa</span></a></div>
+          <div class="main-nav-child"><a href="#" onclick="showSection('section-location'); return false;"><i
+                class="fa-solid fa-location-crosshairs" id="icon-location" name="icon"></i><span class="nav-title">位置</span><span class="nav-desc">更新城市位置</span></a></div>
+          <div class="main-nav-child"><a href="#" onclick="showSection('section-timezone'); return false;"><i
+                class="fa-solid fa-hourglass" id="icon-timezone" name="icon"></i><span class="nav-title">时区</span><span class="nav-desc">同步设备时区配置</span></a></div>
+        </div>
+      </section>
 
       <div id="section-volume" class="toggleable-section" style="display:none;">
         <h2 class="center">Volume</h2>

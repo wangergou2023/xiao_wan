@@ -2,7 +2,7 @@
 <html>
 
 <head>
-  <title>Vector SDK App</title>
+  <title>小丸设备接入</title>
   <!-- Meta Apple tags for a PWA like experience. -->
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
@@ -18,21 +18,31 @@
 <body>
   <div id="outer">
     <div id="content">
-      <h1 class="center">Vector Configuration</h1>
-      <hr />
-      <div class="main-nav-parent">
-        <div class="main-nav-child">
-          <a href="../index.html"><i class="fa-solid fa-reply"></i><br />Back</a>
+      <section class="home-hero">
+        <div class="hero-copy">
+          <p class="hero-badge">Xiao Wan Device Access</p>
+          <h1>小丸设备接入</h1>
+          <p class="hero-subtitle">从已发现的机器人里选择一台，连接后进入设备设置页。</p>
         </div>
-      </div>
-      <hr />
-      <p>
-        Choose the bot you would like to connect to then press "Connect".
-      </p>
+        <div class="hero-status-card setup-status-card">
+          <p class="hero-status-label">返回入口</p>
+          <a class="setup-back-link" href="../index.html">
+            <i class="fa-solid fa-reply"></i>
+            <span>返回控制台首页</span>
+          </a>
+          <p class="panel-subtitle">这里主要负责挑选机器人并建立 SDK 会话。</p>
+        </div>
+      </section>
+
+      <div class="section-panel">
+      <h2 class="center">选择机器人</h2>
+      <p class="panel-subtitle center">选中一台机器人后点击连接，即可进入设备侧设置与控制页面。</p>
+      <hr class="small-hr" />
       <select id="botList" name="botList"></select><br />
-      <button onclick="connectSDK()">Connect</button>
+      <button onclick="connectSDK()">连接设备</button>
       <hr />
       <div id="authResult"></div>
+      </div>
     </div>
   </div>
 </body>

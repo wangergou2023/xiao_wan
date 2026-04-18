@@ -251,47 +251,15 @@ function updateLongTermMemory() {
         select.appendChild(option);
       });
 
-      const profile = data.profile || {};
-      getE("memoryUserName").value = profile.user_name || "";
-      getE("memoryOwnerName").value = profile.owner_name || "";
-      getE("memoryNickname").value = profile.nickname || "";
-      getE("memoryPreferredLanguage").value = profile.preferred_language || "";
-      getE("memoryPreferredGreeting").value = profile.preferred_greeting || "";
-      getE("memoryFavoriteTopics").value = (profile.favorite_topics || []).join(",");
-      getE("memoryForbiddenTopics").value = (profile.forbidden_topics || []).join(",");
-      getE("memoryFacts").value = (profile.facts || []).join("\n");
-      getE("memoryManualNotes").value = data.manual_notes || "";
+      getE("memoryText").value = data.memory_text || "";
     });
 }
 
 function saveLongTermMemory() {
-  const splitCSV = (value) =>
-    value
-      .split(",")
-      .map((item) => item.trim())
-      .filter((item) => item.length > 0);
-
-  const splitLines = (value) =>
-    value
-      .split("\n")
-      .map((item) => item.trim())
-      .filter((item) => item.length > 0);
-
   const esn = getE("memoryRobotESN").value || "";
   const data = {
     esn,
-    profile: {
-      esn,
-      user_name: getE("memoryUserName").value.trim(),
-      owner_name: getE("memoryOwnerName").value.trim(),
-      nickname: getE("memoryNickname").value.trim(),
-      preferred_language: getE("memoryPreferredLanguage").value.trim(),
-      preferred_greeting: getE("memoryPreferredGreeting").value.trim(),
-      favorite_topics: splitCSV(getE("memoryFavoriteTopics").value),
-      forbidden_topics: splitCSV(getE("memoryForbiddenTopics").value),
-      facts: splitLines(getE("memoryFacts").value),
-    },
-    manual_notes: getE("memoryManualNotes").value,
+    memory_text: getE("memoryText").value,
   };
 
   fetch("/api/set_long_term_memory", {

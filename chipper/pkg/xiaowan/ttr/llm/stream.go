@@ -157,6 +157,7 @@ func StreamingKGSim(req interface{}, esn string, transcribedText string, isKG bo
 	var fullRespSlice []string
 	var finalToolCalls []openai.ToolCall
 	var isDone bool
+	var deferredActions []func()
 	c := newKnowledgeClient()
 	speakReady := make(chan string)
 	successIntent := make(chan bool, 1)
@@ -197,7 +198,6 @@ func StreamingKGSim(req interface{}, esn string, transcribedText string, isKG bo
 			response, err := stream.Recv()
 			if errors.Is(err, io.EOF) {
 				finalToolCalls = toolCallStream.Calls()
-				// prevents a crash
 				if len(fullRespSlice) == 0 && strings.TrimSpace(fullfullRespText) != "" {
 					logger.Println("LLM debug: final response has no sentence punctuation, using raw content")
 					finalChunk := strings.TrimSpace(fullfullRespText)
@@ -205,10 +205,56 @@ func StreamingKGSim(req interface{}, esn string, transcribedText string, isKG bo
 					prefetch.PreloadFromRaw(finalChunk)
 					notifySuccess()
 				}
+
+				newStr := strings.TrimSpace(strings.Join(fullRespSlice, " "))
+				if len(fullRespSlice) > 0 && strings.TrimSpace(newStr) != strings.TrimSpace(fullfullRespText) {
+					logger.Println("LLM debug: there is content after the last punctuation mark")
+					extraBit := strings.TrimSpace(strings.TrimPrefix(fullRespText, newStr))
+					if extraBit != "" {
+						fullRespSlice = append(fullRespSlice, extraBit)
+						newStr = strings.TrimSpace(strings.Join(fullRespSlice, " "))
+					}
+				}
+
+				toolMessages := []openai.ChatCompletionMessage{}
 				if len(finalToolCalls) > 0 {
 					logger.Println("LLM native tool calls: " + fmt.Sprint(finalToolCalls))
+					nChat[len(nChat)-1].ToolCalls = append([]openai.ToolCall(nil), finalToolCalls...)
+					nChat[len(nChat)-1].Content = newStr
+					var needFollowUp bool
+					deferredFromTools, toolResults, followUpNeeded := executeNativeToolCalls(finalToolCalls, nativeToolContext{Robot: robot})
+					deferredActions = append(deferredActions, deferredFromTools...)
+					toolMessages = append(toolMessages, toolResults...)
+					needFollowUp = followUpNeeded || (len(fullRespSlice) == 0 && len(toolResults) > 0)
+					if len(toolResults) > 0 {
+						nChat = append(nChat, toolResults...)
+					}
+					if needFollowUp && len(toolResults) > 0 {
+						followupText, followErr := createToolFollowup(ctx, c, aireq, nChat)
+						if followErr != nil {
+							logger.Println("LLM tool follow-up failed: " + followErr.Error())
+						} else if strings.TrimSpace(followupText) != "" {
+							fullRespSlice = append(fullRespSlice, followupText)
+							if strings.TrimSpace(fullfullRespText) == "" {
+								fullfullRespText = followupText
+							} else {
+								fullfullRespText = strings.TrimSpace(fullfullRespText + " " + followupText)
+							}
+							newStr = strings.TrimSpace(strings.Join(fullRespSlice, " "))
+							prefetch.PreloadFromRaw(followupText)
+							notifySuccess()
+							select {
+							case speakReady <- followupText:
+							default:
+							}
+							toolMessages = append(toolMessages, openai.ChatCompletionMessage{Role: openai.ChatMessageRoleAssistant, Content: followupText})
+						}
+					}
 					notifySuccess()
+				} else {
+					nChat[len(nChat)-1].Content = newStr
 				}
+
 				logger.Println("LLM final raw: " + clipDebugString(fullfullRespText, 300))
 				logger.Println("LLM final slices: " + fmt.Sprint(fullRespSlice))
 				if len(fullRespSlice) == 0 && len(finalToolCalls) == 0 {
@@ -226,30 +272,15 @@ func StreamingKGSim(req interface{}, esn string, transcribedText string, isKG bo
 					break
 				}
 				isDone = true
-				newStr := strings.TrimSpace(strings.Join(fullRespSlice, " "))
-				if len(fullRespSlice) > 0 && strings.TrimSpace(newStr) != strings.TrimSpace(fullfullRespText) {
-					logger.Println("LLM debug: there is content after the last punctuation mark")
-					extraBit := strings.TrimSpace(strings.TrimPrefix(fullRespText, newStr))
-					if extraBit != "" {
-						fullRespSlice = append(fullRespSlice, extraBit)
-						newStr = strings.TrimSpace(strings.Join(fullRespSlice, " "))
-					}
-				}
 				if vars.APIConfig.Knowledge.SaveChat {
-					assistantMessage := openai.ChatCompletionMessage{
-						Role:    openai.ChatMessageRoleAssistant,
-						Content: newStr,
+					messagesToRemember := []openai.ChatCompletionMessage{{
+						Role:    openai.ChatMessageRoleUser,
+						Content: transcribedText,
+					}, nChat[len(nChat)-1]}
+					if len(toolMessages) > 0 {
+						messagesToRemember = append(messagesToRemember, toolMessages...)
 					}
-					if len(finalToolCalls) > 0 {
-						assistantMessage.ToolCalls = append([]openai.ToolCall(nil), finalToolCalls...)
-					}
-					RememberMessages([]openai.ChatCompletionMessage{
-						{
-							Role:    openai.ChatMessageRoleUser,
-							Content: transcribedText,
-						},
-						assistantMessage,
-					}, esn)
+					RememberMessages(messagesToRemember, esn)
 				}
 				if newStr != "" {
 					logger.LogUI("LLM response for " + esn + ": " + newStr)
@@ -305,8 +336,6 @@ func StreamingKGSim(req interface{}, esn string, transcribedText string, isKG bo
 		robotpkg.BControl(robot, ctx, start, stop)
 	}
 	interrupted := false
-	var deferredActions []func()
-	var nativeDeferredQueued bool
 	go func() {
 		interrupted = robotpkg.InterruptKGSimWhenTouchedOrWaked(robot, stop, stopStop)
 	}()
@@ -357,12 +386,6 @@ func StreamingKGSim(req interface{}, esn string, transcribedText string, isKG bo
 				break
 			}
 			numInResp = numInResp + 1
-		}
-		if !nativeDeferredQueued && len(finalToolCalls) > 0 {
-			nChat[len(nChat)-1].ToolCalls = append([]openai.ToolCall(nil), finalToolCalls...)
-			nativeDeferred, _ := nativeToolCallsToDeferredActions(finalToolCalls, robot)
-			deferredActions = append(deferredActions, nativeDeferred...)
-			nativeDeferredQueued = true
 		}
 		speechSession.Stop(!interrupted)
 		time.Sleep(time.Millisecond * 100)

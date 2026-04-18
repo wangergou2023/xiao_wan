@@ -1,25 +1,12 @@
 # Long-term Memory
 
-This file is the human-readable companion to the structured user profile.
+This file stores freeform durable memory for the robot.
 
-Use it for stable facts that should survive across sessions.
+## Remembered Notes
 
-## Good Things To Store Here
+- No durable memory has been confirmed yet.
 
-- The user's name
-- Owner relationship or family role definitions
-- Preferred greeting style
-- Long-term speaking preferences
-- Stable household habits that affect interaction
+## Sync Info
 
-## Do Not Store Here
-
-- Short-lived chat details that will not matter later
-- Random one-off jokes or temporary context
-- Guesses that were never confirmed
-
-## Consistency Rules
-
-- Keep this file consistent with structured memory.
-- If structured profile facts are stronger or newer, follow them.
-- Prefer confirmed user statements over inferred assumptions.
+- Robot ESN: 0dd1c497
+- Source of truth: freeform long-term memory saved by web settings or confirmed remembered facts

@@ -3,7 +3,6 @@ package vision
 import (
 	"context"
 	"errors"
-	"fmt"
 	"strings"
 	"sync"
 	"time"
@@ -12,13 +11,10 @@ import (
 	"github.com/wangergou2023/xiao_wan/chipper/pkg/vars"
 	"github.com/wangergou2023/xiao_wan/chipper/pkg/vector"
 	"github.com/wangergou2023/xiao_wan/chipper/pkg/vectorpb"
-	memorypkg "github.com/wangergou2023/xiao_wan/chipper/pkg/xiaowan/memory"
 )
 
 const recentFaceTTL = 45 * time.Second
 const faceReappearanceWindow = 10 * time.Second
-const repeatedFaceLogInterval = 15 * time.Second
-const repeatedDecisionLogInterval = 8 * time.Second
 
 type observedFaceState struct {
 	Name        string
@@ -29,15 +25,10 @@ type observedFaceState struct {
 }
 
 var (
-	faceWatcherMu     sync.Mutex
-	faceWatchers      = map[string]bool{}
-	observedFacesMu   sync.Mutex
-	observedFaces     = map[string]observedFaceState{}
-	faceLogMu         sync.Mutex
-	lastFaceEventLogs = map[string]time.Time{}
-	lastFaceMapLogs   = map[string]time.Time{}
-	decisionLogMu     sync.Mutex
-	lastDecisionLogs  = map[string]time.Time{}
+	faceWatcherMu   sync.Mutex
+	faceWatchers    = map[string]bool{}
+	observedFacesMu sync.Mutex
+	observedFaces   = map[string]observedFaceState{}
 )
 
 // BuildPromptContext 返回最近一次识别到的人脸上下文，供 LLM 判断当前面对的是谁。
@@ -63,41 +54,12 @@ func BuildPromptContext(esn string) string {
 }
 
 func buildIdentityPrompt(esn string, state observedFaceState) string {
+	_ = esn
 	name := strings.TrimSpace(state.Name)
 	if name == "" {
 		return ""
 	}
-
-	profile := memorypkg.LoadProfile(esn)
-	switch {
-	case samePerson(name, profile.OwnerName):
-		return fmt.Sprintf("Current visual context: The robot recently recognized %s in front of it. This face matches the saved owner identity.", name)
-	case samePerson(name, profile.UserName):
-		return fmt.Sprintf("Current visual context: The robot recently recognized %s in front of it. This face matches the saved user identity.", name)
-	case samePerson(name, profile.Nickname):
-		return fmt.Sprintf("Current visual context: The robot recently recognized %s in front of it. This may be the person who prefers to be addressed as %s.", name, profile.Nickname)
-	default:
-		return "Current visual context: The robot recently recognized a face named " + name + " standing in front of it."
-	}
-}
-
-func identityKind(profile memorypkg.UserProfile, name string) string {
-	switch {
-	case samePerson(name, profile.OwnerName):
-		return "owner"
-	case samePerson(name, profile.UserName):
-		return "user"
-	case samePerson(name, profile.Nickname):
-		return "nickname"
-	default:
-		return "known_face"
-	}
-}
-
-func samePerson(faceName, profileName string) bool {
-	faceName = strings.TrimSpace(strings.ToLower(faceName))
-	profileName = strings.TrimSpace(strings.ToLower(profileName))
-	return faceName != "" && profileName != "" && faceName == profileName
+	return "Current visual context: The robot recently recognized a face named " + name + " standing in front of it."
 }
 
 // ensureFaceWatcher 为每个机器人只启动一个后台观察器，避免重复占用事件流。
@@ -169,7 +131,6 @@ func watchFacesOnce(esn string) error {
 			if face == nil {
 				continue
 			}
-			maybeLogFaceEvent(esn, face.GetFaceId(), strings.TrimSpace(face.GetName()))
 			updateObservedFace(esn, face.GetFaceId(), face.GetName())
 		case *vectorpb.Event_VisionModesAutoDisabled:
 			return context.Canceled
@@ -202,53 +163,6 @@ func updateObservedFace(esn string, faceID int32, name string) {
 	}
 	observedFacesMu.Unlock()
 
-	if name == "" {
-		logDecisionOnce(esn, fmt.Sprintf("unknown-face:%d", faceID), fmt.Sprintf("Face watcher for %s saw face id=%d but did not match a saved name", esn, faceID))
-		return
-	}
-
-	profile := memorypkg.LoadProfile(esn)
-	maybeLogFaceMapping(esn, faceID, name, identityKind(profile, name))
-}
-
-func maybeLogFaceEvent(esn string, faceID int32, name string) {
-	key := fmt.Sprintf("%s:%d:%s", esn, faceID, strings.ToLower(strings.TrimSpace(name)))
-
-	faceLogMu.Lock()
-	defer faceLogMu.Unlock()
-
-	lastAt := lastFaceEventLogs[key]
-	if !lastAt.IsZero() && time.Since(lastAt) < repeatedFaceLogInterval {
-		return
-	}
-	lastFaceEventLogs[key] = time.Now()
-	logger.Println(fmt.Sprintf("Face watcher for %s observed face event: id=%d, name=%q", esn, faceID, name))
-}
-
-func maybeLogFaceMapping(esn string, faceID int32, name, kind string) {
-	key := fmt.Sprintf("%s:%d:%s:%s", esn, faceID, strings.ToLower(strings.TrimSpace(name)), kind)
-
-	faceLogMu.Lock()
-	defer faceLogMu.Unlock()
-
-	lastAt := lastFaceMapLogs[key]
-	if !lastAt.IsZero() && time.Since(lastAt) < repeatedFaceLogInterval {
-		return
-	}
-	lastFaceMapLogs[key] = time.Now()
-	logger.Println(fmt.Sprintf("Face watcher for %s mapped face id=%d name=%q as %s", esn, faceID, name, kind))
-}
-
-func logDecisionOnce(esn, key, msg string) {
-	fullKey := esn + "::" + key
-
-	decisionLogMu.Lock()
-	defer decisionLogMu.Unlock()
-
-	lastAt := lastDecisionLogs[fullKey]
-	if !lastAt.IsZero() && time.Since(lastAt) < repeatedDecisionLogInterval {
-		return
-	}
-	lastDecisionLogs[fullKey] = time.Now()
-	logger.Println(msg)
+	_ = faceID
+	_ = name
 }
