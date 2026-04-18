@@ -47,6 +47,7 @@ const (
 	ActionNod            = 10
 	ActionLookDownShy    = 11
 	ActionRaiseArmsHappy = 12
+	ActionGoCharge       = 13
 )
 
 const (
@@ -147,7 +148,7 @@ func CreatePrompt(origPrompt string, model string, isKG bool) string {
 		prompt = prompt + "\n\n" + "Additional active skills:\n" + skillPrompt
 	}
 	if vars.APIConfig.Knowledge.CommandsEnable {
-		prompt = prompt + "\n\n" + "You are running ON an Anki Vector robot. You have a set of commands. If you include an emoji, I will make you start over. If you want to use a command but it doesn't exist or your desired parameter isn't in the list, avoid using the command. The format is {{command||parameter}}. You can embed these in sentences. Example: \"User: How are you feeling? | Response: \"{{playAnimationWI||sad}} I'm feeling sad...\". Square brackets ([]) are not valid.\n\nUse the playAnimation or playAnimationWI commands if you want to express emotion! You are very animated and good at following instructions. Animation takes precendence over words. You are to include many animations in your response. Head and lift commands are only for subtle physical gestures. Use at most one small motor gesture near a sentence, and do not chain them repeatedly. Prefer higher-level gestures like nod or raiseArmsHappy when they fit.\n\nHere is every valid command:"
+		prompt = prompt + "\n\n" + "You are running ON an Anki Vector robot. You have a set of commands. If you include an emoji, I will make you start over. If you want to use a command but it doesn't exist or your desired parameter isn't in the list, avoid using the command. The format is {{command||parameter}}. You can embed these in sentences. Example: \"User: How are you feeling? | Response: \"{{playAnimationWI||sad}} I'm feeling sad...\". Square brackets ([]) are not valid.\n\nUse the playAnimation or playAnimationWI commands if you want to express emotion! You are very animated and good at following instructions. Animation takes precendence over words. You are to include many animations in your response. Head and lift commands are only for subtle physical gestures. Use at most one small motor gesture near a sentence, and do not chain them repeatedly. Prefer higher-level gestures like nod or raiseArmsHappy when they fit. For physical task requests, the real task command is more important than emotional gestures.\n\nImportant rule: if the user asks you to go home, return to the charger, go charge, go back to charge, head to the charger, or similar, you MUST include {{goCharge||now}} in your response. Only saying that you will charge is not enough.\n\nExamples:\nUser: 回家去充电\nResponse: 好的，我现在回充电座。{{goCharge||now}}\nUser: 去充电吧\nResponse: 好的，我这就去充电。{{goCharge||now}}\nUser: 回家吧\nResponse: 好的，我先回家休息充电。{{goCharge||now}}\n\nHere is every valid command:"
 		for _, cmd := range ValidLLMCommands {
 			if ModelIsSupported(cmd, model) {
 				promptAppendage := "\n\nCommand Name: " + cmd.Command + "\nDescription: " + cmd.Description + "\nParameter choices: " + cmd.ParamChoices
@@ -204,17 +205,26 @@ func GetActionsFromString(input string) []RobotAction {
 			continue
 		}
 
-		cmdPlusParam := strings.Split(strings.TrimSpace(strings.Split(spl, "}}")[0]), "||")
+		commandAndTail := strings.SplitN(spl, "}}", 2)
+		commandText := strings.TrimSpace(commandAndTail[0])
+		cmdPlusParam := strings.SplitN(commandText, "||", 2)
 		cmd := strings.TrimSpace(cmdPlusParam[0])
-		param := strings.TrimSpace(cmdPlusParam[1])
+		param := ""
+		// 某些流式片段里模型会输出 {{lookDownShy}} 这种无参数命令。
+		// 对这类“now”型命令自动补默认参数，避免预取阶段因切片越界崩溃。
+		if len(cmdPlusParam) > 1 {
+			param = strings.TrimSpace(cmdPlusParam[1])
+		} else {
+			param = "now"
+		}
 		action := CmdParamToAction(cmd, param)
 		if action.Action != -1 {
 			actions = append(actions, action)
 		}
-		if len(strings.Split(spl, "}}")) != 1 {
+		if len(commandAndTail) > 1 {
 			action := RobotAction{
 				Action:    ActionSayText,
-				Parameter: strings.TrimSpace(strings.Split(spl, "}}")[1]),
+				Parameter: strings.TrimSpace(commandAndTail[1]),
 			}
 			actions = append(actions, action)
 		}
@@ -325,6 +335,11 @@ func DoRaiseArmsHappy(robot *vector.Vector) error {
 		return err
 	}
 	return robotpkg.LiftDownFor(robot, llmLiftMoveDuration)
+}
+
+// DoGoCharge 触发机器人回充电座，给 LLM 一个真正可执行的高层能力。
+func DoGoCharge(robot *vector.Vector) error {
+	return robotpkg.GoCharge(robot)
 }
 
 // DoSayText 统一走文本播报入口，优先复用预生成好的智谱 TTS，失败时再回退到机器人原生播报。
@@ -619,6 +634,8 @@ func PerformActions(msgs []openai.ChatCompletionMessage, actions []RobotAction, 
 				DoRaiseArmsHappy(robot)
 				allowMotorGestureDuringThisSentence = false
 			}
+		case action.Action == ActionGoCharge:
+			DoGoCharge(robot)
 		case action.Action == ActionNewRequest:
 			go DoNewRequest(robot)
 			return true

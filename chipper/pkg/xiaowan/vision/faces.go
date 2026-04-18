@@ -2,6 +2,7 @@ package vision
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 	"sync"
@@ -113,7 +114,12 @@ func ensureFaceWatcher(esn string) {
 func watchFaces(esn string) {
 	for {
 		if err := watchFacesOnce(esn); err != nil {
-			logger.Println("Face watcher for " + esn + " stopped, retrying: " + err.Error())
+			if errors.Is(err, context.Canceled) {
+				// 视觉模式被机器人自动关闭时，后台观察器会主动重连；这是预期路径，不当成错误刷日志。
+				logger.Println("Face watcher for " + esn + " restarting after vision mode reset")
+			} else {
+				logger.Println("Face watcher for " + esn + " stopped, retrying: " + err.Error())
+			}
 		}
 		time.Sleep(5 * time.Second)
 	}

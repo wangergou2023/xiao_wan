@@ -84,6 +84,13 @@ func builtinToolSpecs() []ToolSpec {
 			SupportedModels: []string{"all"},
 		},
 		{
+			Name:            "goCharge",
+			Description:     "Makes the robot actually go back to its charger/home and start charging. This is the required command for real charging behavior. If the user asks you to go charge, go home, return to the charger, or head back to the dock, you MUST use this command. Only talking about charging without this command does not complete the request.",
+			ParamChoices:    "now",
+			Action:          ActionGoCharge,
+			SupportedModels: []string{"all"},
+		},
+		{
 			Name:            "newVoiceRequest",
 			Description:     "Starts a new voice command from the robot. Use this if you want more input from the user after your response/if you want to carry out a conversation. Below this, there should be a NOTE telling you whether you are in conversation mode or not. If you are, DONT BE AFRAID TO USE THIS COMMAND! This goes at the end of your response, if you use it.",
 			ParamChoices:    "now",
