@@ -27,6 +27,7 @@ type observedFaceState struct {
 	FaceID      int32
 	LastSeenAt  time.Time
 	FirstSeenAt time.Time
+	Reappeared  bool
 }
 
 type pendingGreetingState struct {
@@ -208,17 +209,21 @@ func updateObservedFace(esn string, faceID int32, name string) {
 	prev := observedFaces[esn]
 	now := time.Now()
 	firstSeenAt := now
+	reappeared := false
 	if strings.EqualFold(strings.TrimSpace(prev.Name), name) && !prev.LastSeenAt.IsZero() && now.Sub(prev.LastSeenAt) < faceReappearanceWindow {
 		firstSeenAt = prev.FirstSeenAt
 		if firstSeenAt.IsZero() {
 			firstSeenAt = prev.LastSeenAt
 		}
+	} else if strings.EqualFold(strings.TrimSpace(prev.Name), name) && !prev.LastSeenAt.IsZero() && now.Sub(prev.LastSeenAt) >= faceReappearanceWindow {
+		reappeared = true
 	}
 	observedFaces[esn] = observedFaceState{
 		Name:        name,
 		FaceID:      faceID,
 		LastSeenAt:  now,
 		FirstSeenAt: firstSeenAt,
+		Reappeared:  reappeared,
 	}
 	observedFacesMu.Unlock()
 
@@ -338,10 +343,6 @@ func speakAutoGreeting(esn, name string) error {
 	}
 	if kind == "nickname" && knownGreetingFunc != nil {
 		logger.Println(fmt.Sprintf("Auto face greeting branch for %s name=%q: nickname -> llm greeting", esn, name))
-		return knownGreetingFunc(esn, name)
-	}
-	if kind == "known_face" && knownGreetingFunc != nil {
-		logger.Println(fmt.Sprintf("Auto face greeting branch for %s name=%q: known_face -> llm greeting", esn, name))
 		return knownGreetingFunc(esn, name)
 	}
 	text := buildAutoGreetingText(profile, name)
@@ -467,10 +468,7 @@ func hasFaceReappeared(esn, name string) bool {
 	if !strings.EqualFold(strings.TrimSpace(state.Name), strings.TrimSpace(name)) {
 		return false
 	}
-	if state.FirstSeenAt.IsZero() {
-		return false
-	}
-	return time.Since(state.FirstSeenAt) < 2*time.Second
+	return state.Reappeared
 }
 
 func buildAutoGreetingText(profile memorypkg.UserProfile, name string) string {

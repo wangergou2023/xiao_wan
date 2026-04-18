@@ -274,7 +274,11 @@ func StreamingKGSim(req interface{}, esn string, transcribedText string, isKG bo
 	go func() {
 		interrupted = robotpkg.InterruptKGSimWhenTouchedOrWaked(robot, stop, stopStop)
 	}()
-	for range start {
+	for {
+		_, ok := <-start
+		if !ok {
+			break
+		}
 		if isKG {
 			kgStopLooping = true
 			for range kgReadyToAnswer {
@@ -330,6 +334,7 @@ func StreamingKGSim(req interface{}, esn string, transcribedText string, isKG bo
 			stopStop <- true
 			stop <- true
 		}
+		break
 	}
 	return "", nil
 }

@@ -94,7 +94,11 @@ func KGSim(esn string, textToSay string) error {
 
 		var stopTTSLoop bool
 		var TTSLoopStopped bool
-		for range start {
+		for {
+			_, ok := <-start
+			if !ok {
+				break
+			}
 			time.Sleep(time.Millisecond * 300)
 			robot.Conn.PlayAnimation(ctx, &vectorpb.PlayAnimationRequest{
 				Animation: &vectorpb.Animation{Name: "anim_getin_tts_01"},
@@ -132,6 +136,7 @@ func KGSim(esn string, textToSay string) error {
 				Loops:     1,
 			})
 			stop <- true
+			break
 		}
 	}()
 	return nil
