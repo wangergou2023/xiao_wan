@@ -37,11 +37,6 @@
           <a href="#" onclick="showBotAuth(); return false;"><i class="fa solid fa-robot" id="icon-BotAuth"
               name="icon"></i><br />Bot Setup</a>
         </div>
-        <!--Custom Intents-->
-        <div class="main-nav-child">
-          <a href="#" onclick="showIntents(); return false;"><i class="fa-solid fa-microphone-lines" id="icon-Intents"
-              name="icon"></i><br />Custom Intents</a>
-        </div>
         <!--Logs-->
         <div class="main-nav-child">
           <a href="#" onclick="showLog(); return false;"><i class="fa-solid fa-file-lines" id="icon-Logs"
@@ -59,65 +54,6 @@
         </div>
       </div>
       <hr />
-
-      <div id="section-intents" style="display: none">
-        <h2 id="foldable-add" onclick="toggleSection('content-add', 'content-edit')">
-          <span>+</span>
-          Add a custom intent
-        </h2>
-        <div class="content" id="content-add">
-          <p>
-            For more details, see
-            <a href="https://github.com/kercre123/wire-pod/wiki/Custom-Intents" target="_blank">the Custom Intents page of the wiki</a>
-          </p>
-          <div id="addIntentStatus"></div>
-          <form id="intentAddForm">
-            <label for="nameAdd">Custom intent name:</label>
-            <input type="text" name="nameAdd" id="nameAdd" /><br />
-            <label for="descriptionAdd">Custom intent description:</label>
-            <input type="text" name="descriptionAdd" id="descriptionAdd" /><br />
-            <label for="utterancesAdd">Utterances that will trigger the intent (separated by
-              ,):</label>
-            <input type="text" name="utterancesAdd" id="utterancesAdd" /><br />
-            <div id="intentAddSelect"></div>
-            <label for="paramnameAdd">Intent parameter name (not required):</label>
-            <input type="text" name="paramnameAdd" id="paramnameAdd" /><br />
-            <label for="paramvalueAdd">Intent parameter value (not required):</label>
-            <input type="text" name="paramvalueAdd" id="paramvalueAdd" /><br />
-            <label for="execAdd">Path to script/program to execute after sending intent (not
-              required):</label>
-            <input type="text" name="execAdd" id="execAdd" /><br />
-            <label for="execAdd">Arguments for script/program (seperated by ,) (not required):</label>
-            <input type="text" name="execAddArgs" id="execAddArgs" size="50" /><br />
-            <label for="luaAdd">Lua code to run (not required):</label>
-            <textarea id="luaAdd"></textarea>
-          </form>
-          <div>
-            <button onclick="sendIntentAdd()">Add intent</button>
-          </div>
-          <hr />
-        </div>
-
-        <h2 id="foldable-edit" onclick="toggleSection('content-edit', 'content-add')">
-          <span>+</span>
-          Edit/delete a custom intent
-        </h2>
-        <div class="content" id="content-edit">
-          <div id="editSelect"></div>
-          <div id="editIntentStatus"></div>
-          <div id="deleteIntentStatus"></div>
-          <div>
-            <div>
-              <button onclick="editFormCreate()">Edit selected intent</button>
-              <button onclick="deleteSelectedIntent()">
-                Delete selected intent
-              </button>
-            </div>
-          </div>
-          <div id="editIntentForm"></div>
-          <hr />
-        </div>
-      </div>
 
       <div id="section-botauth" style="display: none">
         <h2>Authentication</h2>
@@ -218,9 +154,6 @@
 <!-- <script src="./sdkapp/js/main.js"></script> -->
 <script>
   checkInited();
-  updateIntentSelection("editSelect");
-  updateIntentSelection("deleteSelect");
-  createIntentSelect("intentAddSelect");
   processBotStats();
 </script>
 

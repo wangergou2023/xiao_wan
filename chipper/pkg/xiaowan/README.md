@@ -17,7 +17,7 @@
 -	Text-to-response, takes text from wirepod-stt, turns it into a response, and sends it to the bot. Does all intent parsing and stuff as well
 
 ## config-ws
--	Webserver for custom intents and such
+-	Webserver for setup, logs, and robot management
 
 ## sdkapp
 -   App for configuring bot settings and controlling bots

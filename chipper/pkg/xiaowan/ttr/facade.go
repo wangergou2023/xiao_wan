@@ -12,11 +12,6 @@ func IntentPass(req interface{}, intentThing string, speechText string, intentPa
 	return intentpkg.IntentPass(req, intentThing, speechText, intentParams, isParam)
 }
 
-// ProcessCustomIntents 对外暴露自定义 intent 匹配能力。
-func ProcessCustomIntents(req interface{}, voiceText string) bool {
-	return intentpkg.ProcessCustomIntents(req, voiceText)
-}
-
 // KnowledgeGraphResponseIG 兼容旧调用方，对外暴露 KG 响应封装能力。
 func KnowledgeGraphResponseIG(req *vtt.IntentGraphRequest, spokenText string, queryText string) error {
 	return intentpkg.KnowledgeGraphResponseIG(req, spokenText, queryText)

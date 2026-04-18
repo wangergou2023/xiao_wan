@@ -13,7 +13,6 @@ import (
 	"strings"
 
 	"github.com/wangergou2023/xiao_wan/chipper/pkg/logger"
-	"github.com/wangergou2023/xiao_wan/chipper/pkg/scripting"
 	"github.com/wangergou2023/xiao_wan/chipper/pkg/vars"
 	"github.com/wangergou2023/xiao_wan/chipper/pkg/xiaowan/localization"
 	memorypkg "github.com/wangergou2023/xiao_wan/chipper/pkg/xiaowan/memory"
@@ -28,14 +27,6 @@ func apiHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Access-Control-Allow-Headers", "*")
 
 	switch strings.TrimPrefix(r.URL.Path, "/api/") {
-	case "add_custom_intent":
-		handleAddCustomIntent(w, r)
-	case "edit_custom_intent":
-		handleEditCustomIntent(w, r)
-	case "get_custom_intents_json":
-		handleGetCustomIntentsJSON(w)
-	case "remove_custom_intent":
-		handleRemoveCustomIntent(w, r)
 	case "set_weather_api":
 		handleSetWeatherAPI(w, r)
 	case "get_weather_api":
@@ -83,111 +74,6 @@ func apiHandler(w http.ResponseWriter, r *http.Request) {
 	default:
 		http.Error(w, "not found", http.StatusNotFound)
 	}
-}
-
-func handleAddCustomIntent(w http.ResponseWriter, r *http.Request) {
-	var intent vars.CustomIntent
-	if err := json.NewDecoder(r.Body).Decode(&intent); err != nil {
-		http.Error(w, "invalid request body", http.StatusBadRequest)
-		return
-	}
-	if anyEmpty(intent.Name, intent.Description, intent.Intent) || len(intent.Utterances) == 0 {
-		http.Error(w, "missing required field (name, description, utterances, and intent are required)", http.StatusBadRequest)
-		return
-	}
-	intent.LuaScript = strings.TrimSpace(intent.LuaScript)
-	if intent.LuaScript != "" {
-		if err := scripting.ValidateLuaScript(intent.LuaScript); err != nil {
-			http.Error(w, "lua validation error: "+err.Error(), http.StatusBadRequest)
-			return
-		}
-	}
-	vars.CustomIntentsExist = true
-	vars.CustomIntents = append(vars.CustomIntents, intent)
-	saveCustomIntents()
-	fmt.Fprint(w, "Intent added successfully.")
-}
-
-func handleEditCustomIntent(w http.ResponseWriter, r *http.Request) {
-	var request struct {
-		Number int `json:"number"`
-		vars.CustomIntent
-	}
-	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
-		http.Error(w, "invalid request body", http.StatusBadRequest)
-		return
-	}
-	if request.Number < 1 || request.Number > len(vars.CustomIntents) {
-		http.Error(w, "invalid intent number", http.StatusBadRequest)
-		return
-	}
-	intent := &vars.CustomIntents[request.Number-1]
-	if request.Name != "" {
-		intent.Name = request.Name
-	}
-	if request.Description != "" {
-		intent.Description = request.Description
-	}
-	if len(request.Utterances) != 0 {
-		intent.Utterances = request.Utterances
-	}
-	if request.Intent != "" {
-		intent.Intent = request.Intent
-	}
-	if request.Params.ParamName != "" {
-		intent.Params.ParamName = request.Params.ParamName
-	}
-	if request.Params.ParamValue != "" {
-		intent.Params.ParamValue = request.Params.ParamValue
-	}
-	if request.Exec != "" {
-		intent.Exec = request.Exec
-	}
-	if request.LuaScript != "" {
-		intent.LuaScript = request.LuaScript
-		if err := scripting.ValidateLuaScript(intent.LuaScript); err != nil {
-			http.Error(w, "lua validation error: "+err.Error(), http.StatusBadRequest)
-			return
-		}
-	}
-	if len(request.ExecArgs) != 0 {
-		intent.ExecArgs = request.ExecArgs
-	}
-	intent.IsSystemIntent = false
-	saveCustomIntents()
-	fmt.Fprint(w, "Intent edited successfully.")
-}
-
-func handleGetCustomIntentsJSON(w http.ResponseWriter) {
-	if !vars.CustomIntentsExist {
-		http.Error(w, "you must create an intent first", http.StatusBadRequest)
-		return
-	}
-	customIntentJSONFile, err := os.ReadFile(vars.CustomIntentsPath)
-	if err != nil {
-		http.Error(w, "could not read custom intents file", http.StatusInternalServerError)
-		logger.Println(err)
-		return
-	}
-	w.Header().Set("Content-Type", "application/json")
-	w.Write(customIntentJSONFile)
-}
-
-func handleRemoveCustomIntent(w http.ResponseWriter, r *http.Request) {
-	var request struct {
-		Number int `json:"number"`
-	}
-	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
-		http.Error(w, "invalid request body", http.StatusBadRequest)
-		return
-	}
-	if request.Number < 1 || request.Number > len(vars.CustomIntents) {
-		http.Error(w, "invalid intent number", http.StatusBadRequest)
-		return
-	}
-	vars.CustomIntents = append(vars.CustomIntents[:request.Number-1], vars.CustomIntents[request.Number:]...)
-	saveCustomIntents()
-	fmt.Fprint(w, "Intent removed successfully.")
 }
 
 func handleSetWeatherAPI(w http.ResponseWriter, r *http.Request) {
@@ -487,11 +373,6 @@ func handleGenerateCerts(w http.ResponseWriter) {
 		return
 	}
 	fmt.Fprint(w, "done")
-}
-
-func saveCustomIntents() {
-	customIntentJSONFile, _ := json.Marshal(vars.CustomIntents)
-	os.WriteFile(vars.CustomIntentsPath, customIntentJSONFile, 0644)
 }
 
 func DisableCachingAndSniffing(next http.Handler) http.Handler {

@@ -33,17 +33,16 @@ var IsPackagedLinux bool
 var AndroidPath string
 
 var (
-	JdocsPath         string = "./jdocs/jdocs.json"
-	JdocsDir          string = "./jdocs"
-	CustomIntentsPath string = "./customIntents.json"
-	BotConfigsPath    string = "./botConfig.json"
-	BotInfoPath       string = "./jdocs/botSdkInfo.json"
-	BotInfoName       string = "botSdkInfo.json"
-	PodName           string = "wire-pod"
-	VoskModelPath     string = "../vosk/models/"
-	WhisperModelPath  string = "../whisper.cpp/models/"
-	SessionCertPath   string = "./session-certs/"
-	VersionFile       string = "./version"
+	JdocsPath        string = "./jdocs/jdocs.json"
+	JdocsDir         string = "./jdocs"
+	BotConfigsPath   string = "./botConfig.json"
+	BotInfoPath      string = "./jdocs/botSdkInfo.json"
+	BotInfoName      string = "botSdkInfo.json"
+	PodName          string = "wire-pod"
+	VoskModelPath    string = "../vosk/models/"
+	WhisperModelPath string = "../whisper.cpp/models/"
+	SessionCertPath  string = "./session-certs/"
+	VersionFile      string = "./version"
 )
 
 var (
@@ -60,8 +59,6 @@ var WebPort string = "8080"
 var SDKIniPath string
 var BotJdocs []botjdoc
 var BotInfo RobotInfoStore
-var CustomIntents []CustomIntent
-var CustomIntentsExist bool = false
 var DownloadedVoskModels []string
 var VoskGrammerEnable bool = false
 
@@ -102,21 +99,6 @@ type RecurringInfoStore struct {
 	ESN string `json:"esn"`
 	// 192.168.1.150
 	IP string `json:"ip"`
-}
-
-type CustomIntent struct {
-	Name        string   `json:"name"`
-	Description string   `json:"description"`
-	Utterances  []string `json:"utterances"`
-	Intent      string   `json:"intent"`
-	Params      struct {
-		ParamName  string `json:"paramname"`
-		ParamValue string `json:"paramvalue"`
-	} `json:"params"`
-	Exec           string   `json:"exec"`
-	ExecArgs       []string `json:"execargs"`
-	IsSystemIntent bool     `json:"issystem"`
-	LuaScript      string   `json:"luascript"`
 }
 
 type AJdoc struct {
@@ -160,7 +142,6 @@ func Init() {
 		os.Mkdir(podDir, 0777)
 		JdocsDir = join(podDir, JdocsDir)
 		JdocsPath = JdocsDir + "/jdocs.json"
-		CustomIntentsPath = join(podDir, CustomIntentsPath)
 		BotConfigsPath = join(podDir, BotConfigsPath)
 		BotInfoPath = JdocsDir + "/" + BotInfoName
 		VoskModelPath = join(podDir, "./vosk/models/")
@@ -246,7 +227,6 @@ func Init() {
 	}
 
 	ReadSessionCerts()
-	LoadCustomIntents()
 	VarsInited = true
 }
 
@@ -258,18 +238,6 @@ func GetDownloadedVoskModels() {
 	}
 	for _, dir := range array {
 		DownloadedVoskModels = append(DownloadedVoskModels, dir.Name())
-	}
-}
-
-func LoadCustomIntents() {
-	jsonBytes, err := os.ReadFile(CustomIntentsPath)
-	if err == nil {
-		json.Unmarshal(jsonBytes, &CustomIntents)
-		CustomIntentsExist = true
-		logger.Println("Loaded custom intents:")
-		for _, intent := range CustomIntents {
-			logger.Println(intent.Name)
-		}
 	}
 }
 

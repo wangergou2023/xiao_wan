@@ -1,23 +1,12 @@
 package intent
 
 import (
-	"bytes"
-	"encoding/json"
 	"fmt"
-	"os/exec"
-	"strings"
 
 	pb "github.com/digital-dream-labs/api/go/chipperpb"
 	"github.com/wangergou2023/xiao_wan/chipper/pkg/logger"
-	"github.com/wangergou2023/xiao_wan/chipper/pkg/scripting"
-	"github.com/wangergou2023/xiao_wan/chipper/pkg/vars"
 	"github.com/wangergou2023/xiao_wan/chipper/pkg/vtt"
 )
-
-type systemIntentResponseStruct struct {
-	Status       string `json:"status"`
-	ReturnIntent string `json:"returnIntent"`
-}
 
 // IntentPass 将匹配到的 intent 结果写回 IntentGraph 流。
 func IntentPass(req interface{}, intentThing string, speechText string, intentParams map[string]string, isParam bool) (interface{}, error) {
@@ -64,111 +53,6 @@ func IntentPass(req interface{}, intentThing string, speechText string, intentPa
 		logger.Println("No Parameters Sent")
 	}
 	return r, nil
-}
-
-func customIntentHandler(req interface{}, voiceText string, botSerial string) bool {
-	var successMatched bool = false
-	if vars.CustomIntentsExist {
-		for _, c := range vars.CustomIntents {
-			for _, v := range c.Utterances {
-				//if strings.Contains(voiceText, strings.ToLower(strings.TrimSpace(v))) {
-				// Check whether the custom sentence is either at the end of the spoken text or space-separated...
-				var seekText = strings.ToLower(strings.TrimSpace(v))
-				// System intents can also match any utterances (*)
-				if (c.IsSystemIntent && strings.HasPrefix(seekText, "*")) || strings.Contains(voiceText, seekText) {
-					logger.Println("Bot " + botSerial + " Custom Intent Matched: " + c.Name + " - " + c.Description + " - " + c.Intent)
-					var intentParams map[string]string
-					var isParam bool = false
-					if c.Params.ParamValue != "" {
-						logger.Println("Bot " + botSerial + " Custom Intent Parameter: " + c.Params.ParamName + " - " + c.Params.ParamValue)
-						intentParams = map[string]string{c.Params.ParamName: c.Params.ParamValue}
-						isParam = true
-					}
-
-					go func() {
-						if c.LuaScript != "" {
-							err := scripting.RunLuaScript(botSerial, c.LuaScript)
-							if err != nil {
-								logger.Println("Error running Lua script: " + err.Error())
-							}
-						}
-					}()
-
-					var args []string
-					for _, arg := range c.ExecArgs {
-						switch arg {
-						case "!botSerial":
-							arg = botSerial
-						case "!speechText":
-							arg = "\"" + voiceText + "\""
-						case "!intentName":
-							arg = c.Name
-						case "!locale":
-							arg = vars.APIConfig.STT.Language
-						}
-						args = append(args, arg)
-					}
-					var customIntentExec *exec.Cmd
-					if len(args) == 0 {
-						logger.Println("Bot " + botSerial + " Executing: " + c.Exec)
-						customIntentExec = exec.Command(c.Exec)
-					} else {
-						logger.Println("Bot " + botSerial + " Executing: " + c.Exec + " " + strings.Join(args, " "))
-						customIntentExec = exec.Command(c.Exec, args...)
-					}
-					var out bytes.Buffer
-					var stderr bytes.Buffer
-					customIntentExec.Stdout = &out
-					customIntentExec.Stderr = &stderr
-					err := customIntentExec.Run()
-					if err != nil {
-						fmt.Println(fmt.Sprint(err) + ": " + stderr.String())
-					}
-					logger.Println("Bot " + botSerial + " Custom Intent Exec Output: " + strings.TrimSpace(string(out.String())))
-
-					if c.IsSystemIntent {
-						// A system intent returns its output in json format
-						var resp systemIntentResponseStruct
-						err := json.Unmarshal(out.Bytes(), &resp)
-						if err == nil && resp.Status == "ok" {
-							logger.Println("Bot " + botSerial + " System intent parsed and executed successfully")
-							IntentPass(req, resp.ReturnIntent, voiceText, intentParams, isParam)
-							successMatched = true
-						}
-					} else {
-						IntentPass(req, c.Intent, voiceText, intentParams, isParam)
-						successMatched = true
-					}
-					break
-				}
-				if successMatched {
-					break
-				}
-			}
-			if successMatched {
-				break
-			}
-		}
-	}
-	return successMatched
-}
-
-// ProcessCustomIntents 仅保留用户自定义 intent，旧的内置 keyphrase 规则已经移除。
-func ProcessCustomIntents(req interface{}, voiceText string) bool {
-	var botSerial string
-	var req3 *vtt.IntentGraphRequest
-	if str, ok := req.(*vtt.IntentGraphRequest); ok {
-		req3 = str
-		botSerial = req3.Device
-	}
-	voiceText = strings.ToLower(voiceText)
-	successMatched := customIntentHandler(req, voiceText, botSerial)
-	if successMatched {
-		logger.Println("This is a custom intent!")
-		return true
-	}
-	logger.Println("Not a custom intent")
-	return false
 }
 
 // KnowledgeGraphResponseIG 将知识回答包装成 IntentGraph 的 KG 响应。

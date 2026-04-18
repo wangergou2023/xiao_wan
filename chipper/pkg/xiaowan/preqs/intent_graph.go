@@ -11,7 +11,6 @@ import (
 )
 
 func (s *Server) ProcessIntentGraph(req *vtt.IntentGraphRequest) (*vtt.IntentGraphResponse, error) {
-	var successMatched bool
 	speechReq := sr.ReqToSpeechRequest(req)
 	var transcribedText string
 	if !isSti {
@@ -25,7 +24,6 @@ func (s *Server) ProcessIntentGraph(req *vtt.IntentGraphRequest) (*vtt.IntentGra
 			ttr.IntentPass(req, "intent_system_noaudio", "", map[string]string{}, false)
 			return nil, nil
 		}
-		successMatched = ttr.ProcessCustomIntents(req, transcribedText)
 	} else {
 		intent, slots, err := stiHandler(speechReq)
 		if err != nil {
@@ -59,27 +57,19 @@ func (s *Server) ProcessIntentGraph(req *vtt.IntentGraphRequest) (*vtt.IntentGra
 	// 	ttr.IntentPass(req, "intent_system_unmatched", transcribedText, map[string]string{"": ""}, false)
 	// 	return nil, nil
 	// }
-	if successMatched {
+	if vars.APIConfig.Knowledge.IntentGraph && vars.APIConfig.Knowledge.Enable {
+		logger.Println("Making LLM request for device " + req.Device + "...")
+		_, err := ttr.StreamingKGSim(req, req.Device, transcribedText, false)
+		if err != nil {
+			logger.Println("LLM error: " + err.Error())
+			logger.LogUI("LLM error: " + err.Error())
+			ttr.IntentPass(req, "intent_system_unmatched", transcribedText, map[string]string{"": ""}, false)
+			ttr.KGSim(req.Device, "There was an error getting a response from the L L M. Check the logs in the web interface.")
+		}
 		logger.Println("Bot " + speechReq.Device + " request served.")
 		return nil, nil
 	}
-
-	if !successMatched {
-		if vars.APIConfig.Knowledge.IntentGraph && vars.APIConfig.Knowledge.Enable {
-			logger.Println("Making LLM request for device " + req.Device + "...")
-			_, err := ttr.StreamingKGSim(req, req.Device, transcribedText, false)
-			if err != nil {
-				logger.Println("LLM error: " + err.Error())
-				logger.LogUI("LLM error: " + err.Error())
-				ttr.IntentPass(req, "intent_system_unmatched", transcribedText, map[string]string{"": ""}, false)
-				ttr.KGSim(req.Device, "There was an error getting a response from the L L M. Check the logs in the web interface.")
-			}
-			logger.Println("Bot " + speechReq.Device + " request served.")
-			return nil, nil
-		}
-		logger.Println("No intent was matched.")
-		ttr.IntentPass(req, "intent_system_unmatched", transcribedText, map[string]string{"": ""}, false)
-		return nil, nil
-	}
+	logger.Println("No intent was matched.")
+	ttr.IntentPass(req, "intent_system_unmatched", transcribedText, map[string]string{"": ""}, false)
 	return nil, nil
 }

@@ -1,44 +1,6 @@
-const intentsJson = JSON.parse(
-  '["intent_greeting_hello", "intent_names_ask", "intent_imperative_eyecolor", "intent_character_age", "intent_explore_start", "intent_system_charger", "intent_system_sleep", "intent_greeting_goodmorning", "intent_greeting_goodnight", "intent_greeting_goodbye", "intent_seasonal_happynewyear", "intent_seasonal_happyholidays", "intent_amazon_signin", "intent_imperative_forward", "intent_imperative_turnaround", "intent_imperative_turnleft", "intent_imperative_turnright", "intent_play_rollcube", "intent_play_popawheelie", "intent_play_fistbump", "intent_play_blackjack", "intent_imperative_affirmative", "intent_imperative_negative", "intent_photo_take_extend", "intent_imperative_praise", "intent_imperative_abuse", "intent_weather_extend", "intent_imperative_apologize", "intent_imperative_backup", "intent_imperative_volumedown", "intent_imperative_volumeup", "intent_imperative_lookatme", "intent_imperative_volumelevel_extend", "intent_imperative_shutup", "intent_names_username_extend", "intent_imperative_come", "intent_imperative_love", "intent_knowledge_promptquestion", "intent_clock_checktimer", "intent_global_stop_extend", "intent_clock_settimer_extend", "intent_clock_time", "intent_imperative_quiet", "intent_imperative_dance", "intent_play_pickupcube", "intent_imperative_fetchcube", "intent_imperative_findcube", "intent_play_anytrick", "intent_message_recordmessage_extend", "intent_message_playmessage_extend", "intent_blackjack_hit", "intent_blackjack_stand", "intent_play_keepaway"]'
-);
-
 var GetLog = false;
 
 const getE = (element) => document.getElementById(element);
-
-function updateIntentSelection(element) {
-  fetch("/api/get_custom_intents_json")
-    .then((response) => response.json())
-    .then((listResponse) => {
-      const container = getE(element);
-      container.innerHTML = "";
-      if (listResponse && listResponse.length > 0) {
-        const select = document.createElement("select");
-        select.name = `${element}intents`;
-        select.id = `${element}intents`;
-        listResponse.forEach((intent) => {
-          if (!intent.issystem) {
-            const option = document.createElement("option");
-            option.value = intent.name;
-            option.text = intent.name;
-            select.appendChild(option);
-          }
-        });
-        const label = document.createElement("label");
-        label.innerHTML = "Choose the intent: ";
-        label.htmlFor = `${element}intents`;
-        container.appendChild(label).appendChild(select);
-
-        select.addEventListener("change", hideEditIntents);
-      } else {
-        const error = document.createElement("p");
-        error.innerHTML = "No intents found, you must add one first";
-        container.appendChild(error);
-      }
-    }).catch(() => {
-      // Do nothing
-    });
-}
 
 function checkInited() {
   fetch("/api/is_api_v3").then((response) => {
@@ -58,154 +20,6 @@ function checkInited() {
     });
 }
 
-function createIntentSelect(element) {
-  const select = document.createElement("select");
-  select.name = `${element}intents`;
-  select.id = `${element}intents`;
-  intentsJson.forEach((intent) => {
-    const option = document.createElement("option");
-    option.value = intent;
-    option.text = intent;
-    select.appendChild(option);
-  });
-  const label = document.createElement("label");
-  label.innerHTML = "Intent to send to robot after script executed:";
-  label.htmlFor = `${element}intents`;
-  getE(element).innerHTML = "";
-  getE(element).appendChild(label).appendChild(select);
-}
-
-function editFormCreate() {
-  const intentNumber = getE("editSelectintents").selectedIndex;
-
-  fetch("/api/get_custom_intents_json")
-    .then((response) => response.json())
-    .then((intents) => {
-      const intent = intents[intentNumber];
-      if (intent) {
-        const form = document.createElement("form");
-        form.id = "editIntentForm";
-        form.name = "editIntentForm";
-        form.innerHTML = `
-          <label for="name">Name:<br><input type="text" id="name" value="${intent.name}"></label><br>
-          <label for="description">Description:<br><input type="text" id="description" value="${intent.description}"></label><br>
-          <label for="utterances">Utterances:<br><input type="text" id="utterances" value="${intent.utterances.join(",")}"></label><br>
-          <label for="intent">Intent:<br><select id="intent">${intentsJson
-            .map(
-              (name) =>
-                `<option value="${name}" ${name === intent.intent ? "selected" : ""
-                }>${name}</option>`
-            )
-            .join("")}</select></label><br>
-          <label for="paramname">Param Name:<br><input type="text" id="paramname" value="${intent.params.paramname}"></label><br>
-          <label for="paramvalue">Param Value:<br><input type="text" id="paramvalue" value="${intent.params.paramvalue}"></label><br>
-          <label for="exec">Exec:<br><input type="text" id="exec" value="${intent.exec}"></label><br>
-          <label for="execargs">Exec Args:<br><input type="text" id="execargs" value="${intent.execargs.join(",")}"></label><br>
-          <label for="luascript">Lua code to run:</label><br><textarea id="luascript">${intent.luascript}</textarea>
-          <button onclick="editIntent(${intentNumber})">Submit</button>
-        `;
-        //form.querySelector("#submit").onclick = () => editIntent(intentNumber);
-        getE("editIntentForm").innerHTML = "";
-        getE("editIntentForm").appendChild(form);
-        showEditIntents();
-      } else {
-        displayError("editIntentForm", "No intents found, you must add one first");
-      }
-    }).catch((error) => {
-      console.error(error);
-      displayError("editIntentForm", "Error fetching intents");
-    })
-}
-
-function editIntent(intentNumber) {
-  const data = {
-    number: intentNumber + 1,
-    name: getE("name").value,
-    description: getE("description").value,
-    utterances: getE("utterances").value.split(","),
-    intent: getE("intent").value,
-    params: {
-      paramname: getE("paramname").value,
-      paramvalue: getE("paramvalue").value,
-    },
-    exec: getE("exec").value,
-    execargs: getE("execargs").value.split(","),
-    luascript: getE("luascript").value,
-  };
-
-  fetch("/api/edit_custom_intent", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(data),
-  })
-    .then((response) => response.text())
-    .then((response) => {
-      displayMessage("editIntentStatus", response);
-      alert(response)
-      updateIntentSelection("editSelect");
-      updateIntentSelection("deleteSelect");
-    });
-}
-
-function deleteSelectedIntent() {
-  const intentNumber = getE("editSelectintents").selectedIndex + 1;
-
-  fetch("/api/remove_custom_intent", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({ number: intentNumber }),
-  })
-    .then((response) => response.text())
-    .then((response) => {
-      hideEditIntents();
-      alert(response)
-      updateIntentSelection("editSelect");
-      updateIntentSelection("deleteSelect");
-    });
-}
-
-function sendIntentAdd() {
-  const form = getE("intentAddForm");
-  const data = {
-    name: form.elements["nameAdd"].value,
-    description: form.elements["descriptionAdd"].value,
-    utterances: form.elements["utterancesAdd"].value.split(","),
-    intent: form.elements["intentAddSelectintents"].value,
-    params: {
-      paramname: form.elements["paramnameAdd"].value,
-      paramvalue: form.elements["paramvalueAdd"].value,
-    },
-    exec: form.elements["execAdd"].value,
-    execargs: form.elements["execAddArgs"].value.split(","),
-    luascript: form.elements["luaAdd"].value,
-  };
-  if (!data.name || !data.description || !data.utterances) {
-    displayMessage("addIntentStatus", "A required input is missing. You need a name, description, and utterances.");
-    alert("A required input is missing. You need a name, description, and utterances.")
-    return
-  }
-
-  displayMessage("addIntentStatus", "Adding...");
-
-  fetch("/api/add_custom_intent", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(data),
-  })
-    .then((response) => response.text())
-    .then((response) => {
-      displayMessage("addIntentStatus", response);
-      alert(response)
-      updateIntentSelection("editSelect");
-      updateIntentSelection("deleteSelect");
-    });
-}
 
 function checkWeather() {
   getE("apiKeySpan").style.display = getE("weatherProvider").value ? "block" : "none";
@@ -543,15 +357,6 @@ function sendRestart() {
     });
 }
 
-function hideEditIntents() {
-  getE("editIntentForm").style.display = "none";
-  getE("editIntentStatus").innerHTML = "";
-}
-
-function showEditIntents() {
-  getE("editIntentForm").style.display = "block";
-}
-
 function displayMessage(elementId, message) {
   const element = getE(elementId);
   element.innerHTML = "";
@@ -566,26 +371,6 @@ function displayError(elementId, message) {
   const error = document.createElement("p");
   error.innerHTML = message;
   element.appendChild(error);
-}
-
-function toggleSection(sectionToToggle, sectionToClose, foldableID) {
-  const toggleSect = getE(sectionToToggle);
-  const closeSect = getE(sectionToClose);
-
-  if (toggleSect.style.display === "block") {
-    closeSection(toggleSect, foldableID);
-  } else {
-    openSection(toggleSect, foldableID);
-    closeSection(closeSect, foldableID);
-  }
-}
-
-function openSection(sectionID) {
-  sectionID.style.display = "block";
-}
-
-function closeSection(sectionID) {
-  sectionID.style.display = "none";
 }
 
 function updateColor(id) {
@@ -604,7 +389,7 @@ function updateColor(id) {
 
 
 function showLog() {
-  toggleVisibility(["section-intents", "section-log", "section-botauth", "section-version", "section-uicustomizer"], "section-log", "icon-Logs");
+  toggleVisibility(["section-log", "section-botauth", "section-version", "section-uicustomizer"], "section-log", "icon-Logs");
   logDivArea = getE("botTranscriptedTextArea");
   getE("logscrollbottom").checked = true;
   logP = document.createElement("p");
@@ -693,12 +478,8 @@ function showLanguage() {
 }
 
 function showVersion() {
-  toggleVisibility(["section-log", "section-botauth", "section-intents", "section-version", "section-uicustomizer"], "section-version", "icon-Version");
+  toggleVisibility(["section-log", "section-botauth", "section-version", "section-uicustomizer"], "section-version", "icon-Version");
   checkUpdate();
-}
-
-function showIntents() {
-  toggleVisibility(["section-log", "section-botauth", "section-intents", "section-version", "section-uicustomizer"], "section-intents", "icon-Intents");
 }
 
 function showWeather() {

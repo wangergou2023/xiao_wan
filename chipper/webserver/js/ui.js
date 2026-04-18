@@ -35,7 +35,7 @@ var colorMap = {
 };
 
 function showUICustomizer() {
-    toggleVisibility(["section-log", "section-botauth", "section-intents", "section-version", "section-intents"], "section-uicustomizer", "icon-Customizer");
+    toggleVisibility(["section-log", "section-botauth", "section-version", "section-uicustomizer"], "section-uicustomizer", "icon-Customizer");
 }
 
 function setUIFont() {
@@ -75,4 +75,3 @@ function loadSettings() {
 
 // call loadSettings
 loadSettings();
-
