@@ -345,6 +345,26 @@ function sendBigModelConfig() {
     });
 }
 
+function sendVisionConfig() {
+  const data = {
+    enable_face_context: getE("visionEnableFaceContext").checked,
+    auto_greet_known_faces: getE("visionAutoGreetKnownFaces").checked,
+  };
+
+  fetch("/api/set_vision_config", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(data),
+  })
+    .then((response) => response.text())
+    .then((response) => {
+      displayMessage("visionConfigStatus", response);
+      alert(response);
+    });
+}
+
 function deleteSavedChats() {
   if (confirm("确认删除所有已保存的对话记录吗？")) {
     fetch("/api/delete_chats")
@@ -388,6 +408,92 @@ function updateBigModelConfig() {
       getE("bigmodelTTSVoice").value = data.tts_voice || "";
       getE("bigmodelTTSSpeed").value = data.tts_speed || "";
       getE("bigmodelTTSVolume").value = data.tts_volume || "";
+    });
+}
+
+function updateVisionConfig() {
+  fetch("/api/get_vision_config")
+    .then((response) => response.json())
+    .then((data) => {
+      getE("visionEnableFaceContext").checked = !!data.enable_face_context;
+      getE("visionAutoGreetKnownFaces").checked = !!data.auto_greet_known_faces;
+    });
+}
+
+function updateLongTermMemory() {
+  const esn = getE("memoryRobotESN").value || "";
+  const query = esn ? `?esn=${encodeURIComponent(esn)}` : "";
+  fetch(`/api/get_long_term_memory${query}`)
+    .then((response) => response.json())
+    .then((data) => {
+      const select = getE("memoryRobotESN");
+      const currentValue = data.esn || "";
+      select.innerHTML = "";
+      (data.robots || []).forEach((robotEsn) => {
+        const option = document.createElement("option");
+        option.value = robotEsn;
+        option.text = robotEsn;
+        if (robotEsn === currentValue) {
+          option.selected = true;
+        }
+        select.appendChild(option);
+      });
+
+      const profile = data.profile || {};
+      getE("memoryUserName").value = profile.user_name || "";
+      getE("memoryOwnerName").value = profile.owner_name || "";
+      getE("memoryNickname").value = profile.nickname || "";
+      getE("memoryPreferredLanguage").value = profile.preferred_language || "";
+      getE("memoryPreferredGreeting").value = profile.preferred_greeting || "";
+      getE("memoryFavoriteTopics").value = (profile.favorite_topics || []).join(",");
+      getE("memoryForbiddenTopics").value = (profile.forbidden_topics || []).join(",");
+      getE("memoryFacts").value = (profile.facts || []).join("\n");
+      getE("memoryManualNotes").value = data.manual_notes || "";
+    });
+}
+
+function saveLongTermMemory() {
+  const splitCSV = (value) =>
+    value
+      .split(",")
+      .map((item) => item.trim())
+      .filter((item) => item.length > 0);
+
+  const splitLines = (value) =>
+    value
+      .split("\n")
+      .map((item) => item.trim())
+      .filter((item) => item.length > 0);
+
+  const esn = getE("memoryRobotESN").value || "";
+  const data = {
+    esn,
+    profile: {
+      esn,
+      user_name: getE("memoryUserName").value.trim(),
+      owner_name: getE("memoryOwnerName").value.trim(),
+      nickname: getE("memoryNickname").value.trim(),
+      preferred_language: getE("memoryPreferredLanguage").value.trim(),
+      preferred_greeting: getE("memoryPreferredGreeting").value.trim(),
+      favorite_topics: splitCSV(getE("memoryFavoriteTopics").value),
+      forbidden_topics: splitCSV(getE("memoryForbiddenTopics").value),
+      facts: splitLines(getE("memoryFacts").value),
+    },
+    manual_notes: getE("memoryManualNotes").value,
+  };
+
+  fetch("/api/set_long_term_memory", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(data),
+  })
+    .then((response) => response.text())
+    .then((response) => {
+      displayMessage("memoryStatus", response);
+      alert(response);
+      updateLongTermMemory();
     });
 }
 
@@ -574,7 +680,7 @@ function checkUpdate() {
 }
 
 function showLanguage() {
-  toggleVisibility(["section-weather", "section-restart", "section-kg", "section-language"], "section-language", "icon-Language");
+  toggleVisibility(["section-weather", "section-restart", "section-kg", "section-language", "section-memory"], "section-language", "icon-Language");
   fetch("/api/get_stt_info")
     .then((response) => response.json())
     .then((parsed) => {
@@ -598,11 +704,16 @@ function showIntents() {
 }
 
 function showWeather() {
-  toggleVisibility(["section-weather", "section-restart", "section-language", "section-kg"], "section-weather", "icon-Weather");
+  toggleVisibility(["section-weather", "section-restart", "section-language", "section-kg", "section-memory"], "section-weather", "icon-Weather");
 }
 
 function showKG() {
-  toggleVisibility(["section-weather", "section-restart", "section-language", "section-kg"], "section-kg", "icon-KG");
+  toggleVisibility(["section-weather", "section-restart", "section-language", "section-kg", "section-memory"], "section-kg", "icon-KG");
+}
+
+function showMemory() {
+  toggleVisibility(["section-weather", "section-restart", "section-language", "section-kg", "section-memory"], "section-memory", "icon-Memory");
+  updateLongTermMemory();
 }
 
 function toggleVisibility(sections, sectionToShow, iconId) {

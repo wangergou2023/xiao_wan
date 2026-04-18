@@ -38,7 +38,7 @@ func CreateAIReq(transcribedText, esn string, gpt3tryagain, isKG bool) openai.Ch
 	model = getKnowledgeModel(gpt3tryagain)
 	logKnowledgeModel(model)
 
-	smsg.Content = CreatePrompt(smsg.Content, model, isKG)
+	smsg.Content = createPromptWithMemory(smsg.Content, model, esn, isKG)
 
 	nChat = append(nChat, smsg)
 	if vars.APIConfig.Knowledge.SaveChat {
@@ -66,6 +66,9 @@ func CreateAIReq(transcribedText, esn string, gpt3tryagain, isKG bool) openai.Ch
 
 // StreamingKGSim 处理 LLM 流式回复，并把文本、动作和机器人行为串成一条完整链路。
 func StreamingKGSim(req interface{}, esn string, transcribedText string, isKG bool) (string, error) {
+	endActivity := robotpkg.BeginForegroundActivity(esn)
+	defer endActivity()
+
 	start := make(chan bool)
 	stop := make(chan bool)
 	stopStop := make(chan bool)

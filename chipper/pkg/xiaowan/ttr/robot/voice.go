@@ -14,6 +14,7 @@ import (
 
 // KGSim 用于在不经过完整 LLM 流程时，让机器人直接播报一段短文本。
 func KGSim(esn string, textToSay string) error {
+	endActivity := BeginForegroundActivity(esn)
 	ctx := context.Background()
 	matched := false
 	var robot *vector.Vector
@@ -31,6 +32,7 @@ func KGSim(esn string, textToSay string) error {
 		var err error
 		robot, err = vector.New(vector.WithSerialNo(esn), vector.WithToken(guid), vector.WithTarget(target))
 		if err != nil {
+			endActivity()
 			return err
 		}
 	}
@@ -42,6 +44,8 @@ func KGSim(esn string, textToSay string) error {
 		},
 	}
 	go func() {
+		defer endActivity()
+
 		start := make(chan bool)
 		stop := make(chan bool)
 

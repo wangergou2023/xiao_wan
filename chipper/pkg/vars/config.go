@@ -21,6 +21,10 @@ type apiConfig struct {
 		Key      string `json:"key"`
 		Unit     string `json:"unit"`
 	} `json:"weather"`
+	Vision struct {
+		EnableFaceContext   bool `json:"enable_face_context"`
+		AutoGreetKnownFaces bool `json:"auto_greet_known_faces"`
+	} `json:"vision"`
 	Knowledge struct {
 		Enable         bool    `json:"enable"`
 		Provider       string  `json:"provider"`
@@ -64,6 +68,8 @@ func WriteConfigToDisk() {
 
 func CreateConfigFromEnv() {
 	// if no config exists, create it
+	APIConfig.Vision.EnableFaceContext = true
+	APIConfig.Vision.AutoGreetKnownFaces = false
 	if os.Getenv("WEATHERAPI_ENABLED") == "true" {
 		APIConfig.Weather.Enable = true
 		APIConfig.Weather.Provider = os.Getenv("WEATHERAPI_PROVIDER")
@@ -120,6 +126,10 @@ func ReadConfig() {
 			logger.Println("Failed to unmarshal API config JSON")
 			logger.Println(err)
 			return
+		}
+		if !strings.Contains(string(configBytes), "\"vision\"") {
+			APIConfig.Vision.EnableFaceContext = true
+			APIConfig.Vision.AutoGreetKnownFaces = false
 		}
 		if !APIConfig.HasReadFromEnv {
 			if APIConfig.Server.Port != os.Getenv("DDL_RPC_PORT") {

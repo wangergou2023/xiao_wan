@@ -16,10 +16,15 @@ import (
 	"github.com/wangergou2023/xiao_wan/chipper/pkg/vars"
 	"github.com/wangergou2023/xiao_wan/chipper/pkg/vector"
 	"github.com/wangergou2023/xiao_wan/chipper/pkg/vectorpb"
+	memorypkg "github.com/wangergou2023/xiao_wan/chipper/pkg/xiaowan/memory"
+	skillspkg "github.com/wangergou2023/xiao_wan/chipper/pkg/xiaowan/skills"
 	robotpkg "github.com/wangergou2023/xiao_wan/chipper/pkg/xiaowan/ttr/robot"
+	visionpkg "github.com/wangergou2023/xiao_wan/chipper/pkg/xiaowan/vision"
+	workspacepkg "github.com/wangergou2023/xiao_wan/chipper/pkg/xiaowan/workspace"
 )
 
 const speechAnimationWICooldown = 1200 * time.Millisecond
+const speechMotorGestureCooldown = 900 * time.Millisecond
 
 const (
 	// arg: text to say
@@ -33,7 +38,23 @@ const (
 	ActionGetImage   = 3
 	ActionNewRequest = 4
 	// arg: sound file
-	ActionPlaySound = 4
+	ActionPlaySound = 5
+	// arg: now
+	ActionHeadUp         = 6
+	ActionHeadDown       = 7
+	ActionLiftUp         = 8
+	ActionLiftDown       = 9
+	ActionNod            = 10
+	ActionLookDownShy    = 11
+	ActionRaiseArmsHappy = 12
+)
+
+const (
+	llmHeadMoveDuration       = 400 * time.Millisecond
+	llmLiftMoveDuration       = 500 * time.Millisecond
+	llmNodMoveDuration        = 220 * time.Millisecond
+	llmLookDownShyDuration    = 650 * time.Millisecond
+	llmRaiseArmsHappyDuration = 650 * time.Millisecond
 )
 
 var animationMap [][2]string = [][2]string{
@@ -106,43 +127,7 @@ type LLMCommand struct {
 
 // create function which parses from LLM and makes a struct of RobotActions
 
-var ValidLLMCommands []LLMCommand = []LLMCommand{
-	{
-		Command:         "playAnimationWI",
-		Description:     "Plays an animation on the robot without interrupting speech. This should be used FAR more than the playAnimation command. This is great for storytelling and making any normal response animated. Don't put two of these right next to each other. Use this MANY times. The param choices are the only choices you have. You can't create any.",
-		ParamChoices:    "happy, veryHappy, sad, verySad, angry, frustrated, dartingEyes, confused, thinking, celebrate, love",
-		Action:          ActionPlayAnimationWI,
-		SupportedModels: []string{"all"},
-	},
-	{
-		Command:         "playAnimation",
-		Description:     "Plays an animation on the robot. This will interrupt speech. Only use this if you are directed to play an animaion.",
-		ParamChoices:    "happy, veryHappy, sad, verySad, angry, frustrated, dartingEyes, confused, thinking, celebrate, love",
-		Action:          ActionPlayAnimation,
-		SupportedModels: []string{"all"},
-	},
-	{
-		Command:     "getImage",
-		Description: "Gets an image from the robot's camera and places it in the next message. If you want to do this, tell the user what you are about to do THEN use the command. This command should END a sentence. Your response will be stopped when this command is recognized. If a user says something like 'what do you see', you should assume that you need to take a new photo. Do NOT automatically assume that you are analyzing a previous photo.",
-		// not impl yet
-		ParamChoices:    "front, lookingUp",
-		Action:          ActionGetImage,
-		SupportedModels: []string{"all"},
-	},
-	{
-		Command:         "newVoiceRequest",
-		Description:     "Starts a new voice command from the robot. Use this if you want more input from the user after your response/if you want to carry out a conversation. Below this, there should be a NOTE telling you whether you are in conversation mode or not. If you are, DONT BE AFRAID TO USE THIS COMMAND! This goes at the end of your response, if you use it.",
-		ParamChoices:    "now",
-		Action:          ActionNewRequest,
-		SupportedModels: []string{"all"},
-	},
-	// {
-	// 	Command:      "playSound",
-	// 	Description:  "Plays a sound on the robot.",
-	// 	ParamChoices: "drumroll",
-	// 	Action:       ActionPlaySound,
-	// },
-}
+var ValidLLMCommands []LLMCommand = validLLMCommands()
 
 func ModelIsSupported(cmd LLMCommand, model string) bool {
 	for _, str := range cmd.SupportedModels {
@@ -155,8 +140,14 @@ func ModelIsSupported(cmd LLMCommand, model string) bool {
 
 func CreatePrompt(origPrompt string, model string, isKG bool) string {
 	prompt := origPrompt + "\n\n" + "Keep in mind, user input comes from speech-to-text software, so respond accordingly. No special characters, especially these: & ^ * # @ - . No lists. No formatting."
+	if workspacePrompt := strings.TrimSpace(workspacepkg.BuildPromptContext()); workspacePrompt != "" {
+		prompt = prompt + "\n\nWorkspace guidance:\n" + workspacePrompt
+	}
+	if skillPrompt := strings.TrimSpace(skillspkg.BuildAutoSkillPrompt()); skillPrompt != "" {
+		prompt = prompt + "\n\n" + "Additional active skills:\n" + skillPrompt
+	}
 	if vars.APIConfig.Knowledge.CommandsEnable {
-		prompt = prompt + "\n\n" + "You are running ON an Anki Vector robot. You have a set of commands. If you include an emoji, I will make you start over. If you want to use a command but it doesn't exist or your desired parameter isn't in the list, avoid using the command. The format is {{command||parameter}}. You can embed these in sentences. Example: \"User: How are you feeling? | Response: \"{{playAnimationWI||sad}} I'm feeling sad...\". Square brackets ([]) are not valid.\n\nUse the playAnimation or playAnimationWI commands if you want to express emotion! You are very animated and good at following instructions. Animation takes precendence over words. You are to include many animations in your response.\n\nHere is every valid command:"
+		prompt = prompt + "\n\n" + "You are running ON an Anki Vector robot. You have a set of commands. If you include an emoji, I will make you start over. If you want to use a command but it doesn't exist or your desired parameter isn't in the list, avoid using the command. The format is {{command||parameter}}. You can embed these in sentences. Example: \"User: How are you feeling? | Response: \"{{playAnimationWI||sad}} I'm feeling sad...\". Square brackets ([]) are not valid.\n\nUse the playAnimation or playAnimationWI commands if you want to express emotion! You are very animated and good at following instructions. Animation takes precendence over words. You are to include many animations in your response. Head and lift commands are only for subtle physical gestures. Use at most one small motor gesture near a sentence, and do not chain them repeatedly. Prefer higher-level gestures like nod or raiseArmsHappy when they fit.\n\nHere is every valid command:"
 		for _, cmd := range ValidLLMCommands {
 			if ModelIsSupported(cmd, model) {
 				promptAppendage := "\n\nCommand Name: " + cmd.Command + "\nDescription: " + cmd.Description + "\nParameter choices: " + cmd.ParamChoices
@@ -173,6 +164,17 @@ func CreatePrompt(origPrompt string, model string, isKG bool) string {
 	}
 	if os.Getenv("DEBUG_PRINT_PROMPT") == "true" {
 		logger.Println(prompt)
+	}
+	return prompt
+}
+
+func createPromptWithMemory(origPrompt, model, esn string, isKG bool) string {
+	prompt := CreatePrompt(origPrompt, model, isKG)
+	if profilePrompt := strings.TrimSpace(memorypkg.BuildPromptContext(esn)); profilePrompt != "" {
+		prompt = prompt + "\n\nLong-term user profile:\n" + profilePrompt
+	}
+	if facePrompt := strings.TrimSpace(visionpkg.BuildPromptContext(esn)); facePrompt != "" {
+		prompt = prompt + "\n\nLive face context:\n" + facePrompt
 	}
 	return prompt
 }
@@ -279,6 +281,50 @@ func DoPlaySound(sound string, robot *vector.Vector) error {
 	}
 	logger.Println("Sound provided by LLM doesn't exist: " + sound)
 	return nil
+}
+
+// DoHeadUp 让 LLM 只能触发一个很短的安全抬头动作，避免长时间占用电机。
+func DoHeadUp(robot *vector.Vector) error {
+	return robotpkg.HeadUpFor(robot, llmHeadMoveDuration)
+}
+
+// DoHeadDown 让 LLM 只能触发一个很短的安全低头动作。
+func DoHeadDown(robot *vector.Vector) error {
+	return robotpkg.HeadDownFor(robot, llmHeadMoveDuration)
+}
+
+// DoLiftUp 让 LLM 只能触发一个很短的安全抬臂动作。
+func DoLiftUp(robot *vector.Vector) error {
+	return robotpkg.LiftUpFor(robot, llmLiftMoveDuration)
+}
+
+// DoLiftDown 让 LLM 只能触发一个很短的安全落臂动作。
+func DoLiftDown(robot *vector.Vector) error {
+	return robotpkg.LiftDownFor(robot, llmLiftMoveDuration)
+}
+
+// DoNod 用一个短促的低头再抬头组合，表达确认或回应。
+func DoNod(robot *vector.Vector) error {
+	if err := robotpkg.HeadDownFor(robot, llmNodMoveDuration); err != nil {
+		return err
+	}
+	return robotpkg.HeadUpFor(robot, llmNodMoveDuration)
+}
+
+// DoLookDownShy 让机器人短暂低头，适合害羞、委屈、思考等语气。
+func DoLookDownShy(robot *vector.Vector) error {
+	if err := robotpkg.HeadDownFor(robot, llmLookDownShyDuration); err != nil {
+		return err
+	}
+	return robotpkg.HeadUpFor(robot, llmHeadMoveDuration)
+}
+
+// DoRaiseArmsHappy 通过抬臂再回落做一个简短的开心手势。
+func DoRaiseArmsHappy(robot *vector.Vector) error {
+	if err := robotpkg.LiftUpFor(robot, llmRaiseArmsHappyDuration); err != nil {
+		return err
+	}
+	return robotpkg.LiftDownFor(robot, llmLiftMoveDuration)
 }
 
 // DoSayText 统一走文本播报入口，优先复用预生成好的智谱 TTS，失败时再回退到机器人原生播报。
@@ -518,6 +564,7 @@ func PerformActions(msgs []openai.ChatCompletionMessage, actions []RobotAction, 
 	// assuming we have behavior control already
 	stopPerforming := false
 	allowWIDuringThisSentence := true
+	allowMotorGestureDuringThisSentence := true
 	go func() {
 		for range stopStop {
 			stopPerforming = true
@@ -536,6 +583,41 @@ func PerformActions(msgs []openai.ChatCompletionMessage, actions []RobotAction, 
 			if allowWIDuringThisSentence {
 				DoPlayAnimationWI(action.Parameter, robot)
 				allowWIDuringThisSentence = false
+			}
+		case action.Action == ActionHeadUp:
+			if allowMotorGestureDuringThisSentence && allowSpeechMotorGesture(robot.Cfg.SerialNo, "headUp") {
+				DoHeadUp(robot)
+				allowMotorGestureDuringThisSentence = false
+			}
+		case action.Action == ActionHeadDown:
+			if allowMotorGestureDuringThisSentence && allowSpeechMotorGesture(robot.Cfg.SerialNo, "headDown") {
+				DoHeadDown(robot)
+				allowMotorGestureDuringThisSentence = false
+			}
+		case action.Action == ActionLiftUp:
+			if allowMotorGestureDuringThisSentence && allowSpeechMotorGesture(robot.Cfg.SerialNo, "liftUp") {
+				DoLiftUp(robot)
+				allowMotorGestureDuringThisSentence = false
+			}
+		case action.Action == ActionLiftDown:
+			if allowMotorGestureDuringThisSentence && allowSpeechMotorGesture(robot.Cfg.SerialNo, "liftDown") {
+				DoLiftDown(robot)
+				allowMotorGestureDuringThisSentence = false
+			}
+		case action.Action == ActionNod:
+			if allowMotorGestureDuringThisSentence && allowSpeechMotorGesture(robot.Cfg.SerialNo, "nod") {
+				DoNod(robot)
+				allowMotorGestureDuringThisSentence = false
+			}
+		case action.Action == ActionLookDownShy:
+			if allowMotorGestureDuringThisSentence && allowSpeechMotorGesture(robot.Cfg.SerialNo, "lookDownShy") {
+				DoLookDownShy(robot)
+				allowMotorGestureDuringThisSentence = false
+			}
+		case action.Action == ActionRaiseArmsHappy:
+			if allowMotorGestureDuringThisSentence && allowSpeechMotorGesture(robot.Cfg.SerialNo, "raiseArmsHappy") {
+				DoRaiseArmsHappy(robot)
+				allowMotorGestureDuringThisSentence = false
 			}
 		case action.Action == ActionNewRequest:
 			go DoNewRequest(robot)
@@ -611,9 +693,16 @@ type speechAnimationWIState struct {
 	LastPlayedAt  time.Time
 }
 
+type speechMotorGestureState struct {
+	LastGesture  string
+	LastPlayedAt time.Time
+}
+
 var (
-	speechAnimationWIMu     sync.Mutex
-	speechAnimationWIStates = map[string]speechAnimationWIState{}
+	speechAnimationWIMu      sync.Mutex
+	speechAnimationWIStates  = map[string]speechAnimationWIState{}
+	speechMotorGestureMu     sync.Mutex
+	speechMotorGestureStates = map[string]speechMotorGestureState{}
 )
 
 // allowSpeechAnimationWI 对说话期的 WI 动作做轻量节流，避免一句里动作太密导致排队抢占。
@@ -633,6 +722,27 @@ func allowSpeechAnimationWI(esn, animation string) bool {
 	speechAnimationWIStates[esn] = speechAnimationWIState{
 		LastAnimation: animation,
 		LastPlayedAt:  now,
+	}
+	return true
+}
+
+// allowSpeechMotorGesture 对头部/手臂小动作做节流，避免一句话里连续点头抬臂。
+func allowSpeechMotorGesture(esn, gesture string) bool {
+	speechMotorGestureMu.Lock()
+	defer speechMotorGestureMu.Unlock()
+
+	state := speechMotorGestureStates[esn]
+	now := time.Now()
+	if !state.LastPlayedAt.IsZero() && now.Sub(state.LastPlayedAt) < speechMotorGestureCooldown {
+		return false
+	}
+	if state.LastGesture == gesture && !state.LastPlayedAt.IsZero() && now.Sub(state.LastPlayedAt) < 2500*time.Millisecond {
+		return false
+	}
+
+	speechMotorGestureStates[esn] = speechMotorGestureState{
+		LastGesture:  gesture,
+		LastPlayedAt: now,
 	}
 	return true
 }

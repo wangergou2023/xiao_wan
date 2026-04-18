@@ -3,10 +3,16 @@ package robot
 import (
 	"context"
 	"errors"
+	"time"
 
 	sdk_wrapper "github.com/wangergou2023/xiao_wan/chipper/pkg/sdk-wrapper"
 	"github.com/wangergou2023/xiao_wan/chipper/pkg/vector"
 	"github.com/wangergou2023/xiao_wan/chipper/pkg/vectorpb"
+)
+
+const (
+	defaultLiftSpeed = 4.0
+	defaultHeadSpeed = 1.5
 )
 
 // ensureSDKForRobot 确保 sdk-wrapper 已绑定到当前机器人，方便复用更高层的控制封装。
@@ -42,6 +48,81 @@ func MoveHead(robot *vector.Vector, speed float32) error {
 	}
 	sdk_wrapper.MoveHead(speed)
 	return nil
+}
+
+// StopLift 立即停止手臂电机，适合和定时动作组合使用。
+func StopLift(robot *vector.Vector) error {
+	return MoveLift(robot, 0)
+}
+
+// LiftUp 以默认速度抬起手臂；方向约定基于当前项目实测习惯，可按需要继续校准。
+func LiftUp(robot *vector.Vector) error {
+	return MoveLift(robot, defaultLiftSpeed)
+}
+
+// LiftDown 以默认速度放下手臂。
+func LiftDown(robot *vector.Vector) error {
+	return MoveLift(robot, -defaultLiftSpeed)
+}
+
+// MoveLiftFor 让手臂以给定速度运动一小段时间，再自动停止。
+// 这层封装比裸速度控制更适合上层场景与后续 LLM/tool 调用。
+func MoveLiftFor(robot *vector.Vector, speed float32, duration time.Duration) error {
+	if duration <= 0 {
+		return MoveLift(robot, speed)
+	}
+	if err := MoveLift(robot, speed); err != nil {
+		return err
+	}
+	time.Sleep(duration)
+	return StopLift(robot)
+}
+
+// LiftUpFor 以默认速度抬手臂一段时间后自动停止。
+func LiftUpFor(robot *vector.Vector, duration time.Duration) error {
+	return MoveLiftFor(robot, defaultLiftSpeed, duration)
+}
+
+// LiftDownFor 以默认速度放手臂一段时间后自动停止。
+func LiftDownFor(robot *vector.Vector, duration time.Duration) error {
+	return MoveLiftFor(robot, -defaultLiftSpeed, duration)
+}
+
+// StopHead 立即停止头部俯仰电机。
+func StopHead(robot *vector.Vector) error {
+	return MoveHead(robot, 0)
+}
+
+// HeadUp 以默认速度抬头。
+func HeadUp(robot *vector.Vector) error {
+	return MoveHead(robot, defaultHeadSpeed)
+}
+
+// HeadDown 以默认速度低头。
+func HeadDown(robot *vector.Vector) error {
+	return MoveHead(robot, -defaultHeadSpeed)
+}
+
+// MoveHeadFor 让头部以给定速度俯仰一小段时间，再自动停止。
+func MoveHeadFor(robot *vector.Vector, speed float32, duration time.Duration) error {
+	if duration <= 0 {
+		return MoveHead(robot, speed)
+	}
+	if err := MoveHead(robot, speed); err != nil {
+		return err
+	}
+	time.Sleep(duration)
+	return StopHead(robot)
+}
+
+// HeadUpFor 以默认速度抬头一段时间后自动停止。
+func HeadUpFor(robot *vector.Vector, duration time.Duration) error {
+	return MoveHeadFor(robot, defaultHeadSpeed, duration)
+}
+
+// HeadDownFor 以默认速度低头一段时间后自动停止。
+func HeadDownFor(robot *vector.Vector, duration time.Duration) error {
+	return MoveHeadFor(robot, -defaultHeadSpeed, duration)
 }
 
 // DriveOnCharger 使用 sdk-wrapper 执行上充电座动作。

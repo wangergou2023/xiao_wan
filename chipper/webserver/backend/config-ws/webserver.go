@@ -16,6 +16,7 @@ import (
 	"github.com/wangergou2023/xiao_wan/chipper/pkg/scripting"
 	"github.com/wangergou2023/xiao_wan/chipper/pkg/vars"
 	"github.com/wangergou2023/xiao_wan/chipper/pkg/xiaowan/localization"
+	memorypkg "github.com/wangergou2023/xiao_wan/chipper/pkg/xiaowan/memory"
 	processreqs "github.com/wangergou2023/xiao_wan/chipper/pkg/xiaowan/preqs"
 	botsetup "github.com/wangergou2023/xiao_wan/chipper/pkg/xiaowan/setup"
 )
@@ -47,6 +48,10 @@ func apiHandler(w http.ResponseWriter, r *http.Request) {
 		handleSetBigModelConfig(w, r)
 	case "get_bigmodel_config":
 		handleGetBigModelConfig(w)
+	case "set_vision_config":
+		handleSetVisionConfig(w, r)
+	case "get_vision_config":
+		handleGetVisionConfig(w)
 	case "set_stt_info":
 		handleSetSTTInfo(w, r)
 	case "get_download_status":
@@ -59,6 +64,10 @@ func apiHandler(w http.ResponseWriter, r *http.Request) {
 		handleGetLogs(w)
 	case "get_debug_logs":
 		handleGetDebugLogs(w)
+	case "get_long_term_memory":
+		handleGetLongTermMemory(w, r)
+	case "set_long_term_memory":
+		handleSetLongTermMemory(w, r)
 	case "is_running":
 		handleIsRunning(w)
 	case "delete_chats":
@@ -233,6 +242,89 @@ func handleSetBigModelConfig(w http.ResponseWriter, r *http.Request) {
 func handleGetBigModelConfig(w http.ResponseWriter) {
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(vars.APIConfig.BigModel)
+}
+
+func handleSetVisionConfig(w http.ResponseWriter, r *http.Request) {
+	if err := json.NewDecoder(r.Body).Decode(&vars.APIConfig.Vision); err != nil {
+		http.Error(w, "invalid request body", http.StatusBadRequest)
+		return
+	}
+	vars.WriteConfigToDisk()
+	fmt.Fprint(w, "视觉设置已保存。")
+}
+
+func handleGetVisionConfig(w http.ResponseWriter) {
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(vars.APIConfig.Vision)
+}
+
+func handleGetLongTermMemory(w http.ResponseWriter, r *http.Request) {
+	esn := strings.TrimSpace(r.URL.Query().Get("esn"))
+	if esn == "" {
+		esn = defaultMemoryESN()
+	}
+	editable := memorypkg.LoadEditableProfile(esn)
+	resp := struct {
+		ESN         string                `json:"esn"`
+		Robots      []string              `json:"robots"`
+		Profile     memorypkg.UserProfile `json:"profile"`
+		ManualNotes string                `json:"manual_notes"`
+	}{
+		ESN:         esn,
+		Robots:      memoryRobotESNs(),
+		Profile:     editable.Profile,
+		ManualNotes: editable.ManualNotes,
+	}
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(resp)
+}
+
+func handleSetLongTermMemory(w http.ResponseWriter, r *http.Request) {
+	var req struct {
+		ESN         string                `json:"esn"`
+		Profile     memorypkg.UserProfile `json:"profile"`
+		ManualNotes string                `json:"manual_notes"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "invalid request body", http.StatusBadRequest)
+		return
+	}
+	esn := strings.TrimSpace(req.ESN)
+	if esn == "" {
+		esn = strings.TrimSpace(req.Profile.ESN)
+	}
+	if esn == "" {
+		esn = defaultMemoryESN()
+	}
+	if esn == "" {
+		http.Error(w, "missing robot esn", http.StatusBadRequest)
+		return
+	}
+	req.Profile.ESN = esn
+	memorypkg.SaveEditableProfile(memorypkg.EditableProfile{
+		Profile:     req.Profile,
+		ManualNotes: req.ManualNotes,
+	})
+	fmt.Fprint(w, "长期记忆已保存。")
+}
+
+func memoryRobotESNs() []string {
+	var esns []string
+	for _, bot := range vars.BotInfo.Robots {
+		if strings.TrimSpace(bot.Esn) == "" {
+			continue
+		}
+		esns = append(esns, bot.Esn)
+	}
+	return esns
+}
+
+func defaultMemoryESN() string {
+	esns := memoryRobotESNs()
+	if len(esns) == 0 {
+		return ""
+	}
+	return esns[0]
 }
 
 func handleSetSTTInfo(w http.ResponseWriter, r *http.Request) {
