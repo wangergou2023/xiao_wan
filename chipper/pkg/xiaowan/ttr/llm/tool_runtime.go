@@ -660,13 +660,8 @@ func resolveSafeToolPath(input string, allowCreate bool) (string, error) {
 		return "", fmt.Errorf("no allowed tool roots configured")
 	}
 
-	candidate := input
-	if !filepath.IsAbs(candidate) {
-		candidate = filepath.Join(roots[0], candidate)
-	}
-	candidate = filepath.Clean(candidate)
-
 	for _, root := range roots {
+		candidate := normalizeToolPathForRoot(input, root)
 		resolved, ok, err := validateToolPathAgainstRoot(candidate, root, allowCreate)
 		if err != nil {
 			return "", err
@@ -676,6 +671,24 @@ func resolveSafeToolPath(input string, allowCreate bool) (string, error) {
 		}
 	}
 	return "", fmt.Errorf("path outside allowed roots")
+}
+
+func normalizeToolPathForRoot(input, root string) string {
+	candidate := strings.TrimSpace(input)
+	if filepath.IsAbs(candidate) {
+		return filepath.Clean(candidate)
+	}
+
+	cleanRoot := filepath.Clean(root)
+	cleanInput := filepath.Clean(candidate)
+	if cleanInput == "workspace" {
+		return cleanRoot
+	}
+	workspacePrefix := "workspace" + string(filepath.Separator)
+	if strings.HasPrefix(cleanInput, workspacePrefix) {
+		cleanInput = strings.TrimPrefix(cleanInput, workspacePrefix)
+	}
+	return filepath.Clean(filepath.Join(cleanRoot, cleanInput))
 }
 
 func validateToolPathAgainstRoot(candidate, root string, allowCreate bool) (string, bool, error) {

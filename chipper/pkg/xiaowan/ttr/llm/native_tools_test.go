@@ -144,6 +144,59 @@ func TestExecuteNativeToolCallsFileTools(t *testing.T) {
 	}
 }
 
+func TestExecuteNativeToolCallsAcceptsWorkspacePrefixedPaths(t *testing.T) {
+	tmp := t.TempDir()
+	oldWD, err := os.Getwd()
+	if err != nil {
+		t.Fatal(err)
+	}
+	oldWirepodHome := os.Getenv("WIREPOD_HOME")
+	if err := os.Chdir(tmp); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Setenv("WIREPOD_HOME", tmp); err != nil {
+		t.Fatal(err)
+	}
+	defer func() {
+		_ = os.Chdir(oldWD)
+		_ = os.Setenv("WIREPOD_HOME", oldWirepodHome)
+	}()
+
+	if err := os.MkdirAll(filepath.Join(tmp, "workspace", "memory"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(tmp, "workspace", "memory", "MEMORY.md"), []byte("No durable user facts have been confirmed yet."), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	toolCalls := []openai.ToolCall{{
+		ID:   "edit_workspace_1",
+		Type: openai.ToolTypeFunction,
+		Function: openai.FunctionCall{
+			Name:      "editFile",
+			Arguments: `{"path":"workspace/memory/MEMORY.md","old_text":"No durable user facts have been confirmed yet.","new_text":"- 用户喜欢吃苹果"}`,
+		},
+	}}
+
+	_, results, needFollowUp := executeNativeToolCalls(toolCalls, nativeToolContext{})
+	if !needFollowUp {
+		t.Fatalf("expected edit tool to request follow-up")
+	}
+	if len(results) != 1 {
+		t.Fatalf("expected 1 tool result, got %d", len(results))
+	}
+	data, err := os.ReadFile(filepath.Join(tmp, "workspace", "memory", "MEMORY.md"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(string(data), "用户喜欢吃苹果") {
+		t.Fatalf("expected workspace memory doc to be edited, got %q", string(data))
+	}
+	if !strings.Contains(results[0].Content, `"status":"ok"`) {
+		t.Fatalf("expected successful tool result, got %s", results[0].Content)
+	}
+}
+
 func TestWriteFileRequiresOverwriteForExistingFile(t *testing.T) {
 	tmp := t.TempDir()
 	oldWD, err := os.Getwd()
