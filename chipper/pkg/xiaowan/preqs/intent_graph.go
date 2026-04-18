@@ -25,7 +25,7 @@ func (s *Server) ProcessIntentGraph(req *vtt.IntentGraphRequest) (*vtt.IntentGra
 			ttr.IntentPass(req, "intent_system_noaudio", "", map[string]string{}, false)
 			return nil, nil
 		}
-		successMatched = ttr.ProcessTextAll(req, transcribedText, vars.IntentList, speechReq.IsOpus)
+		successMatched = ttr.ProcessCustomIntents(req, transcribedText)
 	} else {
 		intent, slots, err := stiHandler(speechReq)
 		if err != nil {
@@ -59,6 +59,11 @@ func (s *Server) ProcessIntentGraph(req *vtt.IntentGraphRequest) (*vtt.IntentGra
 	// 	ttr.IntentPass(req, "intent_system_unmatched", transcribedText, map[string]string{"": ""}, false)
 	// 	return nil, nil
 	// }
+	if successMatched {
+		logger.Println("Bot " + speechReq.Device + " request served.")
+		return nil, nil
+	}
+
 	if !successMatched {
 		if vars.APIConfig.Knowledge.IntentGraph && vars.APIConfig.Knowledge.Enable {
 			logger.Println("Making LLM request for device " + req.Device + "...")
@@ -76,6 +81,5 @@ func (s *Server) ProcessIntentGraph(req *vtt.IntentGraphRequest) (*vtt.IntentGra
 		ttr.IntentPass(req, "intent_system_unmatched", transcribedText, map[string]string{"": ""}, false)
 		return nil, nil
 	}
-	logger.Println("Bot " + speechReq.Device + " request served.")
 	return nil, nil
 }

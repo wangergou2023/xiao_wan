@@ -61,27 +61,27 @@ func PlaceChat(chat vars.RememberedChat) {
 
 // Remember 只保留最近 16 条会话消息，避免上下文无限增长。
 func Remember(user, ai openai.ChatCompletionMessage, esn string) {
-	chatAppend := []openai.ChatCompletionMessage{user, ai}
+	RememberMessages([]openai.ChatCompletionMessage{user, ai}, esn)
+}
+
+// RememberMessages 允许把 assistant tool call 和 tool 结果一并写入会话历史。
+func RememberMessages(messages []openai.ChatCompletionMessage, esn string) {
+	if len(messages) == 0 {
+		return
+	}
 	currentChat := GetChat(esn)
-	currentChat = trimRememberedChat(currentChat)
 	currentChat.ESN = esn
-	currentChat.Chats = append(currentChat.Chats, chatAppend...)
+	currentChat.Chats = append(currentChat.Chats, messages...)
+	currentChat = trimRememberedChat(currentChat)
 	PlaceChat(currentChat)
 }
 
 func trimRememberedChat(chat vars.RememberedChat) vars.RememberedChat {
-	if len(chat.Chats) < maxRememberedMessages {
+	if len(chat.Chats) <= maxRememberedMessages {
 		return chat
 	}
-	var newChat vars.RememberedChat
-	newChat.ESN = chat.ESN
-	for i, message := range chat.Chats {
-		if i < 2 {
-			continue
-		}
-		newChat.Chats = append(newChat.Chats, message)
-	}
-	return newChat
+	chat.Chats = append([]openai.ChatCompletionMessage(nil), chat.Chats[len(chat.Chats)-maxRememberedMessages:]...)
+	return chat
 }
 
 func chatHistoryDir() string {

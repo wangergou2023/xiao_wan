@@ -153,72 +153,22 @@ func customIntentHandler(req interface{}, voiceText string, botSerial string) bo
 	return successMatched
 }
 
-// ProcessTextAll 负责执行自定义 intent、精确匹配和模糊匹配三段流程。
-func ProcessTextAll(req interface{}, voiceText string, intents []vars.JsonIntent, isOpus bool) bool {
+// ProcessCustomIntents 仅保留用户自定义 intent，旧的内置 keyphrase 规则已经移除。
+func ProcessCustomIntents(req interface{}, voiceText string) bool {
 	var botSerial string
 	var req3 *vtt.IntentGraphRequest
 	if str, ok := req.(*vtt.IntentGraphRequest); ok {
 		req3 = str
 		botSerial = req3.Device
 	}
-	var matched int = 0
-	var intentNum int = 0
-	var successMatched bool = false
 	voiceText = strings.ToLower(voiceText)
-	customIntentMatched := customIntentHandler(req, voiceText, botSerial)
-	if !customIntentMatched {
-		logger.Println("Not a custom intent")
-		// Look for a perfect match first
-		for _, b := range intents {
-			for _, c := range b.Keyphrases {
-				if voiceText == strings.ToLower(c) {
-					logger.Println("Bot " + botSerial + " Perfect match for intent " + b.Name + " (" + strings.ToLower(c) + ")")
-					if isOpus {
-						ParamChecker(req, b.Name, voiceText, botSerial)
-					} else {
-						prehistoricParamChecker(req, b.Name, voiceText)
-					}
-					successMatched = true
-					matched = 1
-					break
-				}
-			}
-			if matched == 1 {
-				matched = 0
-				break
-			}
-			intentNum = intentNum + 1
-		}
-		// Not found? Then let's be happy with a bare substring search
-		if !successMatched {
-			intentNum = 0
-			matched = 0
-			for _, b := range intents {
-				for _, c := range b.Keyphrases {
-					if strings.Contains(voiceText, strings.ToLower(c)) && !b.RequireExactMatch {
-						logger.Println("Bot " + botSerial + " Partial match for intent " + b.Name + " (" + strings.ToLower(c) + ")")
-						if isOpus {
-							ParamChecker(req, b.Name, voiceText, botSerial)
-						} else {
-							prehistoricParamChecker(req, b.Name, voiceText)
-						}
-						successMatched = true
-						matched = 1
-						break
-					}
-				}
-				if matched == 1 {
-					matched = 0
-					break
-				}
-				intentNum = intentNum + 1
-			}
-		}
-	} else {
+	successMatched := customIntentHandler(req, voiceText, botSerial)
+	if successMatched {
 		logger.Println("This is a custom intent!")
-		successMatched = true
+		return true
 	}
-	return successMatched
+	logger.Println("Not a custom intent")
+	return false
 }
 
 // KnowledgeGraphResponseIG 将知识回答包装成 IntentGraph 的 KG 响应。

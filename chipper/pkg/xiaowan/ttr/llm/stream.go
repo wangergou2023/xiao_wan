@@ -61,7 +61,43 @@ func CreateAIReq(transcribedText, esn string, gpt3tryagain, isKG bool) openai.Ch
 		Messages:         nChat,
 		Stream:           true,
 	}
+	if vars.APIConfig.Knowledge.CommandsEnable {
+		aireq = withNativeTools(aireq)
+	}
 	return aireq
+}
+
+func createKnowledgeStream(ctx context.Context, c *openai.Client, transcribedText, esn string, isKG bool) (*openai.ChatCompletionStream, openai.ChatCompletionRequest, error) {
+	aireq := CreateAIReq(transcribedText, esn, false, isKG)
+	stream, err := c.CreateChatCompletionStream(ctx, aireq)
+	if err == nil {
+		return stream, aireq, nil
+	}
+
+	log.Printf("Error creating chat completion stream: %v", err)
+	if strings.Contains(err.Error(), "does not exist") && vars.APIConfig.Knowledge.Provider == "openai" {
+		logger.Println("GPT-4 model cannot be accessed with this API key. You likely need to add more than $5 dollars of funds to your OpenAI account.")
+		logger.LogUI("GPT-4 model cannot be accessed with this API key. You likely need to add more than $5 dollars of funds to your OpenAI account.")
+		aireq = CreateAIReq(transcribedText, esn, true, isKG)
+		logger.Println("Falling back to " + aireq.Model)
+		logger.LogUI("Falling back to " + aireq.Model)
+		stream, err = c.CreateChatCompletionStream(ctx, aireq)
+		if err == nil {
+			return stream, aireq, nil
+		}
+	}
+
+	if hasNativeTools(aireq) {
+		logger.Println("Native tool call request failed, retrying without native tools: " + err.Error())
+		fallbackReq := withoutNativeTools(aireq)
+		stream, fallbackErr := c.CreateChatCompletionStream(ctx, fallbackReq)
+		if fallbackErr == nil {
+			return stream, fallbackReq, nil
+		}
+		err = fallbackErr
+	}
+
+	return nil, aireq, err
 }
 
 // StreamingKGSim 处理 LLM 流式回复，并把文本、动作和机器人行为串成一条完整链路。
@@ -119,11 +155,13 @@ func StreamingKGSim(req interface{}, esn string, transcribedText string, isKG bo
 	var fullRespText string
 	var fullfullRespText string
 	var fullRespSlice []string
+	var finalToolCalls []openai.ToolCall
 	var isDone bool
 	c := newKnowledgeClient()
 	speakReady := make(chan string)
 	successIntent := make(chan bool, 1)
 	prefetch := newTTSPrefetchSession()
+	var toolCallStream streamedToolCallAccumulator
 	intentAnnounced := false
 	notifySuccess := func() {
 		if intentAnnounced {
@@ -136,34 +174,18 @@ func StreamingKGSim(req interface{}, esn string, transcribedText string, isKG bo
 		}
 	}
 
-	aireq := CreateAIReq(transcribedText, esn, false, isKG)
-
-	stream, err := c.CreateChatCompletionStream(ctx, aireq)
+	stream, aireq, err := createKnowledgeStream(ctx, c, transcribedText, esn, isKG)
 	if err != nil {
-		log.Printf("Error creating chat completion stream: %v", err)
-		if strings.Contains(err.Error(), "does not exist") && vars.APIConfig.Knowledge.Provider == "openai" {
-			logger.Println("GPT-4 model cannot be accessed with this API key. You likely need to add more than $5 dollars of funds to your OpenAI account.")
-			logger.LogUI("GPT-4 model cannot be accessed with this API key. You likely need to add more than $5 dollars of funds to your OpenAI account.")
-			aireq := CreateAIReq(transcribedText, esn, true, isKG)
-			logger.Println("Falling back to " + aireq.Model)
-			logger.LogUI("Falling back to " + aireq.Model)
-			stream, err = c.CreateChatCompletionStream(ctx, aireq)
-			if err != nil {
-				logger.Println("OpenAI still not returning a response even after falling back. Erroring.")
-				return "", err
+		if isKG {
+			kgStopLooping = true
+			for range kgReadyToAnswer {
+				break
 			}
-		} else {
-			if isKG {
-				kgStopLooping = true
-				for range kgReadyToAnswer {
-					break
-				}
-				stop <- true
-				time.Sleep(time.Second / 3)
-				robotpkg.KGSim(esn, "There was an error getting data from the L. L. M.")
-			}
-			return "", err
+			stop <- true
+			time.Sleep(time.Second / 3)
+			robotpkg.KGSim(esn, "There was an error getting data from the L. L. M.")
 		}
+		return "", err
 	}
 	nChat := aireq.Messages
 	nChat = append(nChat, openai.ChatCompletionMessage{
@@ -174,6 +196,7 @@ func StreamingKGSim(req interface{}, esn string, transcribedText string, isKG bo
 		for {
 			response, err := stream.Recv()
 			if errors.Is(err, io.EOF) {
+				finalToolCalls = toolCallStream.Calls()
 				// prevents a crash
 				if len(fullRespSlice) == 0 && strings.TrimSpace(fullfullRespText) != "" {
 					logger.Println("LLM debug: final response has no sentence punctuation, using raw content")
@@ -182,9 +205,13 @@ func StreamingKGSim(req interface{}, esn string, transcribedText string, isKG bo
 					prefetch.PreloadFromRaw(finalChunk)
 					notifySuccess()
 				}
+				if len(finalToolCalls) > 0 {
+					logger.Println("LLM native tool calls: " + fmt.Sprint(finalToolCalls))
+					notifySuccess()
+				}
 				logger.Println("LLM final raw: " + clipDebugString(fullfullRespText, 300))
 				logger.Println("LLM final slices: " + fmt.Sprint(fullRespSlice))
-				if len(fullRespSlice) == 0 {
+				if len(fullRespSlice) == 0 && len(finalToolCalls) == 0 {
 					logger.Println("LLM returned no response")
 					successIntent <- false
 					if isKG {
@@ -199,31 +226,34 @@ func StreamingKGSim(req interface{}, esn string, transcribedText string, isKG bo
 					break
 				}
 				isDone = true
-				// if fullRespSlice != fullRespText, add that missing bit to fullRespSlice
-				newStr := fullRespSlice[0]
-				for i, str := range fullRespSlice {
-					if i == 0 {
-						continue
-					}
-					newStr = newStr + " " + str
-				}
-				if strings.TrimSpace(newStr) != strings.TrimSpace(fullfullRespText) {
+				newStr := strings.TrimSpace(strings.Join(fullRespSlice, " "))
+				if len(fullRespSlice) > 0 && strings.TrimSpace(newStr) != strings.TrimSpace(fullfullRespText) {
 					logger.Println("LLM debug: there is content after the last punctuation mark")
-					extraBit := strings.TrimPrefix(fullRespText, newStr)
-					fullRespSlice = append(fullRespSlice, extraBit)
+					extraBit := strings.TrimSpace(strings.TrimPrefix(fullRespText, newStr))
+					if extraBit != "" {
+						fullRespSlice = append(fullRespSlice, extraBit)
+						newStr = strings.TrimSpace(strings.Join(fullRespSlice, " "))
+					}
 				}
 				if vars.APIConfig.Knowledge.SaveChat {
-					Remember(openai.ChatCompletionMessage{
-						Role:    openai.ChatMessageRoleUser,
-						Content: transcribedText,
-					},
-						openai.ChatCompletionMessage{
-							Role:    openai.ChatMessageRoleAssistant,
-							Content: newStr,
+					assistantMessage := openai.ChatCompletionMessage{
+						Role:    openai.ChatMessageRoleAssistant,
+						Content: newStr,
+					}
+					if len(finalToolCalls) > 0 {
+						assistantMessage.ToolCalls = append([]openai.ToolCall(nil), finalToolCalls...)
+					}
+					RememberMessages([]openai.ChatCompletionMessage{
+						{
+							Role:    openai.ChatMessageRoleUser,
+							Content: transcribedText,
 						},
-						esn)
+						assistantMessage,
+					}, esn)
 				}
-				logger.LogUI("LLM response for " + esn + ": " + newStr)
+				if newStr != "" {
+					logger.LogUI("LLM response for " + esn + ": " + newStr)
+				}
 				logger.Println("LLM stream finished")
 				return
 			}
@@ -236,6 +266,10 @@ func StreamingKGSim(req interface{}, esn string, transcribedText string, isKG bo
 			if len(response.Choices) == 0 {
 				logger.Println("Empty response")
 				return
+			}
+
+			if len(response.Choices[0].Delta.ToolCalls) > 0 {
+				toolCallStream.AddDelta(response.Choices[0].Delta.ToolCalls)
 			}
 
 			deltaText := removeSpecialCharacters(response.Choices[0].Delta.Content)
@@ -272,6 +306,7 @@ func StreamingKGSim(req interface{}, esn string, transcribedText string, isKG bo
 	}
 	interrupted := false
 	var deferredActions []func()
+	var nativeDeferredQueued bool
 	go func() {
 		interrupted = robotpkg.InterruptKGSimWhenTouchedOrWaked(robot, stop, stopStop)
 	}()
@@ -296,6 +331,10 @@ func StreamingKGSim(req interface{}, esn string, transcribedText string, isKG bo
 			respSlice := fullRespSlice
 			if len(respSlice)-1 < numInResp {
 				if !isDone {
+					if len(respSlice) == 0 {
+						time.Sleep(50 * time.Millisecond)
+						continue
+					}
 					logger.Println("Waiting for more content from LLM...")
 					for range speakReady {
 						respSlice = fullRespSlice
@@ -318,6 +357,12 @@ func StreamingKGSim(req interface{}, esn string, transcribedText string, isKG bo
 				break
 			}
 			numInResp = numInResp + 1
+		}
+		if !nativeDeferredQueued && len(finalToolCalls) > 0 {
+			nChat[len(nChat)-1].ToolCalls = append([]openai.ToolCall(nil), finalToolCalls...)
+			nativeDeferred, _ := nativeToolCallsToDeferredActions(finalToolCalls, robot)
+			deferredActions = append(deferredActions, nativeDeferred...)
+			nativeDeferredQueued = true
 		}
 		speechSession.Stop(!interrupted)
 		time.Sleep(time.Millisecond * 100)

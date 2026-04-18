@@ -1,7 +1,6 @@
 package ttr
 
 import (
-	"github.com/wangergou2023/xiao_wan/chipper/pkg/vars"
 	"github.com/wangergou2023/xiao_wan/chipper/pkg/vtt"
 	intentpkg "github.com/wangergou2023/xiao_wan/chipper/pkg/xiaowan/ttr/intent"
 	llmpkg "github.com/wangergou2023/xiao_wan/chipper/pkg/xiaowan/ttr/llm"
@@ -13,9 +12,9 @@ func IntentPass(req interface{}, intentThing string, speechText string, intentPa
 	return intentpkg.IntentPass(req, intentThing, speechText, intentParams, isParam)
 }
 
-// ProcessTextAll 兼容旧调用方，对外暴露规则 intent 匹配能力。
-func ProcessTextAll(req interface{}, voiceText string, intents []vars.JsonIntent, isOpus bool) bool {
-	return intentpkg.ProcessTextAll(req, voiceText, intents, isOpus)
+// ProcessCustomIntents 对外暴露自定义 intent 匹配能力。
+func ProcessCustomIntents(req interface{}, voiceText string) bool {
+	return intentpkg.ProcessCustomIntents(req, voiceText)
 }
 
 // KnowledgeGraphResponseIG 兼容旧调用方，对外暴露 KG 响应封装能力。
