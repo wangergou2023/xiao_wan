@@ -26,12 +26,13 @@ type observedFaceState struct {
 }
 
 var (
-	faceWatcherMu   sync.Mutex
-	faceWatchers    = map[string]bool{}
-	observedFacesMu sync.Mutex
-	observedFaces   = map[string]observedFaceState{}
-	autoGreetMu     sync.Mutex
-	lastAutoGreets  = map[string]time.Time{}
+	faceWatcherMu     sync.Mutex
+	faceWatchers      = map[string]bool{}
+	observedFacesMu   sync.Mutex
+	observedFaces     = map[string]observedFaceState{}
+	autoGreetMu       sync.Mutex
+	lastAutoGreets    = map[string]time.Time{}
+	ownerGreetingFunc func(esn, name string) error
 )
 
 // BuildPromptContext 返回最近一次识别到的人脸上下文，供 LLM 判断当前面对的是谁。
@@ -164,6 +165,7 @@ func watchFacesOnce(esn string) error {
 			if face == nil {
 				continue
 			}
+			logger.Println(fmt.Sprintf("Face watcher for %s observed face event: id=%d, name=%q", esn, face.GetFaceId(), strings.TrimSpace(face.GetName())))
 			updateObservedFace(esn, face.GetFaceId(), face.GetName())
 		case *vectorpb.Event_VisionModesAutoDisabled:
 			// 某些情况下机器人会自动关掉视觉能力，这里立刻退出并走外层重连重开。
@@ -183,6 +185,14 @@ func updateObservedFace(esn string, faceID int32, name string) {
 	}
 	observedFacesMu.Unlock()
 
+	if name == "" {
+		logger.Println(fmt.Sprintf("Face watcher for %s saw face id=%d but did not match a saved name", esn, faceID))
+		return
+	}
+
+	profile := memorypkg.LoadProfile(esn)
+	logger.Println(fmt.Sprintf("Face watcher for %s mapped face id=%d name=%q as %s", esn, faceID, name, identityKind(profile, name)))
+
 	if name != "" {
 		maybeAutoGreetKnownFace(esn, name)
 	}
@@ -191,24 +201,30 @@ func updateObservedFace(esn string, faceID int32, name string) {
 // maybeAutoGreetKnownFace 对已命名人脸做低频自动问候，避免重复路过时一直说话。
 func maybeAutoGreetKnownFace(esn, name string) {
 	if !vars.APIConfig.Vision.AutoGreetKnownFaces {
+		logger.Println(fmt.Sprintf("Auto face greeting skipped for %s name=%q: feature disabled", esn, name))
 		return
 	}
 	if robotpkg.IsBusyForPassiveGreeting(esn) {
+		logger.Println(fmt.Sprintf("Auto face greeting skipped for %s name=%q: robot is busy", esn, name))
 		return
 	}
 	if !shouldAutoGreet(esn, name) {
 		return
 	}
 	go func() {
+		logger.Println(fmt.Sprintf("Auto face greeting starting for %s name=%q", esn, name))
 		if err := speakAutoGreeting(esn, name); err != nil {
 			logger.Println("Auto face greeting failed for " + esn + ": " + err.Error())
+			return
 		}
+		logger.Println(fmt.Sprintf("Auto face greeting finished for %s name=%q", esn, name))
 	}()
 }
 
 func shouldAutoGreet(esn, name string) bool {
 	key := strings.ToLower(strings.TrimSpace(esn)) + "::" + strings.ToLower(strings.TrimSpace(name))
 	if key == "::" || strings.HasSuffix(key, "::") {
+		logger.Println(fmt.Sprintf("Auto face greeting skipped for %s name=%q: invalid identity key", esn, name))
 		return false
 	}
 
@@ -217,6 +233,7 @@ func shouldAutoGreet(esn, name string) bool {
 
 	lastAt := lastAutoGreets[key]
 	if !lastAt.IsZero() && time.Since(lastAt) < autoGreetCooldown {
+		logger.Println(fmt.Sprintf("Auto face greeting skipped for %s name=%q: cooldown active", esn, name))
 		return false
 	}
 	lastAutoGreets[key] = time.Now()
@@ -225,11 +242,23 @@ func shouldAutoGreet(esn, name string) bool {
 
 func speakAutoGreeting(esn, name string) error {
 	profile := memorypkg.LoadProfile(esn)
+	kind := identityKind(profile, name)
+	if kind == "owner" && ownerGreetingFunc != nil {
+		logger.Println(fmt.Sprintf("Auto face greeting branch for %s name=%q: owner -> llm greeting", esn, name))
+		return ownerGreetingFunc(esn, name)
+	}
 	text := buildAutoGreetingText(profile, name)
 	if strings.TrimSpace(text) == "" {
+		logger.Println(fmt.Sprintf("Auto face greeting branch for %s name=%q: %s -> empty template", esn, name, kind))
 		return nil
 	}
+	logger.Println(fmt.Sprintf("Auto face greeting branch for %s name=%q: %s -> template greeting", esn, name, kind))
 	return robotpkg.KGSim(esn, text)
+}
+
+// SetOwnerGreetingFunc 注入“识别到主人后用 LLM 生成问候”的实现，避免 vision 直接依赖 llm 包。
+func SetOwnerGreetingFunc(fn func(esn, name string) error) {
+	ownerGreetingFunc = fn
 }
 
 func buildAutoGreetingText(profile memorypkg.UserProfile, name string) string {
