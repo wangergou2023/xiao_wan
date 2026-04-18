@@ -23,6 +23,7 @@ func TestCreatePromptBuildsLayeredRuntimeSections(t *testing.T) {
 		"Runtime voice rules:",
 		"Workspace guidance:",
 		"Robot runtime tools and expression rules:",
+		"Long-term memory lives in `workspace/memory/MEMORY.md`.",
 		"Conversation mode rules:",
 		"Valid legacy command catalog:",
 	}

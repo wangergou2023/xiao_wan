@@ -222,7 +222,7 @@ func StreamingKGSim(req interface{}, esn string, transcribedText string, isKG bo
 					nChat[len(nChat)-1].ToolCalls = append([]openai.ToolCall(nil), finalToolCalls...)
 					nChat[len(nChat)-1].Content = newStr
 					var needFollowUp bool
-					deferredFromTools, toolResults, followUpNeeded := executeNativeToolCalls(finalToolCalls, nativeToolContext{Robot: robot})
+					deferredFromTools, toolResults, followUpNeeded := executeNativeToolCalls(finalToolCalls, nativeToolContext{Robot: robot, ESN: esn})
 					deferredActions = append(deferredActions, deferredFromTools...)
 					toolMessages = append(toolMessages, toolResults...)
 					needFollowUp = followUpNeeded || (len(fullRespSlice) == 0 && len(toolResults) > 0)

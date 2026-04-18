@@ -2,6 +2,8 @@ package llm
 
 import (
 	"encoding/json"
+	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/sashabaranov/go-openai"
@@ -11,6 +13,7 @@ import (
 
 type nativeToolContext struct {
 	Robot *vector.Vector
+	ESN   string
 }
 
 type nativeToolExecution struct {
@@ -21,6 +24,7 @@ type nativeToolExecution struct {
 
 type nativeToolDefinition struct {
 	Name        string
+	Aliases     []string
 	Description string
 	Parameters  map[string]any
 	Execute     func(call openai.ToolCall, ctx nativeToolContext) nativeToolExecution
@@ -28,7 +32,94 @@ type nativeToolDefinition struct {
 
 var nativeToolDefinitions = []nativeToolDefinition{
 	{
-		Name:        "goCharge",
+		Name:        "get_current_time",
+		Description: "Get the current local date and time from the running system. Use this whenever you need the actual current time or date.",
+		Parameters:  emptyToolParameters(),
+		Execute:     executeGetCurrentTimeTool,
+	},
+	{
+		Name:        "weather",
+		Description: "Look up current weather or a simple forecast for a location using the configured weather provider.",
+		Parameters: map[string]any{
+			"type": "object",
+			"properties": map[string]any{
+				"location": map[string]any{
+					"type":        "string",
+					"description": "City or location to query, for example Tokyo or Beijing.",
+				},
+				"type": map[string]any{
+					"type":        "string",
+					"description": "current or forecast. Defaults to current.",
+					"enum":        []string{"current", "forecast"},
+				},
+				"days": map[string]any{
+					"type":        "integer",
+					"description": "Forecast day count, 1-5. Defaults to 1 when type=forecast.",
+				},
+			},
+			"required":             []string{"location"},
+			"additionalProperties": false,
+		},
+		Execute: executeWeatherTool,
+	},
+	{
+		Name:        "cron_add",
+		Description: "Create a recurring or one-shot reminder job that will make the robot speak a message later.",
+		Parameters: map[string]any{
+			"type": "object",
+			"properties": map[string]any{
+				"name": map[string]any{
+					"type":        "string",
+					"description": "Short job name.",
+				},
+				"schedule_type": map[string]any{
+					"type":        "string",
+					"description": "every for recurring jobs, at for one-shot jobs.",
+					"enum":        []string{"every", "at"},
+				},
+				"interval_s": map[string]any{
+					"type":        "integer",
+					"description": "Interval in seconds for recurring jobs.",
+				},
+				"at_epoch": map[string]any{
+					"type":        "integer",
+					"description": "Future Unix timestamp for a one-shot job.",
+				},
+				"message": map[string]any{
+					"type":        "string",
+					"description": "Message the robot should say when the job fires.",
+				},
+			},
+			"required":             []string{"name", "schedule_type", "message"},
+			"additionalProperties": false,
+		},
+		Execute: executeCronAddTool,
+	},
+	{
+		Name:        "cron_list",
+		Description: "List all scheduled reminder jobs.",
+		Parameters:  emptyToolParameters(),
+		Execute:     executeCronListTool,
+	},
+	{
+		Name:        "cron_remove",
+		Description: "Remove a scheduled reminder job by id.",
+		Parameters: map[string]any{
+			"type": "object",
+			"properties": map[string]any{
+				"job_id": map[string]any{
+					"type":        "string",
+					"description": "The id of the scheduled job to remove.",
+				},
+			},
+			"required":             []string{"job_id"},
+			"additionalProperties": false,
+		},
+		Execute: executeCronRemoveTool,
+	},
+	{
+		Name:        "go_charge",
+		Aliases:     []string{"goCharge"},
 		Description: "Actually send the robot back to its charger right now.",
 		Parameters:  emptyToolParameters(),
 		Execute: func(call openai.ToolCall, ctx nativeToolContext) nativeToolExecution {
@@ -40,7 +131,8 @@ var nativeToolDefinitions = []nativeToolDefinition{
 		},
 	},
 	{
-		Name:        "takePhoto",
+		Name:        "take_photo",
+		Aliases:     []string{"takePhoto"},
 		Description: "Take a real photo and save it to the robot photo gallery right now.",
 		Parameters:  emptyToolParameters(),
 		Execute: func(call openai.ToolCall, ctx nativeToolContext) nativeToolExecution {
@@ -52,7 +144,8 @@ var nativeToolDefinitions = []nativeToolDefinition{
 		},
 	},
 	{
-		Name:        "celebrateFireworks",
+		Name:        "celebrate_fireworks",
+		Aliases:     []string{"celebrateFireworks"},
 		Description: "Play the robot fireworks celebration behavior right now.",
 		Parameters:  emptyToolParameters(),
 		Execute: func(call openai.ToolCall, ctx nativeToolContext) nativeToolExecution {
@@ -64,7 +157,8 @@ var nativeToolDefinitions = []nativeToolDefinition{
 		},
 	},
 	{
-		Name:        "backAway",
+		Name:        "back_away",
+		Aliases:     []string{"backAway"},
 		Description: "Make the robot back away a short distance right now.",
 		Parameters:  emptyToolParameters(),
 		Execute: func(call openai.ToolCall, ctx nativeToolContext) nativeToolExecution {
@@ -76,7 +170,8 @@ var nativeToolDefinitions = []nativeToolDefinition{
 		},
 	},
 	{
-		Name:        "readFile",
+		Name:        "read_file",
+		Aliases:     []string{"readFile"},
 		Description: "Read a text file from the safe workspace roots. Use mode=lines for normal inspection, or mode=bytes for byte offsets and paging.",
 		Parameters: map[string]any{
 			"type": "object",
@@ -117,7 +212,8 @@ var nativeToolDefinitions = []nativeToolDefinition{
 		Execute: executeReadFileTool,
 	},
 	{
-		Name:        "writeFile",
+		Name:        "write_file",
+		Aliases:     []string{"writeFile"},
 		Description: "Write or append UTF-8 text inside the safe workspace roots. Use for explicit file creation or replacement, not casual chat.",
 		Parameters: map[string]any{
 			"type": "object",
@@ -146,7 +242,8 @@ var nativeToolDefinitions = []nativeToolDefinition{
 		Execute: executeWriteFileTool,
 	},
 	{
-		Name:        "editFile",
+		Name:        "edit_file",
+		Aliases:     []string{"editFile"},
 		Description: "Edit an existing UTF-8 text file by replacing one exact old_text occurrence with new_text. Prefer this for small precise changes.",
 		Parameters: map[string]any{
 			"type": "object",
@@ -170,7 +267,8 @@ var nativeToolDefinitions = []nativeToolDefinition{
 		Execute: executeEditFileTool,
 	},
 	{
-		Name:        "listFiles",
+		Name:        "list_dir",
+		Aliases:     []string{"listFiles"},
 		Description: "List files in a directory inside the safe workspace roots. Use to inspect workspace structure before reading or editing.",
 		Parameters: map[string]any{
 			"type": "object",
@@ -185,26 +283,31 @@ var nativeToolDefinitions = []nativeToolDefinition{
 		Execute: executeListFilesTool,
 	},
 	{
-		Name:        "runCommand",
-		Description: "Run a restricted read-focused command inside the safe workspace roots. Use only when command output is more useful than direct file reads.",
+		Name:        "system_cmd",
+		Aliases:     []string{"runCommand"},
+		Description: "Run a shell command inside the safe workspace roots and return stdout/stderr. Use this when file tools are not enough or when a skill explicitly needs command-line access.",
 		Parameters: map[string]any{
 			"type": "object",
 			"properties": map[string]any{
 				"command": map[string]any{
 					"type":        "string",
-					"description": "Allowed commands include pwd, ls, cat, rg, sed, head, tail, wc, and date.",
+					"description": "Shell command string to execute.",
+				},
+				"cmd": map[string]any{
+					"type":        "string",
+					"description": "Compatibility alias for command.",
 				},
 				"args": map[string]any{
 					"type":        "array",
 					"items":       map[string]any{"type": "string"},
-					"description": "Optional command arguments.",
+					"description": "Optional extra arguments appended after command for compatibility.",
 				},
 				"cwd": map[string]any{
 					"type":        "string",
 					"description": "Optional working directory inside the allowed workspace roots.",
 				},
 			},
-			"required":             []string{"command"},
+			"required":             []string{},
 			"additionalProperties": false,
 		},
 		Execute: executeRunCommandTool,
@@ -307,9 +410,15 @@ func (a *streamedToolCallAccumulator) Calls() []openai.ToolCall {
 }
 
 func nativeToolDefinitionByName(name string) (nativeToolDefinition, bool) {
+	name = strings.TrimSpace(name)
 	for _, def := range nativeToolDefinitions {
 		if name == def.Name {
 			return def, true
+		}
+		for _, alias := range def.Aliases {
+			if name == alias {
+				return def, true
+			}
 		}
 	}
 	return nativeToolDefinition{}, false
@@ -317,13 +426,13 @@ func nativeToolDefinitionByName(name string) (nativeToolDefinition, bool) {
 
 func nativeToolAction(name string) (RobotAction, bool) {
 	switch strings.TrimSpace(name) {
-	case "goCharge":
+	case "go_charge", "goCharge":
 		return RobotAction{Action: ActionGoCharge, Parameter: "now"}, true
-	case "takePhoto":
+	case "take_photo", "takePhoto":
 		return RobotAction{Action: ActionTakePhoto, Parameter: "now"}, true
-	case "celebrateFireworks":
+	case "celebrate_fireworks", "celebrateFireworks":
 		return RobotAction{Action: ActionCelebrateFireworks, Parameter: "now"}, true
-	case "backAway":
+	case "back_away", "backAway":
 		return RobotAction{Action: ActionBackAway, Parameter: "now"}, true
 	default:
 		return RobotAction{}, false
@@ -334,6 +443,7 @@ func executeNativeToolCalls(toolCalls []openai.ToolCall, ctx nativeToolContext) 
 	var deferred []func()
 	var toolResults []openai.ChatCompletionMessage
 	needFollowUp := false
+	readPaths := map[string]struct{}{}
 
 	for _, call := range toolCalls {
 		name := strings.TrimSpace(call.Function.Name)
@@ -350,10 +460,27 @@ func executeNativeToolCalls(toolCalls []openai.ToolCall, ctx nativeToolContext) 
 			}
 			continue
 		}
+		if guardResult, guarded := guardWorkspaceDocMutation(call, readPaths); guarded {
+			needFollowUp = needFollowUp || guardResult.NeedsFollowUp
+			if call.ID != "" {
+				content := strings.TrimSpace(guardResult.ResultContent)
+				if content == "" {
+					content = `{"status":"error","state":"failed","error":"guard rejected tool call"}`
+				}
+				toolResults = append(toolResults, openai.ChatCompletionMessage{
+					Role:       "tool",
+					ToolCallID: call.ID,
+					Name:       name,
+					Content:    content,
+				})
+			}
+			continue
+		}
 
 		result := def.Execute(call, ctx)
 		deferred = append(deferred, result.Deferred...)
 		needFollowUp = needFollowUp || result.NeedsFollowUp
+		recordReadPath(call, readPaths)
 		if call.ID != "" {
 			content := strings.TrimSpace(result.ResultContent)
 			if content == "" {
@@ -371,10 +498,142 @@ func executeNativeToolCalls(toolCalls []openai.ToolCall, ctx nativeToolContext) 
 	return deferred, toolResults, needFollowUp
 }
 
+func guardWorkspaceDocMutation(call openai.ToolCall, readPaths map[string]struct{}) (nativeToolExecution, bool) {
+	name := canonicalNativeToolName(strings.TrimSpace(call.Function.Name))
+	switch name {
+	case "edit_file":
+		var args editFileArgs
+		if err := decodeToolArgs(call, &args); err != nil {
+			return toolErrorResult(err), true
+		}
+		if !isGuardedWorkspaceDocPath(args.Path) {
+			return nativeToolExecution{}, false
+		}
+		normalized, err := normalizedWorkspaceDocPath(args.Path)
+		if err != nil {
+			return toolErrorResult(err), true
+		}
+		normalized = strings.ToLower(normalized)
+		if _, ok := readPaths[normalized]; !ok {
+			return toolErrorResultString("before editing a key workspace document, call read_file on the same path first"), true
+		}
+	case "write_file":
+		var args writeFileArgs
+		if err := decodeToolArgs(call, &args); err != nil {
+			return toolErrorResult(err), true
+		}
+		if !isGuardedWorkspaceDocPath(args.Path) {
+			return nativeToolExecution{}, false
+		}
+		normalized, err := normalizedWorkspaceDocPath(args.Path)
+		if err != nil {
+			return toolErrorResult(err), true
+		}
+		normalized = strings.ToLower(normalized)
+		if _, ok := readPaths[normalized]; ok {
+			return nativeToolExecution{}, false
+		}
+		if existing, _ := workspaceDocExists(normalized); existing {
+			return toolErrorResultString("before overwriting a key workspace document, call read_file on the same path first and prefer edit_file for a minimal change"), true
+		}
+	}
+	return nativeToolExecution{}, false
+}
+
+func recordReadPath(call openai.ToolCall, readPaths map[string]struct{}) {
+	if canonicalNativeToolName(strings.TrimSpace(call.Function.Name)) != "read_file" {
+		return
+	}
+	var args readFileArgs
+	if err := decodeToolArgs(call, &args); err != nil {
+		return
+	}
+	if !isGuardedWorkspaceDocPath(args.Path) {
+		return
+	}
+	normalized, err := normalizedWorkspaceDocPath(args.Path)
+	if err != nil {
+		return
+	}
+	readPaths[strings.ToLower(normalized)] = struct{}{}
+}
+
+func canonicalNativeToolName(name string) string {
+	def, ok := nativeToolDefinitionByName(name)
+	if !ok {
+		return strings.TrimSpace(name)
+	}
+	return def.Name
+}
+
+func isGuardedWorkspaceDocPath(input string) bool {
+	normalized, err := normalizedWorkspaceDocPath(input)
+	if err != nil {
+		return false
+	}
+	normalized = strings.ToLower(normalized)
+	switch normalized {
+	case "workspace/agents.md", "workspace/agent.md", "workspace/identity.md", "workspace/soul.md", "workspace/user.md", "workspace/memory/memory.md":
+		return true
+	default:
+		return false
+	}
+}
+
+func normalizedWorkspaceDocPath(input string) (string, error) {
+	clean := strings.TrimSpace(input)
+	if clean == "" {
+		return "", nil
+	}
+	abs, err := resolveSafeToolPath(clean, true)
+	if err != nil {
+		return "", err
+	}
+	for _, root := range allowedToolRoots() {
+		rootAbs, err := filepath.Abs(root)
+		if err != nil {
+			continue
+		}
+		rel, err := filepath.Rel(rootAbs, abs)
+		if err != nil {
+			continue
+		}
+		if rel == "." || strings.HasPrefix(rel, "..") {
+			continue
+		}
+		return filepath.ToSlash(filepath.Join("workspace", rel)), nil
+	}
+	return filepath.ToSlash(filepath.Clean(clean)), nil
+}
+
+func workspaceDocExists(normalized string) (bool, error) {
+	rel := strings.TrimPrefix(normalized, "workspace/")
+	abs, err := resolveSafeToolPath(rel, true)
+	if err != nil {
+		return false, err
+	}
+	_, err = os.Stat(abs)
+	if err == nil {
+		return true, nil
+	}
+	if os.IsNotExist(err) {
+		return false, nil
+	}
+	return false, err
+}
+
 func decodeToolArgs(call openai.ToolCall, dst any) error {
 	args := strings.TrimSpace(call.Function.Arguments)
 	if args == "" {
 		args = "{}"
 	}
 	return json.Unmarshal([]byte(args), dst)
+}
+
+func toolErrorResultString(msg string) nativeToolExecution {
+	return toolJSONResult(map[string]any{
+		"status": "error",
+		"state":  "failed",
+		"error":  strings.TrimSpace(msg),
+	})
 }

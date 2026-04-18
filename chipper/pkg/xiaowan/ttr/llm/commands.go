@@ -152,6 +152,9 @@ func CreatePrompt(origPrompt string, model string, isKG bool) string {
 	if workspacePrompt := strings.TrimSpace(workspacepkg.BuildPromptContext()); workspacePrompt != "" {
 		sections = append(sections, "Workspace guidance:\n"+workspacePrompt)
 	}
+	if skillCatalog := strings.TrimSpace(skillspkg.BuildSkillCatalogPrompt()); skillCatalog != "" {
+		sections = append(sections, "Workspace skill index:\n"+skillCatalog)
+	}
 	if skillPrompt := strings.TrimSpace(skillspkg.BuildAutoSkillPrompt()); skillPrompt != "" {
 		sections = append(sections, "Additional active skills:\n"+skillPrompt)
 	}
@@ -173,6 +176,8 @@ func buildVoiceRuntimePrompt() string {
 		"- Reply in natural spoken language that sounds good aloud.",
 		"- Keep sentences short and clear.",
 		"- Avoid emojis, markdown, bullet lists, and written-only formatting.",
+		"- Be genuinely helpful, not performatively helpful.",
+		"- Be resourceful before asking the user for clarification.",
 	}, "\n")
 }
 
@@ -188,15 +193,25 @@ func buildRobotCommandPrompt(model string, isKG bool) string {
 	b.WriteString("- Head and lift commands are subtle physical gestures. Use at most one small motor gesture near a sentence and do not chain them repeatedly.\n")
 	b.WriteString("- For physical task requests, the real task matters more than emotional gestures.\n")
 	b.WriteString("- If native function tools are available, prefer them for charging, taking photos, fireworks, backing away, and file or command operations. Keep {{command||parameter}} as fallback behavior.\n")
-	b.WriteString("- Safe file and command tools exist for workspace files, memory files, settings, and explicit command inspection.\n")
-	b.WriteString("- Treat `workspace/` as your file working root. Important docs live at `workspace/AGENT.md`, `workspace/SOUL.md`, `workspace/USER.md`, and `workspace/memory/MEMORY.md`.\n")
-	b.WriteString("- For file work: listFiles to inspect, readFile to read, editFile for small exact edits, writeFile for explicit rewrites, and runCommand only when command output is the best fit.\n")
+	b.WriteString("- Native tools also exist for current time, weather, and scheduled reminder jobs.\n")
+	b.WriteString("- Safe file and command tools exist for workspace files, memory files, settings, explicit command inspection, and system operations when truly needed.\n")
+	b.WriteString("- Treat `workspace/` as your file working root. Important docs live at `workspace/AGENTS.md`, `workspace/IDENTITY.md`, `workspace/SOUL.md`, `workspace/USER.md`, and `workspace/memory/MEMORY.md`.\n")
+	b.WriteString("- For memorable user facts or identity updates, read the target file first and prefer small edits over rewriting the entire file.\n")
+	b.WriteString("- If a workspace file is missing and you truly need it, you may create it with write_file.\n")
+	b.WriteString("- Long-term memory lives in `workspace/memory/MEMORY.md`. User profile facts live in `workspace/USER.md`. Identity/personality lives in `workspace/IDENTITY.md` and `workspace/SOUL.md`.\n")
+	b.WriteString("- Before updating memory or user facts, first read the file with read_file. Then prefer edit_file for a minimal change. Do not rewrite the whole file unless edit_file truly cannot express the update.\n")
+	b.WriteString("- When storing a memorable fact from direct user chat, keep the wording concise, durable, and easy to reuse later.\n")
+	b.WriteString("- Do not store one-off requests, temporary moods, or speculative guesses as long-term memory.\n")
+	b.WriteString("- For file work: list_dir to inspect, read_file to read, edit_file for small exact edits, write_file for explicit rewrites, and system_cmd only when command output is the best fit.\n")
+	b.WriteString("- Use get_current_time whenever you need the actual date or time. Do not guess.\n")
+	b.WriteString("- Use weather for weather lookups when it is available. Prefer it over raw shell commands.\n")
+	b.WriteString("- Use cron_add, cron_list, and cron_remove for scheduled reminders or recurring spoken tasks.\n")
 	b.WriteString("- Do not use file or command tools for casual conversation, speculation, or facts you already know from context.\n")
 	b.WriteString("\nImportant task rules:\n")
-	b.WriteString("- If the user asks you to go home, return to the charger, go charge, go back to charge, head to the charger, or similar, you MUST either call the native goCharge tool or include {{goCharge||now}} in your response.\n")
-	b.WriteString("- If the user asks you to actually take a photo, snap a picture, or capture a photo, call the native takePhoto tool when available, otherwise use {{takePhoto||now}}. If the user wants visual analysis of the current scene, use getImage instead.\n")
-	b.WriteString("- If the user asks for fireworks, celebration, or new year style celebration, prefer the native celebrateFireworks tool, otherwise use {{celebrateFireworks||now}}.\n")
-	b.WriteString("- If the user asks the robot to move back or give space, prefer the native backAway tool, otherwise use {{backAway||now}}.\n")
+	b.WriteString("- If the user asks you to go home, return to the charger, go charge, go back to charge, head to the charger, or similar, you MUST either call the native go_charge tool or include {{goCharge||now}} in your response.\n")
+	b.WriteString("- If the user asks you to actually take a photo, snap a picture, or capture a photo, call the native take_photo tool when available, otherwise use {{takePhoto||now}}. If the user wants visual analysis of the current scene, use getImage instead.\n")
+	b.WriteString("- If the user asks for fireworks, celebration, or new year style celebration, prefer the native celebrate_fireworks tool, otherwise use {{celebrateFireworks||now}}.\n")
+	b.WriteString("- If the user asks the robot to move back or give space, prefer the native back_away tool, otherwise use {{backAway||now}}.\n")
 	b.WriteString("\nConversation mode rules:\n")
 	if isKG && vars.APIConfig.Knowledge.SaveChat {
 		b.WriteString("- You are in conversation mode. If you ask a question near the end of your response, you MUST use newVoiceRequest. If you want to end the conversation, do not use it.\n")
@@ -208,6 +223,7 @@ func buildRobotCommandPrompt(model string, isKG bool) string {
 	b.WriteString("User: 给我拍张照\nResponse: 好的，我来拍一张。\n")
 	b.WriteString("User: 放个烟花庆祝一下\nResponse: 好呀，我们庆祝一下。\n")
 	b.WriteString("User: 你往后退一点\nResponse: 好的，我退后一点。\n")
+	b.WriteString("User: 记住我喜欢吃苹果\nResponse: 好的，我先看看长期记忆文件，然后把这条偏好记下来。\n")
 	b.WriteString("\nValid legacy command catalog:")
 	for _, cmd := range ValidLLMCommands {
 		if ModelIsSupported(cmd, model) {

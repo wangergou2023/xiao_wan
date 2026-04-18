@@ -1,19 +1,13 @@
 package skills
 
 import (
-	"embed"
-	"io/fs"
 	"os"
 	"path/filepath"
 	"strings"
 	"sync"
 
-	"github.com/wangergou2023/xiao_wan/chipper/pkg/logger"
 	workspacepkg "github.com/wangergou2023/xiao_wan/chipper/pkg/xiaowan/workspace"
 )
-
-//go:embed builtin/*/SKILL.md
-var builtinSkillsFS embed.FS
 
 type Skill struct {
 	Name        string
@@ -29,13 +23,10 @@ var (
 )
 
 // LoadSkills 加载内置技能以及本地技能目录里的 SKILL.md。
-// 这里借鉴 PicoClaw 的 skill 目录约定，但先保持实现轻量，方便机器人项目渐进接入。
+// 现在只加载 workspace 下的本地 SKILL.md，避免内置 skill 继续污染 prompt。
 func LoadSkills() []Skill {
 	loadOnce.Do(func() {
-		var all []Skill
-		all = append(all, loadEmbeddedSkills()...)
-		all = append(all, loadLocalSkills()...)
-		cachedSkills = all
+		cachedSkills = loadLocalSkills()
 	})
 	return append([]Skill(nil), cachedSkills...)
 }
@@ -53,27 +44,33 @@ func BuildAutoSkillPrompt() string {
 	return strings.Join(sections, "\n\n")
 }
 
-func loadEmbeddedSkills() []Skill {
-	var skills []Skill
-	entries, err := fs.ReadDir(builtinSkillsFS, "builtin")
-	if err != nil {
-		return nil
+// BuildSkillCatalogPrompt builds a short skill index, inspired by mimiclaw's
+// "load the matching skill file when needed" pattern.
+func BuildSkillCatalogPrompt() string {
+	skills := LoadSkills()
+	if len(skills) == 0 {
+		return ""
 	}
-	for _, entry := range entries {
-		if !entry.IsDir() {
+	var sections []string
+	sections = append(sections,
+		"Workspace skills live under `workspace/skills/<skill-name>/SKILL.md`.",
+		"When a task clearly matches a skill, read that skill file before acting.",
+		"Resolve any relative paths mentioned inside a skill against that skill's directory.",
+		"Available skills:",
+	)
+	for _, skill := range skills {
+		name := strings.TrimSpace(skill.Name)
+		desc := strings.TrimSpace(skill.Description)
+		if name == "" {
 			continue
 		}
-		skillPath := filepath.ToSlash(filepath.Join("builtin", entry.Name(), "SKILL.md"))
-		data, readErr := builtinSkillsFS.ReadFile(skillPath)
-		if readErr != nil {
+		if desc == "" {
+			sections = append(sections, "- "+name)
 			continue
 		}
-		skill, ok := parseSkill(string(data), "builtin")
-		if ok {
-			skills = append(skills, skill)
-		}
+		sections = append(sections, "- "+name+": "+desc)
 	}
-	return skills
+	return strings.Join(sections, "\n")
 }
 
 func loadLocalSkills() []Skill {
@@ -131,7 +128,6 @@ func parseSkill(content, source string) (Skill, bool) {
 	}
 	skill.Prompt = strings.TrimSpace(parts[2])
 	if skill.Name == "" || skill.Prompt == "" {
-		logger.Println("Skipping invalid skill definition from " + source)
 		return Skill{}, false
 	}
 	return skill, true

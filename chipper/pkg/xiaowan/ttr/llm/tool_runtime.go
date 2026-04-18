@@ -18,6 +18,9 @@ import (
 	"unicode/utf8"
 
 	"github.com/sashabaranov/go-openai"
+	"github.com/wangergou2023/xiao_wan/chipper/pkg/vars"
+	cronpkg "github.com/wangergou2023/xiao_wan/chipper/pkg/xiaowan/cron"
+	"github.com/wangergou2023/xiao_wan/chipper/pkg/xiaowan/ttr/support"
 	workspacepkg "github.com/wangergou2023/xiao_wan/chipper/pkg/xiaowan/workspace"
 )
 
@@ -26,18 +29,6 @@ const (
 	toolWriteMaxBytes      = 24 * 1024
 	toolCommandOutputLimit = 12 * 1024
 )
-
-var allowedToolCommands = map[string]struct{}{
-	"pwd":  {},
-	"ls":   {},
-	"cat":  {},
-	"rg":   {},
-	"sed":  {},
-	"head": {},
-	"tail": {},
-	"wc":   {},
-	"date": {},
-}
 
 type readFileArgs struct {
 	Path      string `json:"path"`
@@ -68,8 +59,197 @@ type listFilesArgs struct {
 
 type runCommandArgs struct {
 	Command string   `json:"command"`
+	Cmd     string   `json:"cmd"`
 	Args    []string `json:"args"`
 	Cwd     string   `json:"cwd"`
+}
+
+type weatherToolArgs struct {
+	Location string `json:"location"`
+	Type     string `json:"type"`
+	Days     int    `json:"days"`
+}
+
+type cronAddArgs struct {
+	Name         string `json:"name"`
+	ScheduleType string `json:"schedule_type"`
+	IntervalS    int64  `json:"interval_s"`
+	AtEpoch      int64  `json:"at_epoch"`
+	Message      string `json:"message"`
+}
+
+type cronRemoveArgs struct {
+	JobID string `json:"job_id"`
+}
+
+func executeGetCurrentTimeTool(call openai.ToolCall, ctx nativeToolContext) nativeToolExecution {
+	_ = call
+	_ = ctx
+	now := time.Now()
+	_, offsetSeconds := now.Zone()
+	offsetHours := offsetSeconds / 3600
+	offsetMinutes := (offsetSeconds % 3600) / 60
+	offset := fmt.Sprintf("%+03d:%02d", offsetHours, absInt(offsetMinutes))
+	return toolSuccessResult(map[string]any{
+		"datetime":       now.Format(time.RFC3339),
+		"date":           now.Format("2006-01-02"),
+		"time":           now.Format("15:04:05"),
+		"timezone":       now.Format("MST"),
+		"utc_offset":     offset,
+		"unix":           now.Unix(),
+		"weekday":        now.Weekday().String(),
+		"human_readable": now.Format("2006-01-02 15:04:05 MST"),
+	})
+}
+
+func executeWeatherTool(call openai.ToolCall, ctx nativeToolContext) nativeToolExecution {
+	_ = ctx
+	var args weatherToolArgs
+	if err := decodeToolArgs(call, &args); err != nil {
+		return toolErrorResult(err)
+	}
+	location := strings.TrimSpace(args.Location)
+	if location == "" {
+		return toolErrorResult(fmt.Errorf("location is required"))
+	}
+	if !vars.APIConfig.Weather.Enable || strings.TrimSpace(vars.APIConfig.Weather.Key) == "" {
+		return toolErrorResult(fmt.Errorf("weather API is not configured"))
+	}
+
+	queryType := strings.ToLower(strings.TrimSpace(args.Type))
+	if queryType == "" {
+		queryType = "current"
+	}
+	days := args.Days
+	if days <= 0 {
+		days = 1
+	}
+	if days > 5 {
+		return toolErrorResult(fmt.Errorf("days must be between 1 and 5"))
+	}
+
+	hoursFromNow := 0
+	if queryType == "forecast" {
+		if strings.TrimSpace(vars.APIConfig.Weather.Provider) != "openweathermap.org" {
+			return toolErrorResult(fmt.Errorf("forecast is only supported with openweathermap.org"))
+		}
+		hoursFromNow = days * 24
+	} else if queryType != "current" {
+		return toolErrorResult(fmt.Errorf("unsupported type: %s", queryType))
+	}
+
+	condition, isForecast, localDatetime, speakableLocation, temperature, temperatureUnit := support.GetWeatherForTool(location, "", hoursFromNow)
+	if strings.TrimSpace(condition) == "" || condition == "undefined" {
+		return toolErrorResult(fmt.Errorf("weather lookup failed for %s", location))
+	}
+	return toolSuccessResult(map[string]any{
+		"location":           strings.TrimSpace(speakableLocation),
+		"requested_location": location,
+		"type":               queryType,
+		"days":               days,
+		"is_forecast":        strings.EqualFold(isForecast, "true") || queryType == "forecast",
+		"local_datetime":     strings.TrimSpace(localDatetime),
+		"condition":          strings.TrimSpace(condition),
+		"temperature":        strings.TrimSpace(temperature),
+		"temperature_unit":   strings.TrimSpace(temperatureUnit),
+		"summary":            buildWeatherSummary(speakableLocation, condition, temperature, temperatureUnit, localDatetime, queryType, days),
+	})
+}
+
+func buildWeatherSummary(location, condition, temperature, unit, localDatetime, queryType string, days int) string {
+	location = strings.TrimSpace(location)
+	condition = strings.TrimSpace(condition)
+	temperature = strings.TrimSpace(temperature)
+	unit = strings.TrimSpace(unit)
+	localDatetime = strings.TrimSpace(localDatetime)
+	if queryType == "forecast" {
+		return fmt.Sprintf("%s forecast in %d day(s): %s, %s°%s. Local time: %s.", location, days, condition, temperature, unit, localDatetime)
+	}
+	return fmt.Sprintf("%s weather now: %s, %s°%s. Local time: %s.", location, condition, temperature, unit, localDatetime)
+}
+
+func absInt(v int) int {
+	if v < 0 {
+		return -v
+	}
+	return v
+}
+
+func executeCronAddTool(call openai.ToolCall, ctx nativeToolContext) nativeToolExecution {
+	var args cronAddArgs
+	if err := decodeToolArgs(call, &args); err != nil {
+		return toolErrorResult(err)
+	}
+	job, err := cronpkg.AddJob(cronpkg.Job{
+		Name:         strings.TrimSpace(args.Name),
+		ScheduleType: strings.TrimSpace(args.ScheduleType),
+		IntervalS:    args.IntervalS,
+		AtEpoch:      args.AtEpoch,
+		Message:      strings.TrimSpace(args.Message),
+		RobotESN:     strings.TrimSpace(ctx.ESN),
+	})
+	if err != nil {
+		return toolErrorResult(err)
+	}
+	return toolSuccessResult(map[string]any{
+		"job": map[string]any{
+			"id":            job.ID,
+			"name":          job.Name,
+			"schedule_type": job.ScheduleType,
+			"interval_s":    job.IntervalS,
+			"at_epoch":      job.AtEpoch,
+			"message":       job.Message,
+			"robot_esn":     job.RobotESN,
+			"next_run_at":   job.NextRunAt,
+		},
+	})
+}
+
+func executeCronListTool(call openai.ToolCall, ctx nativeToolContext) nativeToolExecution {
+	_ = call
+	_ = ctx
+	jobs := cronpkg.ListJobs()
+	items := make([]map[string]any, 0, len(jobs))
+	for _, job := range jobs {
+		items = append(items, map[string]any{
+			"id":            job.ID,
+			"name":          job.Name,
+			"schedule_type": job.ScheduleType,
+			"interval_s":    job.IntervalS,
+			"at_epoch":      job.AtEpoch,
+			"message":       job.Message,
+			"robot_esn":     job.RobotESN,
+			"created_at":    job.CreatedAt,
+			"next_run_at":   job.NextRunAt,
+			"last_run_at":   job.LastRunAt,
+		})
+	}
+	return toolSuccessResult(map[string]any{
+		"jobs":  items,
+		"count": len(items),
+	})
+}
+
+func executeCronRemoveTool(call openai.ToolCall, ctx nativeToolContext) nativeToolExecution {
+	_ = ctx
+	var args cronRemoveArgs
+	if err := decodeToolArgs(call, &args); err != nil {
+		return toolErrorResult(err)
+	}
+	job, ok, err := cronpkg.RemoveJob(strings.TrimSpace(args.JobID))
+	if err != nil {
+		return toolErrorResult(err)
+	}
+	if !ok {
+		return toolErrorResult(fmt.Errorf("job not found"))
+	}
+	return toolSuccessResult(map[string]any{
+		"removed": true,
+		"job": map[string]any{
+			"id":   job.ID,
+			"name": job.Name,
+		},
+	})
 }
 
 func executeReadFileTool(call openai.ToolCall, ctx nativeToolContext) nativeToolExecution {
@@ -158,7 +338,7 @@ func readFileBytes(absPath string, args readFileArgs) nativeToolExecution {
 	readEnd := offset + int64(len(data))
 	notice := "END OF FILE - no further content."
 	if hasMore {
-		notice = fmt.Sprintf("TRUNCATED - call readFile again with mode=bytes and offset=%d to continue.", readEnd)
+		notice = fmt.Sprintf("TRUNCATED - call read_file again with mode=bytes and offset=%d to continue.", readEnd)
 	}
 
 	state := "complete"
@@ -273,10 +453,10 @@ func readFileLines(absPath string, args readFileArgs) nativeToolExecution {
 	truncated := false
 	if truncatedByBudget {
 		truncated = true
-		notice = fmt.Sprintf("TRUNCATED - byte budget reached. Call readFile again with mode=lines and start_line=%d to continue.", startLine+linesRead)
+		notice = fmt.Sprintf("TRUNCATED - byte budget reached. Call read_file again with mode=lines and start_line=%d to continue.", startLine+linesRead)
 	} else if !reachedEOF {
 		truncated = true
-		notice = fmt.Sprintf("PARTIAL - more content remains. Call readFile again with mode=lines and start_line=%d and max_lines=%d to continue.", startLine+linesRead, maxLines)
+		notice = fmt.Sprintf("PARTIAL - more content remains. Call read_file again with mode=lines and start_line=%d and max_lines=%d to continue.", startLine+linesRead, maxLines)
 	}
 
 	state := "complete"
@@ -374,7 +554,7 @@ func executeEditFileTool(call openai.ToolCall, ctx nativeToolContext) nativeTool
 		return toolErrorResult(err)
 	}
 	if isBinaryToolData(data) {
-		return toolErrorResult(fmt.Errorf("file appears to be binary; editFile only supports UTF-8 text files"))
+		return toolErrorResult(fmt.Errorf("file appears to be binary; edit_file only supports UTF-8 text files"))
 	}
 
 	content := string(data)
@@ -443,27 +623,35 @@ func executeRunCommandTool(call openai.ToolCall, ctx nativeToolContext) nativeTo
 		return toolErrorResult(err)
 	}
 	command := strings.TrimSpace(args.Command)
-	if _, ok := allowedToolCommands[command]; !ok {
-		return toolErrorResult(fmt.Errorf("command not allowed: %s", command))
+	if command == "" {
+		command = strings.TrimSpace(args.Cmd)
+	}
+	if command == "" {
+		return toolErrorResult(fmt.Errorf("command is required"))
 	}
 	cwd, err := resolveSafeToolDir(args.Cwd)
 	if err != nil {
 		return toolErrorResult(err)
 	}
-	cleanArgs := make([]string, 0, len(args.Args))
-	for _, arg := range args.Args {
-		arg = strings.TrimSpace(arg)
-		if arg == "" {
-			continue
+	if len(args.Args) > 0 {
+		extra := make([]string, 0, len(args.Args))
+		for _, arg := range args.Args {
+			arg = strings.TrimSpace(arg)
+			if arg == "" {
+				continue
+			}
+			if len(arg) > 200 {
+				return toolErrorResult(fmt.Errorf("argument too long"))
+			}
+			extra = append(extra, arg)
 		}
-		if len(arg) > 200 {
-			return toolErrorResult(fmt.Errorf("argument too long"))
+		if len(extra) > 0 {
+			command = command + " " + strings.Join(extra, " ")
 		}
-		cleanArgs = append(cleanArgs, arg)
 	}
 	cmdCtx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
-	cmd := exec.CommandContext(cmdCtx, command, cleanArgs...)
+	cmd := exec.CommandContext(cmdCtx, "sh", "-lc", command)
 	cmd.Dir = cwd
 	output, err := cmd.CombinedOutput()
 	truncated := false
@@ -487,7 +675,6 @@ func executeRunCommandTool(call openai.ToolCall, ctx nativeToolContext) nativeTo
 		"status":    status,
 		"state":     state,
 		"command":   command,
-		"args":      cleanArgs,
 		"cwd":       cwd,
 		"output":    string(output),
 		"exit_code": exitCode,
@@ -537,13 +724,17 @@ func localToolFollowupFromResults(toolMessages []openai.ChatCompletionMessage) s
 	}
 
 	type toolPayload struct {
-		Status  string `json:"status"`
-		State   string `json:"state"`
-		Path    string `json:"path"`
-		Mode    string `json:"mode"`
-		Content string `json:"content"`
-		Notice  string `json:"notice"`
-		Error   string `json:"error"`
+		Status        string `json:"status"`
+		State         string `json:"state"`
+		Path          string `json:"path"`
+		Mode          string `json:"mode"`
+		Content       string `json:"content"`
+		Notice        string `json:"notice"`
+		Error         string `json:"error"`
+		Datetime      string `json:"datetime"`
+		HumanReadable string `json:"human_readable"`
+		Summary       string `json:"summary"`
+		Count         int    `json:"count"`
 	}
 
 	var snippets []string
@@ -558,6 +749,18 @@ func localToolFollowupFromResults(toolMessages []openai.ChatCompletionMessage) s
 				snippets = append(snippets, "我读取工具结果时遇到错误："+strings.TrimSpace(payload.Error)+"。")
 			}
 		case "ok":
+			if strings.TrimSpace(payload.HumanReadable) != "" {
+				snippets = append(snippets, "我查了当前时间："+strings.TrimSpace(payload.HumanReadable)+"。")
+				continue
+			}
+			if strings.TrimSpace(payload.Summary) != "" {
+				snippets = append(snippets, "我查到天气了："+strings.TrimSpace(payload.Summary))
+				continue
+			}
+			if strings.TrimSpace(msg.Name) == "cron_list" {
+				snippets = append(snippets, fmt.Sprintf("我查了定时任务，现在一共有 %d 个。", payload.Count))
+				continue
+			}
 			base := filepath.Base(strings.TrimSpace(payload.Path))
 			text := strings.TrimSpace(payload.Content)
 			if base == "" || text == "" {

@@ -7,29 +7,39 @@ import (
 )
 
 type Docs struct {
-	Agent  string
-	Soul   string
-	User   string
-	Memory string
+	Agents    string
+	Identity  string
+	Bootstrap string
+	Soul      string
+	User      string
+	Memory    string
 }
 
-// LoadDocs 读取 PicoClaw 风格的 workspace 文档层：
-// workspace/AGENT.md / workspace/SOUL.md / workspace/USER.md /
-// workspace/memory/MEMORY.md。
+// LoadDocs 读取 workspace 文档层。
+// 优先兼容 mimiclaw 风格的 AGENTS.md / IDENTITY.md / BOOTSTRAP.md，
+// 同时兼容旧的 AGENT.md。
 func LoadDocs() Docs {
 	return Docs{
-		Agent:  readWorkspaceFile("AGENT.md"),
-		Soul:   readWorkspaceFile("SOUL.md"),
-		User:   readWorkspaceFile("USER.md"),
-		Memory: readWorkspaceFile(filepath.Join("memory", "MEMORY.md")),
+		Agents:    readWorkspaceFileFirst("AGENTS.md", "AGENT.md"),
+		Identity:  readWorkspaceFile("IDENTITY.md"),
+		Bootstrap: readWorkspaceFile("BOOTSTRAP.md"),
+		Soul:      readWorkspaceFile("SOUL.md"),
+		User:      readWorkspaceFile("USER.md"),
+		Memory:    readWorkspaceFile(filepath.Join("memory", "MEMORY.md")),
 	}
 }
 
 func BuildPromptContext() string {
 	docs := LoadDocs()
 	var sections []string
-	if strings.TrimSpace(docs.Agent) != "" {
-		sections = append(sections, "workspace/AGENT.md:\n"+strings.TrimSpace(docs.Agent))
+	if strings.TrimSpace(docs.Agents) != "" {
+		sections = append(sections, "workspace/AGENTS.md:\n"+strings.TrimSpace(docs.Agents))
+	}
+	if strings.TrimSpace(docs.Identity) != "" {
+		sections = append(sections, "workspace/IDENTITY.md:\n"+strings.TrimSpace(docs.Identity))
+	}
+	if strings.TrimSpace(docs.Bootstrap) != "" {
+		sections = append(sections, "workspace/BOOTSTRAP.md:\n"+strings.TrimSpace(docs.Bootstrap))
 	}
 	if strings.TrimSpace(docs.Soul) != "" {
 		sections = append(sections, "workspace/SOUL.md:\n"+strings.TrimSpace(docs.Soul))
@@ -44,11 +54,17 @@ func BuildPromptContext() string {
 }
 
 func readWorkspaceFile(rel string) string {
+	return readWorkspaceFileFirst(rel)
+}
+
+func readWorkspaceFileFirst(rel ...string) string {
 	for _, root := range WorkspaceRoots() {
-		path := filepath.Join(root, rel)
-		data, err := os.ReadFile(path)
-		if err == nil {
-			return string(data)
+		for _, one := range rel {
+			path := filepath.Join(root, one)
+			data, err := os.ReadFile(path)
+			if err == nil {
+				return string(data)
+			}
 		}
 	}
 	return ""

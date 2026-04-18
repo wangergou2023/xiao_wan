@@ -19,6 +19,7 @@ import (
 	jdocsserver "github.com/wangergou2023/xiao_wan/chipper/pkg/servers/jdocs"
 	tokenserver "github.com/wangergou2023/xiao_wan/chipper/pkg/servers/token"
 	"github.com/wangergou2023/xiao_wan/chipper/pkg/vars"
+	cronpkg "github.com/wangergou2023/xiao_wan/chipper/pkg/xiaowan/cron"
 	wp "github.com/wangergou2023/xiao_wan/chipper/pkg/xiaowan/preqs"
 	wpweb "github.com/wangergou2023/xiao_wan/chipper/webserver/backend/config-ws"
 	sdkWeb "github.com/wangergou2023/xiao_wan/chipper/webserver/backend/sdkapp"
@@ -83,6 +84,7 @@ func BeginWirepodSpecific(sttInitFunc func() error, sttHandlerFunc interface{}, 
 
 	// begin wirepod stuff
 	vars.Init()
+	cronpkg.Init()
 	var err error
 	voiceProcessor, err = wp.New(sttInitFunc, sttHandlerFunc, voiceProcessorName)
 	wpweb.SttInitFunc = sttInitFunc

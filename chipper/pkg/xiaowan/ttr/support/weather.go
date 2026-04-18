@@ -435,3 +435,8 @@ func weatherParser(speechText string, botLocation string, botUnits string) (stri
 func WeatherParser(speechText string, botLocation string, botUnits string) (string, string, string, string, string, string) {
 	return weatherParser(speechText, botLocation, botUnits)
 }
+
+// GetWeatherForTool exposes the existing weather lookup logic to native LLM tools.
+func GetWeatherForTool(location string, botUnits string, hoursFromNow int) (string, string, string, string, string, string) {
+	return getWeather(location, botUnits, hoursFromNow)
+}

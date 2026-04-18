@@ -82,7 +82,7 @@ func TestExecuteNativeToolCallsFileTools(t *testing.T) {
 			ID:   "write_1",
 			Type: openai.ToolTypeFunction,
 			Function: openai.FunctionCall{
-				Name:      "writeFile",
+				Name:      "write_file",
 				Arguments: `{"path":"notes/test.txt","content":"hello tool world\nline 2","mode":"overwrite","overwrite":true}`,
 			},
 		},
@@ -90,7 +90,7 @@ func TestExecuteNativeToolCallsFileTools(t *testing.T) {
 			ID:   "read_1",
 			Type: openai.ToolTypeFunction,
 			Function: openai.FunctionCall{
-				Name:      "readFile",
+				Name:      "read_file",
 				Arguments: `{"path":"notes/test.txt","mode":"bytes","offset":0,"length":5}`,
 			},
 		},
@@ -98,7 +98,7 @@ func TestExecuteNativeToolCallsFileTools(t *testing.T) {
 			ID:   "read_2",
 			Type: openai.ToolTypeFunction,
 			Function: openai.FunctionCall{
-				Name:      "readFile",
+				Name:      "read_file",
 				Arguments: `{"path":"notes/test.txt","mode":"lines","start_line":2,"max_lines":1}`,
 			},
 		},
@@ -106,7 +106,7 @@ func TestExecuteNativeToolCallsFileTools(t *testing.T) {
 			ID:   "list_1",
 			Type: openai.ToolTypeFunction,
 			Function: openai.FunctionCall{
-				Name:      "listFiles",
+				Name:      "list_dir",
 				Arguments: `{"path":"notes"}`,
 			},
 		},
@@ -140,7 +140,7 @@ func TestExecuteNativeToolCallsFileTools(t *testing.T) {
 		t.Fatalf("expected line read result to contain numbered line, got %s", results[2].Content)
 	}
 	if !strings.Contains(results[3].Content, "test.txt") {
-		t.Fatalf("expected listFiles result to contain file name, got %s", results[3].Content)
+		t.Fatalf("expected list_dir result to contain file name, got %s", results[3].Content)
 	}
 }
 
@@ -170,10 +170,17 @@ func TestExecuteNativeToolCallsAcceptsWorkspacePrefixedPaths(t *testing.T) {
 	}
 
 	toolCalls := []openai.ToolCall{{
+		ID:   "read_workspace_1",
+		Type: openai.ToolTypeFunction,
+		Function: openai.FunctionCall{
+			Name:      "read_file",
+			Arguments: `{"path":"workspace/memory/MEMORY.md","mode":"lines","start_line":1,"max_lines":20}`,
+		},
+	}, {
 		ID:   "edit_workspace_1",
 		Type: openai.ToolTypeFunction,
 		Function: openai.FunctionCall{
-			Name:      "editFile",
+			Name:      "edit_file",
 			Arguments: `{"path":"workspace/memory/MEMORY.md","old_text":"No durable user facts have been confirmed yet.","new_text":"- 用户喜欢吃苹果"}`,
 		},
 	}}
@@ -182,8 +189,8 @@ func TestExecuteNativeToolCallsAcceptsWorkspacePrefixedPaths(t *testing.T) {
 	if !needFollowUp {
 		t.Fatalf("expected edit tool to request follow-up")
 	}
-	if len(results) != 1 {
-		t.Fatalf("expected 1 tool result, got %d", len(results))
+	if len(results) != 2 {
+		t.Fatalf("expected 2 tool results, got %d", len(results))
 	}
 	data, err := os.ReadFile(filepath.Join(tmp, "workspace", "memory", "MEMORY.md"))
 	if err != nil {
@@ -192,8 +199,114 @@ func TestExecuteNativeToolCallsAcceptsWorkspacePrefixedPaths(t *testing.T) {
 	if !strings.Contains(string(data), "用户喜欢吃苹果") {
 		t.Fatalf("expected workspace memory doc to be edited, got %q", string(data))
 	}
-	if !strings.Contains(results[0].Content, `"status":"ok"`) {
-		t.Fatalf("expected successful tool result, got %s", results[0].Content)
+	if !strings.Contains(results[1].Content, `"status":"ok"`) {
+		t.Fatalf("expected successful tool result, got %s", results[1].Content)
+	}
+}
+
+func TestEditWorkspaceMemoryRequiresReadFirst(t *testing.T) {
+	tmp := t.TempDir()
+	oldWD, err := os.Getwd()
+	if err != nil {
+		t.Fatal(err)
+	}
+	oldWirepodHome := os.Getenv("WIREPOD_HOME")
+	if err := os.Chdir(tmp); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Setenv("WIREPOD_HOME", tmp); err != nil {
+		t.Fatal(err)
+	}
+	defer func() {
+		_ = os.Chdir(oldWD)
+		_ = os.Setenv("WIREPOD_HOME", oldWirepodHome)
+	}()
+
+	if err := os.MkdirAll(filepath.Join(tmp, "workspace", "memory"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(tmp, "workspace", "memory", "MEMORY.md"), []byte("No durable user facts have been confirmed yet."), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	toolCalls := []openai.ToolCall{{
+		ID:   "edit_guard_1",
+		Type: openai.ToolTypeFunction,
+		Function: openai.FunctionCall{
+			Name:      "edit_file",
+			Arguments: `{"path":"workspace/memory/MEMORY.md","old_text":"No durable user facts have been confirmed yet.","new_text":"- 用户喜欢吃苹果"}`,
+		},
+	}}
+
+	_, results, needFollowUp := executeNativeToolCalls(toolCalls, nativeToolContext{})
+	if !needFollowUp {
+		t.Fatalf("expected guarded rejection to request follow-up")
+	}
+	if len(results) != 1 {
+		t.Fatalf("expected 1 tool result, got %d", len(results))
+	}
+	if !strings.Contains(results[0].Content, "call read_file on the same path first") {
+		t.Fatalf("expected read-first guidance, got %s", results[0].Content)
+	}
+}
+
+func TestEditWorkspaceMemoryAfterReadSucceeds(t *testing.T) {
+	tmp := t.TempDir()
+	oldWD, err := os.Getwd()
+	if err != nil {
+		t.Fatal(err)
+	}
+	oldWirepodHome := os.Getenv("WIREPOD_HOME")
+	if err := os.Chdir(tmp); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Setenv("WIREPOD_HOME", tmp); err != nil {
+		t.Fatal(err)
+	}
+	defer func() {
+		_ = os.Chdir(oldWD)
+		_ = os.Setenv("WIREPOD_HOME", oldWirepodHome)
+	}()
+
+	if err := os.MkdirAll(filepath.Join(tmp, "workspace", "memory"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(tmp, "workspace", "memory", "MEMORY.md"), []byte("No durable user facts have been confirmed yet."), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	toolCalls := []openai.ToolCall{
+		{
+			ID:   "read_guard_1",
+			Type: openai.ToolTypeFunction,
+			Function: openai.FunctionCall{
+				Name:      "read_file",
+				Arguments: `{"path":"workspace/memory/MEMORY.md","mode":"lines","start_line":1,"max_lines":20}`,
+			},
+		},
+		{
+			ID:   "edit_guard_2",
+			Type: openai.ToolTypeFunction,
+			Function: openai.FunctionCall{
+				Name:      "edit_file",
+				Arguments: `{"path":"workspace/memory/MEMORY.md","old_text":"No durable user facts have been confirmed yet.","new_text":"- 用户喜欢吃苹果"}`,
+			},
+		},
+	}
+
+	_, results, _ := executeNativeToolCalls(toolCalls, nativeToolContext{})
+	if len(results) != 2 {
+		t.Fatalf("expected 2 tool results, got %d", len(results))
+	}
+	if strings.Contains(results[1].Content, "call read_file on the same path first") {
+		t.Fatalf("expected edit to pass after read, got %s", results[1].Content)
+	}
+	data, err := os.ReadFile(filepath.Join(tmp, "workspace", "memory", "MEMORY.md"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(string(data), "用户喜欢吃苹果") {
+		t.Fatalf("expected memory doc to be updated, got %q", string(data))
 	}
 }
 
@@ -219,7 +332,7 @@ func TestWriteFileRequiresOverwriteForExistingFile(t *testing.T) {
 		ID:   "write_fail",
 		Type: openai.ToolTypeFunction,
 		Function: openai.FunctionCall{
-			Name:      "writeFile",
+			Name:      "write_file",
 			Arguments: `{"path":"notes/existing.txt","content":"new","mode":"overwrite"}`,
 		},
 	}}
@@ -259,7 +372,7 @@ bye
 		ID:   "edit_1",
 		Type: openai.ToolTypeFunction,
 		Function: openai.FunctionCall{
-			Name:      "editFile",
+			Name:      "edit_file",
 			Arguments: `{"path":"notes/edit.txt","old_text":"replace me once","new_text":"edited text"}`,
 		},
 	}}
@@ -313,7 +426,7 @@ same
 		ID:   "edit_fail",
 		Type: openai.ToolTypeFunction,
 		Function: openai.FunctionCall{
-			Name:      "editFile",
+			Name:      "edit_file",
 			Arguments: `{"path":"notes/dup.txt","old_text":"same","new_text":"new"}`,
 		},
 	}}
@@ -371,7 +484,7 @@ func TestExecuteNativeToolCallsRunCommand(t *testing.T) {
 		ID:   "cmd_1",
 		Type: openai.ToolTypeFunction,
 		Function: openai.FunctionCall{
-			Name:      "runCommand",
+			Name:      "system_cmd",
 			Arguments: `{"command":"pwd"}`,
 		},
 	}}
@@ -391,12 +504,161 @@ func TestExecuteNativeToolCallsRunCommand(t *testing.T) {
 	}
 }
 
+func TestExecuteNativeToolCallsGetCurrentTime(t *testing.T) {
+	toolCalls := []openai.ToolCall{{
+		ID:   "time_1",
+		Type: openai.ToolTypeFunction,
+		Function: openai.FunctionCall{
+			Name:      "get_current_time",
+			Arguments: `{}`,
+		},
+	}}
+
+	_, results, needFollowUp := executeNativeToolCalls(toolCalls, nativeToolContext{})
+	if !needFollowUp {
+		t.Fatalf("expected time tool to request a follow-up response")
+	}
+	if len(results) != 1 {
+		t.Fatalf("expected 1 tool result, got %d", len(results))
+	}
+	if !strings.Contains(results[0].Content, `"datetime"`) {
+		t.Fatalf("expected datetime in tool result, got %s", results[0].Content)
+	}
+	if !strings.Contains(results[0].Content, `"human_readable"`) {
+		t.Fatalf("expected human_readable in tool result, got %s", results[0].Content)
+	}
+}
+
+func TestExecuteNativeToolCallsWeatherRejectsUnconfiguredAPI(t *testing.T) {
+	oldConfig := vars.APIConfig
+	t.Cleanup(func() {
+		vars.APIConfig = oldConfig
+	})
+	vars.APIConfig.Weather.Enable = false
+	vars.APIConfig.Weather.Key = ""
+
+	toolCalls := []openai.ToolCall{{
+		ID:   "weather_1",
+		Type: openai.ToolTypeFunction,
+		Function: openai.FunctionCall{
+			Name:      "weather",
+			Arguments: `{"location":"Tokyo"}`,
+		},
+	}}
+
+	_, results, needFollowUp := executeNativeToolCalls(toolCalls, nativeToolContext{})
+	if !needFollowUp {
+		t.Fatalf("expected weather tool to request a follow-up response")
+	}
+	if len(results) != 1 {
+		t.Fatalf("expected 1 tool result, got %d", len(results))
+	}
+	if !strings.Contains(results[0].Content, "weather API is not configured") {
+		t.Fatalf("expected configuration error, got %s", results[0].Content)
+	}
+}
+
+func TestExecuteNativeToolCallsCronLifecycle(t *testing.T) {
+	tmp := t.TempDir()
+	oldWD, err := os.Getwd()
+	if err != nil {
+		t.Fatal(err)
+	}
+	oldWirepodHome := os.Getenv("WIREPOD_HOME")
+	if err := os.Chdir(tmp); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Setenv("WIREPOD_HOME", tmp); err != nil {
+		t.Fatal(err)
+	}
+	defer func() {
+		_ = os.Chdir(oldWD)
+		_ = os.Setenv("WIREPOD_HOME", oldWirepodHome)
+	}()
+
+	if err := os.MkdirAll(filepath.Join(tmp, "workspace"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+
+	toolCalls := []openai.ToolCall{
+		{
+			ID:   "cron_add_1",
+			Type: openai.ToolTypeFunction,
+			Function: openai.FunctionCall{
+				Name:      "cron_add",
+				Arguments: `{"name":"briefing","schedule_type":"every","interval_s":60,"message":"该播报啦"}`,
+			},
+		},
+		{
+			ID:   "cron_list_1",
+			Type: openai.ToolTypeFunction,
+			Function: openai.FunctionCall{
+				Name:      "cron_list",
+				Arguments: `{}`,
+			},
+		},
+	}
+
+	_, results, needFollowUp := executeNativeToolCalls(toolCalls, nativeToolContext{ESN: "0dd1c497"})
+	if !needFollowUp {
+		t.Fatalf("expected cron tools to request a follow-up response")
+	}
+	if len(results) != 2 {
+		t.Fatalf("expected 2 tool results, got %d", len(results))
+	}
+	if !strings.Contains(results[0].Content, `"schedule_type":"every"`) {
+		t.Fatalf("expected added cron job details, got %s", results[0].Content)
+	}
+	if !strings.Contains(results[1].Content, `"count":1`) {
+		t.Fatalf("expected cron_list to report one job, got %s", results[1].Content)
+	}
+	data, err := os.ReadFile(filepath.Join(tmp, "workspace", "cron", "jobs.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(string(data), `"name": "briefing"`) {
+		t.Fatalf("expected persisted cron job, got %s", string(data))
+	}
+}
+
+func TestExecuteNativeToolCallsRunCommandCmdAlias(t *testing.T) {
+	tmp := t.TempDir()
+	oldWD, err := os.Getwd()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Chdir(tmp); err != nil {
+		t.Fatal(err)
+	}
+	defer os.Chdir(oldWD)
+
+	toolCalls := []openai.ToolCall{{
+		ID:   "cmd_alias_1",
+		Type: openai.ToolTypeFunction,
+		Function: openai.FunctionCall{
+			Name:      "system_cmd",
+			Arguments: `{"cmd":"printf hello"}`,
+		},
+	}}
+
+	_, results, needFollowUp := executeNativeToolCalls(toolCalls, nativeToolContext{})
+	if !needFollowUp {
+		t.Fatalf("expected command tool to request a follow-up response")
+	}
+	if len(results) != 1 {
+		t.Fatalf("expected 1 tool result, got %d", len(results))
+	}
+	if !strings.Contains(results[0].Content, "hello") {
+		t.Fatalf("expected cmd alias output to contain hello, got %s", results[0].Content)
+	}
+}
+
 func TestExecuteNativeToolCallsScheduledRobotTool(t *testing.T) {
 	toolCalls := []openai.ToolCall{{
 		ID:   "charge_1",
 		Type: openai.ToolTypeFunction,
 		Function: openai.FunctionCall{
-			Name:      "goCharge",
+			Name:      "go_charge",
 			Arguments: `{}`,
 		},
 	}}
@@ -416,5 +678,30 @@ func TestExecuteNativeToolCallsScheduledRobotTool(t *testing.T) {
 	}
 	if !strings.Contains(results[0].Content, `"state":"pending"`) {
 		t.Fatalf("expected pending state, got %s", results[0].Content)
+	}
+}
+
+func TestExecuteNativeToolCallsLegacyAliasStillWorks(t *testing.T) {
+	toolCalls := []openai.ToolCall{{
+		ID:   "charge_alias_1",
+		Type: openai.ToolTypeFunction,
+		Function: openai.FunctionCall{
+			Name:      "goCharge",
+			Arguments: `{}`,
+		},
+	}}
+
+	deferred, results, needFollowUp := executeNativeToolCalls(toolCalls, nativeToolContext{})
+	if len(deferred) != 1 {
+		t.Fatalf("expected 1 deferred action, got %d", len(deferred))
+	}
+	if needFollowUp {
+		t.Fatalf("expected scheduled robot action to skip follow-up")
+	}
+	if len(results) != 1 {
+		t.Fatalf("expected 1 tool result, got %d", len(results))
+	}
+	if !strings.Contains(results[0].Content, `"status":"scheduled"`) {
+		t.Fatalf("expected scheduled status, got %s", results[0].Content)
 	}
 }
