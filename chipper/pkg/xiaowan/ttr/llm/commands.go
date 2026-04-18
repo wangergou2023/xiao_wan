@@ -607,11 +607,12 @@ func DoNewRequest(robot *vector.Vector) {
 	_ = robotpkg.StartKnowledgeQuestion(robot)
 }
 
-func PerformActions(msgs []openai.ChatCompletionMessage, actions []RobotAction, robot *vector.Vector, stopStop chan bool, prefetch *ttsPrefetchSession) bool {
+func PerformActions(msgs []openai.ChatCompletionMessage, actions []RobotAction, robot *vector.Vector, stopStop chan bool, prefetch *ttsPrefetchSession) (bool, []func()) {
 	// assuming we have behavior control already
 	stopPerforming := false
 	allowWIDuringThisSentence := true
 	allowMotorGestureDuringThisSentence := true
+	var deferredActions []func()
 	go func() {
 		for range stopStop {
 			stopPerforming = true
@@ -619,7 +620,7 @@ func PerformActions(msgs []openai.ChatCompletionMessage, actions []RobotAction, 
 	}()
 	for _, action := range actions {
 		if stopPerforming {
-			return false
+			return false, deferredActions
 		}
 		switch {
 		case action.Action == ActionSayText:
@@ -667,7 +668,9 @@ func PerformActions(msgs []openai.ChatCompletionMessage, actions []RobotAction, 
 				allowMotorGestureDuringThisSentence = false
 			}
 		case action.Action == ActionGoCharge:
-			DoGoCharge(robot)
+			deferredActions = append(deferredActions, func() {
+				DoGoCharge(robot)
+			})
 		case action.Action == ActionTakePhoto:
 			DoTakePhoto(robot)
 		case action.Action == ActionCelebrateFireworks:
@@ -676,16 +679,16 @@ func PerformActions(msgs []openai.ChatCompletionMessage, actions []RobotAction, 
 			DoBackAway(robot)
 		case action.Action == ActionNewRequest:
 			go DoNewRequest(robot)
-			return true
+			return true, deferredActions
 		case action.Action == ActionGetImage:
 			DoGetImage(msgs, action.Parameter, robot, stopStop)
-			return true
+			return true, deferredActions
 		case action.Action == ActionPlaySound:
 			DoPlaySound(action.Parameter, robot)
 		}
 	}
 	WaitForAnim_Queue(robot.Cfg.SerialNo)
-	return false
+	return false, deferredActions
 }
 
 func WaitForAnim_Queue(esn string) {

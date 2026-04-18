@@ -271,6 +271,7 @@ func StreamingKGSim(req interface{}, esn string, transcribedText string, isKG bo
 		robotpkg.BControl(robot, ctx, start, stop)
 	}
 	interrupted := false
+	var deferredActions []func()
 	go func() {
 		interrupted = robotpkg.InterruptKGSimWhenTouchedOrWaked(robot, stop, stopStop)
 	}()
@@ -310,7 +311,9 @@ func StreamingKGSim(req interface{}, esn string, transcribedText string, isKG bo
 			logger.Println(respSlice[numInResp])
 			acts := GetActionsFromString(respSlice[numInResp])
 			nChat[len(nChat)-1].Content = fullRespText
-			disconnect = PerformActions(nChat, acts, robot, stopStop, prefetch)
+			var newDeferred []func()
+			disconnect, newDeferred = PerformActions(nChat, acts, robot, stopStop, prefetch)
+			deferredActions = append(deferredActions, newDeferred...)
 			if disconnect {
 				break
 			}
@@ -333,6 +336,10 @@ func StreamingKGSim(req interface{}, esn string, transcribedText string, isKG bo
 		if !interrupted {
 			stopStop <- true
 			stop <- true
+			time.Sleep(250 * time.Millisecond)
+			for _, deferred := range deferredActions {
+				deferred()
+			}
 		}
 		break
 	}
