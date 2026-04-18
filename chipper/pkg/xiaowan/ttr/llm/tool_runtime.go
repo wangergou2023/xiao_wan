@@ -18,6 +18,7 @@ import (
 	"unicode/utf8"
 
 	"github.com/sashabaranov/go-openai"
+	workspacepkg "github.com/wangergou2023/xiao_wan/chipper/pkg/xiaowan/workspace"
 )
 
 const (
@@ -753,17 +754,13 @@ func allowedToolRoots() []string {
 		seen[path] = struct{}{}
 		roots = append(roots, path)
 	}
-	if wd, err := os.Getwd(); err == nil {
-		add(wd)
-		add(filepath.Join(wd, "workspace"))
-		add(filepath.Join(wd, "chipper", "workspace"))
-		parent := filepath.Dir(wd)
-		add(filepath.Join(parent, "workspace"))
-		add(filepath.Join(parent, "chipper", "workspace"))
+	for _, root := range workspacepkg.WorkspaceRoots() {
+		add(root)
 	}
-	if wirepodHome := strings.TrimSpace(os.Getenv("WIREPOD_HOME")); wirepodHome != "" {
-		add(filepath.Join(wirepodHome, "workspace"))
-		add(filepath.Join(wirepodHome, "chipper", "workspace"))
+	if len(roots) == 0 {
+		if wd, err := os.Getwd(); err == nil {
+			add(wd)
+		}
 	}
 	return roots
 }

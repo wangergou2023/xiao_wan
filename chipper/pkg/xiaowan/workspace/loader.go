@@ -14,14 +14,14 @@ type Docs struct {
 }
 
 // LoadDocs 读取 PicoClaw 风格的 workspace 文档层：
-// AGENT.md / SOUL.md / USER.md / memory/MEMORY.md。
-// 这里先保持为简单的“多候选路径 + 首个命中”策略，方便在开发与打包环境下共用。
+// workspace/AGENT.md / workspace/SOUL.md / workspace/USER.md /
+// workspace/memory/MEMORY.md。
 func LoadDocs() Docs {
 	return Docs{
-		Agent:  readFirstExistingFile("AGENT.md"),
-		Soul:   readFirstExistingFile("SOUL.md"),
-		User:   readFirstExistingFile("USER.md"),
-		Memory: readFirstExistingFile(filepath.Join("memory", "MEMORY.md")),
+		Agent:  readWorkspaceFile("AGENT.md"),
+		Soul:   readWorkspaceFile("SOUL.md"),
+		User:   readWorkspaceFile("USER.md"),
+		Memory: readWorkspaceFile(filepath.Join("memory", "MEMORY.md")),
 	}
 }
 
@@ -29,22 +29,22 @@ func BuildPromptContext() string {
 	docs := LoadDocs()
 	var sections []string
 	if strings.TrimSpace(docs.Agent) != "" {
-		sections = append(sections, "AGENT.md:\n"+strings.TrimSpace(docs.Agent))
+		sections = append(sections, "workspace/AGENT.md:\n"+strings.TrimSpace(docs.Agent))
 	}
 	if strings.TrimSpace(docs.Soul) != "" {
-		sections = append(sections, "SOUL.md:\n"+strings.TrimSpace(docs.Soul))
+		sections = append(sections, "workspace/SOUL.md:\n"+strings.TrimSpace(docs.Soul))
 	}
 	if strings.TrimSpace(docs.User) != "" {
-		sections = append(sections, "USER.md:\n"+strings.TrimSpace(docs.User))
+		sections = append(sections, "workspace/USER.md:\n"+strings.TrimSpace(docs.User))
 	}
 	if strings.TrimSpace(docs.Memory) != "" {
-		sections = append(sections, "MEMORY.md:\n"+strings.TrimSpace(docs.Memory))
+		sections = append(sections, "workspace/memory/MEMORY.md:\n"+strings.TrimSpace(docs.Memory))
 	}
 	return strings.Join(sections, "\n\n")
 }
 
-func readFirstExistingFile(rel string) string {
-	for _, root := range workspaceRoots() {
+func readWorkspaceFile(rel string) string {
+	for _, root := range WorkspaceRoots() {
 		path := filepath.Join(root, rel)
 		data, err := os.ReadFile(path)
 		if err == nil {
@@ -57,34 +57,48 @@ func readFirstExistingFile(rel string) string {
 // ResolveWritableDocPath 返回某个 workspace 文档推荐写入的位置。
 // 优先复用已存在文件；如果都不存在，就落到第一个候选根目录。
 func ResolveWritableDocPath(rel string) string {
-	for _, root := range workspaceRoots() {
+	for _, root := range WorkspaceRoots() {
 		path := filepath.Join(root, rel)
 		if _, err := os.Stat(path); err == nil {
 			return path
 		}
 	}
-	roots := workspaceRoots()
+	roots := WorkspaceRoots()
 	if len(roots) == 0 {
 		return rel
 	}
 	return filepath.Join(roots[0], rel)
 }
 
-func workspaceRoots() []string {
+// WorkspaceRoots returns candidate workspace roots in priority order.
+func WorkspaceRoots() []string {
 	var roots []string
+	addIfWorkspace := func(path string) {
+		path = strings.TrimSpace(path)
+		if path == "" {
+			return
+		}
+		if info, err := os.Stat(path); err == nil && info.IsDir() {
+			roots = append(roots, path)
+		}
+	}
 	if wirepodHome := strings.TrimSpace(os.Getenv("WIREPOD_HOME")); wirepodHome != "" {
-		roots = append(roots,
-			filepath.Join(wirepodHome, "workspace"),
-			filepath.Join(wirepodHome, "chipper", "workspace"),
-		)
+		addIfWorkspace(filepath.Join(wirepodHome, "workspace"))
+		addIfWorkspace(filepath.Join(wirepodHome, "chipper", "workspace"))
 	}
 	if wd, err := os.Getwd(); err == nil {
-		roots = append(roots,
-			filepath.Join(wd, "workspace"),
-			filepath.Join(wd, "chipper", "workspace"),
-			filepath.Join(filepath.Dir(wd), "workspace"),
-			filepath.Join(filepath.Dir(wd), "chipper", "workspace"),
-		)
+		base := filepath.Base(wd)
+		switch base {
+		case "workspace":
+			addIfWorkspace(wd)
+		case "chipper":
+			addIfWorkspace(filepath.Join(wd, "workspace"))
+		default:
+			addIfWorkspace(filepath.Join(wd, "workspace"))
+			addIfWorkspace(filepath.Join(wd, "chipper", "workspace"))
+			addIfWorkspace(filepath.Join(filepath.Dir(wd), "workspace"))
+			addIfWorkspace(filepath.Join(filepath.Dir(wd), "chipper", "workspace"))
+		}
 	}
 	return dedupeStrings(roots)
 }

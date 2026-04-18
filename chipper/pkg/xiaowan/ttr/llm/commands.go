@@ -189,6 +189,7 @@ func buildRobotCommandPrompt(model string, isKG bool) string {
 	b.WriteString("- For physical task requests, the real task matters more than emotional gestures.\n")
 	b.WriteString("- If native function tools are available, prefer them for charging, taking photos, fireworks, backing away, and file or command operations. Keep {{command||parameter}} as fallback behavior.\n")
 	b.WriteString("- Safe file and command tools exist for workspace files, memory files, settings, and explicit command inspection.\n")
+	b.WriteString("- Treat `workspace/` as your file working root. Important docs live at `workspace/AGENT.md`, `workspace/SOUL.md`, `workspace/USER.md`, and `workspace/memory/MEMORY.md`.\n")
 	b.WriteString("- For file work: listFiles to inspect, readFile to read, editFile for small exact edits, writeFile for explicit rewrites, and runCommand only when command output is the best fit.\n")
 	b.WriteString("- Do not use file or command tools for casual conversation, speculation, or facts you already know from context.\n")
 	b.WriteString("\nImportant task rules:\n")

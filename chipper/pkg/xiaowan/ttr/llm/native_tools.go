@@ -83,7 +83,7 @@ var nativeToolDefinitions = []nativeToolDefinition{
 			"properties": map[string]any{
 				"path": map[string]any{
 					"type":        "string",
-					"description": "Relative or absolute path inside the allowed workspace roots.",
+					"description": "Path inside the workspace root, for example workspace/memory/MEMORY.md or workspace/USER.md.",
 				},
 				"mode": map[string]any{
 					"type":        "string",
@@ -124,7 +124,7 @@ var nativeToolDefinitions = []nativeToolDefinition{
 			"properties": map[string]any{
 				"path": map[string]any{
 					"type":        "string",
-					"description": "Relative or absolute path inside the allowed workspace roots.",
+					"description": "Path inside the workspace root, for example workspace/memory/MEMORY.md or workspace/USER.md.",
 				},
 				"content": map[string]any{
 					"type":        "string",
@@ -153,7 +153,7 @@ var nativeToolDefinitions = []nativeToolDefinition{
 			"properties": map[string]any{
 				"path": map[string]any{
 					"type":        "string",
-					"description": "Relative or absolute path inside the allowed workspace roots.",
+					"description": "Path inside the workspace root, for example workspace/memory/MEMORY.md or workspace/USER.md.",
 				},
 				"old_text": map[string]any{
 					"type":        "string",
@@ -177,7 +177,7 @@ var nativeToolDefinitions = []nativeToolDefinition{
 			"properties": map[string]any{
 				"path": map[string]any{
 					"type":        "string",
-					"description": "Optional directory path inside the allowed workspace roots. Defaults to the current workspace root.",
+					"description": "Optional directory path inside the workspace root. Defaults to the workspace root itself.",
 				},
 			},
 			"additionalProperties": false,

@@ -18,7 +18,7 @@ This file stores stable user-facing context that should shape how the robot rela
 
 ## Memory Boundaries
 
-- Keep only stable facts and durable preferences here or in `memory/MEMORY.md`.
+- Keep only stable facts and durable preferences here or in `workspace/memory/MEMORY.md`.
 - Do not turn every casual remark into long-term memory.
 - Temporary mood, one-off tasks, and passing jokes are not durable memory by default.
 - If a remembered fact conflicts with newer direct user input, trust the newer direct input.

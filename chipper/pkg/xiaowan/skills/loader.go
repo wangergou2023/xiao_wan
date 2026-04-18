@@ -9,6 +9,7 @@ import (
 	"sync"
 
 	"github.com/wangergou2023/xiao_wan/chipper/pkg/logger"
+	workspacepkg "github.com/wangergou2023/xiao_wan/chipper/pkg/xiaowan/workspace"
 )
 
 //go:embed builtin/*/SKILL.md
@@ -102,16 +103,8 @@ func loadLocalSkills() []Skill {
 
 func localSkillRoots() []string {
 	var roots []string
-	if wirepodHome := strings.TrimSpace(os.Getenv("WIREPOD_HOME")); wirepodHome != "" {
-		roots = append(roots, filepath.Join(wirepodHome, "skills"))
-	}
-	if wd, err := os.Getwd(); err == nil {
-		roots = append(roots,
-			filepath.Join(wd, "skills"),
-			filepath.Join(wd, "chipper", "skills"),
-			filepath.Join(filepath.Dir(wd), "skills"),
-			filepath.Join(filepath.Dir(wd), "chipper", "skills"),
-		)
+	for _, root := range workspacepkg.WorkspaceRoots() {
+		roots = append(roots, filepath.Join(root, "skills"))
 	}
 	return dedupeStrings(roots)
 }

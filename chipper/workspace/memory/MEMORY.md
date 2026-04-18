@@ -32,4 +32,4 @@ Do not store as long-term memory:
 ## Sync Info
 
 - Robot ESN: 0dd1c497
-- Source of truth: confirmed freeform memory saved by the system
+- Source of truth: workspace/memory/MEMORY.md
