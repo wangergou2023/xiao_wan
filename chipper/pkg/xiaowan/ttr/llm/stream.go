@@ -66,7 +66,7 @@ func CreateAIReq(transcribedText, esn string, gpt3tryagain, isKG bool) openai.Ch
 
 // StreamingKGSim 处理 LLM 流式回复，并把文本、动作和机器人行为串成一条完整链路。
 func StreamingKGSim(req interface{}, esn string, transcribedText string, isKG bool) (string, error) {
-	endActivity := robotpkg.BeginForegroundActivity(esn)
+	endActivity := robotpkg.BeginForegroundActivity(esn, "llm_stream")
 	defer endActivity()
 
 	start := make(chan bool)

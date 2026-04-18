@@ -14,7 +14,7 @@ import (
 
 // KGSim 用于在不经过完整 LLM 流程时，让机器人直接播报一段短文本。
 func KGSim(esn string, textToSay string) error {
-	endActivity := BeginForegroundActivity(esn)
+	endActivity := BeginForegroundActivity(esn, "kgsim_voice")
 	ctx := context.Background()
 	matched := false
 	var robot *vector.Vector
