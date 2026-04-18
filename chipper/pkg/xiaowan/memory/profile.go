@@ -137,18 +137,36 @@ func syncProfileToMemoryDoc(profile UserProfile) {
 func buildMemoryDoc(profile UserProfile) string {
 	var b strings.Builder
 	b.WriteString("# Long-term Memory\n\n")
-	b.WriteString("This file stores freeform durable memory for the robot.\n\n")
-	b.WriteString("## Remembered Notes\n\n")
+	b.WriteString("This file stores freeform durable memory that may matter across conversations.\n\n")
+	b.WriteString("## How To Read This File\n\n")
+	b.WriteString("- Treat this as living memory, not a rigid database.\n")
+	b.WriteString("- Prefer facts that are stable, user-confirmed, and likely to matter later.\n")
+	b.WriteString("- Prefer concise summaries over chat transcripts.\n")
+	b.WriteString("- If something is uncertain or old, keep the uncertainty visible instead of pretending it is fresh.\n\n")
+	b.WriteString("## Durable Remembered Context\n\n")
 	if strings.TrimSpace(profile.MemoryText) == "" {
-		b.WriteString("- No durable memory has been confirmed yet.\n")
+		b.WriteString("No durable user facts have been confirmed yet.\n")
 	} else {
 		b.WriteString(profile.MemoryText)
 		if !strings.HasSuffix(profile.MemoryText, "\n") {
 			b.WriteString("\n")
 		}
 	}
-	b.WriteString("\n## Sync Info\n\n")
+	b.WriteString("\n## Memory Writing Guidance\n\n")
+	b.WriteString("Good long-term memory includes:\n")
+	b.WriteString("- how the user wants to be addressed\n")
+	b.WriteString("- stable relationship facts\n")
+	b.WriteString("- lasting preferences about greetings, language, and style\n")
+	b.WriteString("- important life context the user explicitly wants remembered\n")
+	b.WriteString("- repeated interests or dislikes that clearly matter over time\n\n")
+	b.WriteString("Do not store as long-term memory:\n")
+	b.WriteString("- one-off requests\n")
+	b.WriteString("- temporary moods\n")
+	b.WriteString("- raw multi-turn chat logs\n")
+	b.WriteString("- sensitive details unless the user clearly wants them remembered\n")
+	b.WriteString("- guesses inferred without confirmation\n\n")
+	b.WriteString("## Sync Info\n\n")
 	b.WriteString(fmt.Sprintf("- Robot ESN: %s\n", profile.ESN))
-	b.WriteString("- Source of truth: freeform long-term memory saved by web settings or confirmed remembered facts\n")
+	b.WriteString("- Source of truth: confirmed freeform memory saved by the system\n")
 	return b.String()
 }

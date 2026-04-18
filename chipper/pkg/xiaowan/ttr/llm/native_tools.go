@@ -29,7 +29,7 @@ type nativeToolDefinition struct {
 var nativeToolDefinitions = []nativeToolDefinition{
 	{
 		Name:        "goCharge",
-		Description: "Send the robot back to its charger right now.",
+		Description: "Actually send the robot back to its charger right now.",
 		Parameters:  emptyToolParameters(),
 		Execute: func(call openai.ToolCall, ctx nativeToolContext) nativeToolExecution {
 			return scheduledActionResult(call, func() {
@@ -53,7 +53,7 @@ var nativeToolDefinitions = []nativeToolDefinition{
 	},
 	{
 		Name:        "celebrateFireworks",
-		Description: "Play the robot fireworks celebration animation right now.",
+		Description: "Play the robot fireworks celebration behavior right now.",
 		Parameters:  emptyToolParameters(),
 		Execute: func(call openai.ToolCall, ctx nativeToolContext) nativeToolExecution {
 			return scheduledActionResult(call, func() {
@@ -77,7 +77,7 @@ var nativeToolDefinitions = []nativeToolDefinition{
 	},
 	{
 		Name:        "readFile",
-		Description: "Read a file from the safe workspace roots. Supports bytes mode with offset and length, or lines mode with start_line and max_lines.",
+		Description: "Read a text file from the safe workspace roots. Use mode=lines for normal inspection, or mode=bytes for byte offsets and paging.",
 		Parameters: map[string]any{
 			"type": "object",
 			"properties": map[string]any{
@@ -118,7 +118,7 @@ var nativeToolDefinitions = []nativeToolDefinition{
 	},
 	{
 		Name:        "writeFile",
-		Description: "Write or append UTF-8 text inside the safe workspace roots. Existing files require overwrite=true unless mode=append is used.",
+		Description: "Write or append UTF-8 text inside the safe workspace roots. Use for explicit file creation or replacement, not casual chat.",
 		Parameters: map[string]any{
 			"type": "object",
 			"properties": map[string]any{
@@ -147,7 +147,7 @@ var nativeToolDefinitions = []nativeToolDefinition{
 	},
 	{
 		Name:        "editFile",
-		Description: "Edit an existing UTF-8 text file by replacing one exact old_text occurrence with new_text. Use this when you need a precise patch instead of rewriting the whole file.",
+		Description: "Edit an existing UTF-8 text file by replacing one exact old_text occurrence with new_text. Prefer this for small precise changes.",
 		Parameters: map[string]any{
 			"type": "object",
 			"properties": map[string]any{
@@ -171,7 +171,7 @@ var nativeToolDefinitions = []nativeToolDefinition{
 	},
 	{
 		Name:        "listFiles",
-		Description: "List files in a directory inside the safe workspace roots.",
+		Description: "List files in a directory inside the safe workspace roots. Use to inspect workspace structure before reading or editing.",
 		Parameters: map[string]any{
 			"type": "object",
 			"properties": map[string]any{
@@ -186,7 +186,7 @@ var nativeToolDefinitions = []nativeToolDefinition{
 	},
 	{
 		Name:        "runCommand",
-		Description: "Run a restricted command line tool inside the safe workspace roots. Only a small allowlist of read-focused commands is supported.",
+		Description: "Run a restricted read-focused command inside the safe workspace roots. Use only when command output is more useful than direct file reads.",
 		Parameters: map[string]any{
 			"type": "object",
 			"properties": map[string]any{

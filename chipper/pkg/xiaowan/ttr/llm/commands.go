@@ -143,44 +143,102 @@ func ModelIsSupported(cmd LLMCommand, model string) bool {
 }
 
 func CreatePrompt(origPrompt string, model string, isKG bool) string {
-	prompt := origPrompt + "\n\n" + "Keep in mind, user input comes from speech-to-text software, so respond accordingly. No special characters, especially these: & ^ * # @ - . No lists. No formatting."
+	sections := []string{origPrompt}
+
+	sections = append(sections,
+		buildVoiceRuntimePrompt(),
+	)
+
 	if workspacePrompt := strings.TrimSpace(workspacepkg.BuildPromptContext()); workspacePrompt != "" {
-		prompt = prompt + "\n\nWorkspace guidance:\n" + workspacePrompt
+		sections = append(sections, "Workspace guidance:\n"+workspacePrompt)
 	}
 	if skillPrompt := strings.TrimSpace(skillspkg.BuildAutoSkillPrompt()); skillPrompt != "" {
-		prompt = prompt + "\n\n" + "Additional active skills:\n" + skillPrompt
+		sections = append(sections, "Additional active skills:\n"+skillPrompt)
 	}
 	if vars.APIConfig.Knowledge.CommandsEnable {
-		prompt = prompt + "\n\n" + "You are running ON an Anki Vector robot. You have a set of commands. If you include an emoji, I will make you start over. If you want to use a command but it doesn't exist or your desired parameter isn't in the list, avoid using the command. The format is {{command||parameter}}. You can embed these in sentences. Example: \"User: How are you feeling? | Response: \"{{playAnimationWI||sad}} I'm feeling sad...\". Square brackets ([]) are not valid.\n\nUse the playAnimation or playAnimationWI commands if you want to express emotion! You are very animated and good at following instructions. Animation takes precendence over words. You are to include many animations in your response. Head and lift commands are only for subtle physical gestures. Use at most one small motor gesture near a sentence, and do not chain them repeatedly. Prefer higher-level gestures like nod or raiseArmsHappy when they fit. For physical task requests, the real task command is more important than emotional gestures.\n\nIf native function tools are available, prefer them for real task execution such as charging, taking photos, fireworks, and backing away. Keep using {{command||parameter}} for expressive animations and as a fallback when native tools are unavailable.\n\nYou also have safe system tools for reading files, writing files, listing files, and running a very small allowlist of shell commands inside the workspace. Use them only when the user is explicitly asking about files, memory documents, settings, or command output. Do not use them for normal casual chat.\n\nImportant rules:\n- If the user asks you to go home, return to the charger, go charge, go back to charge, head to the charger, or similar, you MUST either call the native goCharge tool or include {{goCharge||now}} in your response.\n- If the user asks you to actually take a photo, snap a picture, or capture a photo, call the native takePhoto tool when available, otherwise use {{takePhoto||now}}. If the user wants visual analysis of the current scene, use getImage instead.\n- If the user asks for fireworks, celebration, or new year style celebration, prefer the native celebrateFireworks tool, otherwise use {{celebrateFireworks||now}}.\n- If the user asks the robot to move back or give space, prefer the native backAway tool, otherwise use {{backAway||now}}.\n\nExamples:\nUser: 回家去充电\nResponse: 好的，我现在回充电座。\nUser: 给我拍张照\nResponse: 好的，我来拍一张。\nUser: 放个烟花庆祝一下\nResponse: 好呀，我们庆祝一下。\nUser: 你往后退一点\nResponse: 好的，我退后一点。\n\nHere is every valid command:"
-		for _, cmd := range ValidLLMCommands {
-			if ModelIsSupported(cmd, model) {
-				promptAppendage := "\n\nCommand Name: " + cmd.Command + "\nDescription: " + cmd.Description + "\nParameter choices: " + cmd.ParamChoices
-				prompt = prompt + promptAppendage
-			}
-		}
-		if isKG && vars.APIConfig.Knowledge.SaveChat {
-			promptAppentage := "\n\nNOTE: You are in 'conversation' mode. If you ask the user a question near the end of your response, you MUST use newVoiceRequest. If you decide you want to end the conversation, you should not use it."
-			prompt = prompt + promptAppentage
-		} else {
-			promptAppentage := "\n\nNOTE: You are NOT in 'conversation' mode. Refrain from asking the user any questions and from using newVoiceRequest."
-			prompt = prompt + promptAppentage
-		}
+		sections = append(sections, buildRobotCommandPrompt(model, isKG))
 	}
+
+	prompt := strings.Join(compactPromptSections(sections), "\n\n")
 	if os.Getenv("DEBUG_PRINT_PROMPT") == "true" {
 		logger.Println(prompt)
 	}
 	return prompt
 }
 
+func buildVoiceRuntimePrompt() string {
+	return strings.Join([]string{
+		"Runtime voice rules:",
+		"- User input comes from speech-to-text, so interpret minor transcription noise calmly.",
+		"- Reply in natural spoken language that sounds good aloud.",
+		"- Keep sentences short and clear.",
+		"- Avoid emojis, markdown, bullet lists, and written-only formatting.",
+	}, "\n")
+}
+
+func buildRobotCommandPrompt(model string, isKG bool) string {
+	var b strings.Builder
+	b.WriteString("Robot runtime tools and expression rules:\n")
+	b.WriteString("- You are running on a real Anki Vector robot.\n")
+	b.WriteString("- Use {{command||parameter}} only for robot expression and legacy command fallback.\n")
+	b.WriteString("- If you include an emoji, I will make you start over. Square brackets ([]) are not valid command syntax.\n")
+	b.WriteString("- Prefer native tools when they can complete the real task directly.\n")
+	b.WriteString("- Prefer direct answers for normal chat. Do not call tools just to sound capable.\n")
+	b.WriteString("- Prefer playAnimation or playAnimationWI when emotion matters.\n")
+	b.WriteString("- Head and lift commands are subtle physical gestures. Use at most one small motor gesture near a sentence and do not chain them repeatedly.\n")
+	b.WriteString("- For physical task requests, the real task matters more than emotional gestures.\n")
+	b.WriteString("- If native function tools are available, prefer them for charging, taking photos, fireworks, backing away, and file or command operations. Keep {{command||parameter}} as fallback behavior.\n")
+	b.WriteString("- Safe file and command tools exist for workspace files, memory files, settings, and explicit command inspection.\n")
+	b.WriteString("- For file work: listFiles to inspect, readFile to read, editFile for small exact edits, writeFile for explicit rewrites, and runCommand only when command output is the best fit.\n")
+	b.WriteString("- Do not use file or command tools for casual conversation, speculation, or facts you already know from context.\n")
+	b.WriteString("\nImportant task rules:\n")
+	b.WriteString("- If the user asks you to go home, return to the charger, go charge, go back to charge, head to the charger, or similar, you MUST either call the native goCharge tool or include {{goCharge||now}} in your response.\n")
+	b.WriteString("- If the user asks you to actually take a photo, snap a picture, or capture a photo, call the native takePhoto tool when available, otherwise use {{takePhoto||now}}. If the user wants visual analysis of the current scene, use getImage instead.\n")
+	b.WriteString("- If the user asks for fireworks, celebration, or new year style celebration, prefer the native celebrateFireworks tool, otherwise use {{celebrateFireworks||now}}.\n")
+	b.WriteString("- If the user asks the robot to move back or give space, prefer the native backAway tool, otherwise use {{backAway||now}}.\n")
+	b.WriteString("\nConversation mode rules:\n")
+	if isKG && vars.APIConfig.Knowledge.SaveChat {
+		b.WriteString("- You are in conversation mode. If you ask a question near the end of your response, you MUST use newVoiceRequest. If you want to end the conversation, do not use it.\n")
+	} else {
+		b.WriteString("- You are not in conversation mode. Do not ask follow-up questions and do not use newVoiceRequest.\n")
+	}
+	b.WriteString("\nExamples:\n")
+	b.WriteString("User: 回家去充电\nResponse: 好的，我现在回充电座。\n")
+	b.WriteString("User: 给我拍张照\nResponse: 好的，我来拍一张。\n")
+	b.WriteString("User: 放个烟花庆祝一下\nResponse: 好呀，我们庆祝一下。\n")
+	b.WriteString("User: 你往后退一点\nResponse: 好的，我退后一点。\n")
+	b.WriteString("\nValid legacy command catalog:")
+	for _, cmd := range ValidLLMCommands {
+		if ModelIsSupported(cmd, model) {
+			b.WriteString("\n\nCommand Name: " + cmd.Command)
+			b.WriteString("\nDescription: " + cmd.Description)
+			b.WriteString("\nParameter choices: " + cmd.ParamChoices)
+		}
+	}
+	return b.String()
+}
+
+func compactPromptSections(sections []string) []string {
+	out := make([]string, 0, len(sections))
+	for _, section := range sections {
+		section = strings.TrimSpace(section)
+		if section == "" {
+			continue
+		}
+		out = append(out, section)
+	}
+	return out
+}
+
 func createPromptWithMemory(origPrompt, model, esn string, isKG bool) string {
-	prompt := CreatePrompt(origPrompt, model, isKG)
+	sections := []string{CreatePrompt(origPrompt, model, isKG)}
 	if profilePrompt := strings.TrimSpace(memorypkg.BuildPromptContext(esn)); profilePrompt != "" {
-		prompt = prompt + "\n\nLong-term user profile:\n" + profilePrompt
+		sections = append(sections, "Long-term user profile:\n"+profilePrompt)
 	}
 	if facePrompt := strings.TrimSpace(visionpkg.BuildPromptContext(esn)); facePrompt != "" {
-		prompt = prompt + "\n\nLive face context:\n" + facePrompt
+		sections = append(sections, "Live face context:\n"+facePrompt)
 	}
-	return prompt
+	return strings.Join(compactPromptSections(sections), "\n\n")
 }
 
 func GetActionsFromString(input string) []RobotAction {
