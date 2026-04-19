@@ -82,6 +82,26 @@ type cronRemoveArgs struct {
 	JobID string `json:"job_id"`
 }
 
+type todoStepArgs struct {
+	ID     string `json:"id"`
+	Text   string `json:"text"`
+	Status string `json:"status"`
+	Notes  string `json:"notes"`
+}
+
+type todoWriteArgs struct {
+	Goal   string         `json:"goal"`
+	Status string         `json:"status"`
+	Steps  []todoStepArgs `json:"steps"`
+}
+
+type todoUpdateArgs struct {
+	StepID string `json:"step_id"`
+	Text   string `json:"text"`
+	Status string `json:"status"`
+	Notes  string `json:"notes"`
+}
+
 func executeGetCurrentTimeTool(call openai.ToolCall, ctx nativeToolContext) nativeToolExecution {
 	_ = call
 	_ = ctx
@@ -249,6 +269,177 @@ func executeCronRemoveTool(call openai.ToolCall, ctx nativeToolContext) nativeTo
 			"id":   job.ID,
 			"name": job.Name,
 		},
+	})
+}
+
+func executeTodoReadTool(call openai.ToolCall, ctx nativeToolContext) nativeToolExecution {
+	_ = call
+	_ = ctx
+	state, err := workspacepkg.LoadTodoState()
+	if err != nil {
+		return toolErrorResult(err)
+	}
+	if state.ActivePlan == nil {
+		return toolSuccessResult(map[string]any{
+			"path":        filepath.ToSlash(workspacepkg.TodoJSONRelativePath),
+			"notice":      "我看了当前待办，现在没有进行中的计划。",
+			"plan_status": "empty",
+		})
+	}
+	return toolSuccessResult(map[string]any{
+		"path":        filepath.ToSlash(workspacepkg.TodoJSONRelativePath),
+		"goal":        state.ActivePlan.Goal,
+		"plan_status": state.ActivePlan.Status,
+		"active_plan": state.ActivePlan,
+	})
+}
+
+func executeTodoWriteTool(call openai.ToolCall, ctx nativeToolContext) nativeToolExecution {
+	_ = ctx
+	var args todoWriteArgs
+	if err := decodeToolArgs(call, &args); err != nil {
+		return toolErrorResult(err)
+	}
+	goal := strings.TrimSpace(args.Goal)
+	if goal == "" {
+		return toolErrorResult(fmt.Errorf("goal is required"))
+	}
+	if len(args.Steps) == 0 {
+		return toolErrorResult(fmt.Errorf("at least one step is required"))
+	}
+	if len(args.Steps) > 8 {
+		return toolErrorResult(fmt.Errorf("todo plan is too long; keep it to 8 steps or fewer"))
+	}
+	steps := make([]workspacepkg.TodoStep, 0, len(args.Steps))
+	for i, step := range args.Steps {
+		text := strings.TrimSpace(step.Text)
+		if text == "" {
+			return toolErrorResult(fmt.Errorf("step %d text is required", i+1))
+		}
+		steps = append(steps, workspacepkg.TodoStep{
+			ID:     step.ID,
+			Text:   text,
+			Status: step.Status,
+			Notes:  step.Notes,
+		})
+	}
+	state := workspacepkg.TodoState{
+		ActivePlan: &workspacepkg.TodoPlan{
+			Goal:   goal,
+			Status: strings.TrimSpace(args.Status),
+			Steps:  steps,
+		},
+	}
+	if err := workspacepkg.SaveTodoState(state); err != nil {
+		return toolErrorResult(err)
+	}
+	loaded, err := workspacepkg.LoadTodoState()
+	if err != nil {
+		return toolErrorResult(err)
+	}
+	if loaded.ActivePlan == nil {
+		return toolErrorResult(fmt.Errorf("todo plan was saved but could not be reloaded"))
+	}
+	return toolSuccessResult(map[string]any{
+		"path":        filepath.ToSlash(workspacepkg.TodoJSONRelativePath),
+		"goal":        loaded.ActivePlan.Goal,
+		"plan_status": loaded.ActivePlan.Status,
+		"active_plan": loaded.ActivePlan,
+		"notice":      "我已经写好了当前待办计划。",
+	})
+}
+
+func executeTodoUpdateTool(call openai.ToolCall, ctx nativeToolContext) nativeToolExecution {
+	_ = ctx
+	var args todoUpdateArgs
+	if err := decodeToolArgs(call, &args); err != nil {
+		return toolErrorResult(err)
+	}
+	stepID := strings.TrimSpace(strings.ToLower(args.StepID))
+	if stepID == "" {
+		return toolErrorResult(fmt.Errorf("step_id is required"))
+	}
+	state, err := workspacepkg.LoadTodoState()
+	if err != nil {
+		return toolErrorResult(err)
+	}
+	if state.ActivePlan == nil {
+		return toolErrorResult(fmt.Errorf("there is no active todo plan to update"))
+	}
+	found := false
+	for i := range state.ActivePlan.Steps {
+		step := &state.ActivePlan.Steps[i]
+		if strings.ToLower(strings.TrimSpace(step.ID)) != stepID {
+			continue
+		}
+		if text := strings.TrimSpace(args.Text); text != "" {
+			step.Text = text
+		}
+		if status := strings.TrimSpace(args.Status); status != "" {
+			step.Status = status
+		}
+		if notes := strings.TrimSpace(args.Notes); notes != "" {
+			step.Notes = notes
+		}
+		found = true
+		break
+	}
+	if !found {
+		return toolErrorResult(fmt.Errorf("todo step not found: %s", args.StepID))
+	}
+	workspacepkg.NormalizeTodoStateForRuntime(&state)
+	autoArchived := false
+	if state.ActivePlan != nil && (state.ActivePlan.Status == "completed" || state.ActivePlan.Status == "cancelled") {
+		autoArchived = workspacepkg.ArchiveActivePlan(&state)
+	}
+	if err := workspacepkg.SaveTodoState(state); err != nil {
+		return toolErrorResult(err)
+	}
+	loaded, err := workspacepkg.LoadTodoState()
+	if err != nil {
+		return toolErrorResult(err)
+	}
+	if autoArchived {
+		notice := "我已经更新了当前待办进度，全部步骤完成后我把这个计划自动收尾了。"
+		if len(loaded.RecentPlans) > 0 && loaded.RecentPlans[len(loaded.RecentPlans)-1].Status == "cancelled" {
+			notice = "我已经更新了当前待办进度，这个计划现在已结束，我把它自动收尾了。"
+		}
+		return toolSuccessResult(map[string]any{
+			"path":         filepath.ToSlash(workspacepkg.TodoJSONRelativePath),
+			"plan_status":  "empty",
+			"recent_plans": loaded.RecentPlans,
+			"notice":       notice,
+		})
+	}
+	if loaded.ActivePlan == nil {
+		return toolErrorResult(fmt.Errorf("todo plan update succeeded but could not be reloaded"))
+	}
+	return toolSuccessResult(map[string]any{
+		"path":        filepath.ToSlash(workspacepkg.TodoJSONRelativePath),
+		"goal":        loaded.ActivePlan.Goal,
+		"plan_status": loaded.ActivePlan.Status,
+		"active_plan": loaded.ActivePlan,
+		"notice":      "我已经更新了当前待办进度。",
+	})
+}
+
+func executeTodoClearTool(call openai.ToolCall, ctx nativeToolContext) nativeToolExecution {
+	_ = call
+	_ = ctx
+	state, err := workspacepkg.LoadTodoState()
+	if err != nil {
+		return toolErrorResult(err)
+	}
+	if state.ActivePlan != nil {
+		workspacepkg.ArchiveActivePlan(&state)
+	}
+	if err := workspacepkg.SaveTodoState(state); err != nil {
+		return toolErrorResult(err)
+	}
+	return toolSuccessResult(map[string]any{
+		"path":        filepath.ToSlash(workspacepkg.TodoJSONRelativePath),
+		"plan_status": "empty",
+		"notice":      "我已经收起当前待办计划。",
 	})
 }
 
@@ -734,6 +925,8 @@ func localToolFollowupFromResults(toolMessages []openai.ChatCompletionMessage) s
 		Datetime      string `json:"datetime"`
 		HumanReadable string `json:"human_readable"`
 		Summary       string `json:"summary"`
+		Goal          string `json:"goal"`
+		PlanStatus    string `json:"plan_status"`
 		Count         int    `json:"count"`
 	}
 
@@ -749,6 +942,14 @@ func localToolFollowupFromResults(toolMessages []openai.ChatCompletionMessage) s
 				snippets = append(snippets, "我读取工具结果时遇到错误："+strings.TrimSpace(payload.Error)+"。")
 			}
 		case "ok":
+			if strings.TrimSpace(payload.Notice) != "" {
+				snippets = append(snippets, strings.TrimSpace(payload.Notice))
+				continue
+			}
+			if strings.TrimSpace(payload.Goal) != "" {
+				snippets = append(snippets, "我看了当前待办，目标是："+strings.TrimSpace(payload.Goal)+"，状态是："+strings.TrimSpace(payload.PlanStatus)+"。")
+				continue
+			}
 			if strings.TrimSpace(payload.HumanReadable) != "" {
 				snippets = append(snippets, "我查了当前时间："+strings.TrimSpace(payload.HumanReadable)+"。")
 				continue

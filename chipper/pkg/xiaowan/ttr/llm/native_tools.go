@@ -132,6 +132,96 @@ var nativeToolDefinitions = []nativeToolDefinition{
 		Execute: executeCronRemoveTool,
 	},
 	{
+		Name:        "todo_read",
+		Description: "Read the current active todo plan for this robot. Use it before continuing an existing multi-step task.",
+		Parameters:  emptyToolParameters(),
+		Execute:     executeTodoReadTool,
+	},
+	{
+		Name:        "todo_write",
+		Description: "Create or replace the active todo plan with a short goal and 2-6 concise steps. Use this before starting a multi-step task that needs planning.",
+		Parameters: map[string]any{
+			"type": "object",
+			"properties": map[string]any{
+				"goal": map[string]any{
+					"type":        "string",
+					"description": "Short goal statement for the current task.",
+				},
+				"status": map[string]any{
+					"type":        "string",
+					"description": "Optional overall plan status.",
+					"enum":        []string{"pending", "in_progress", "completed", "cancelled"},
+				},
+				"steps": map[string]any{
+					"type":        "array",
+					"description": "Ordered task steps.",
+					"items": map[string]any{
+						"type": "object",
+						"properties": map[string]any{
+							"id": map[string]any{
+								"type":        "string",
+								"description": "Stable short id like read_memory or step_1.",
+							},
+							"text": map[string]any{
+								"type":        "string",
+								"description": "Human-readable step text.",
+							},
+							"status": map[string]any{
+								"type":        "string",
+								"description": "pending, in_progress, completed, or cancelled.",
+								"enum":        []string{"pending", "in_progress", "completed", "cancelled"},
+							},
+							"notes": map[string]any{
+								"type":        "string",
+								"description": "Optional short note for the step.",
+							},
+						},
+						"required":             []string{"text"},
+						"additionalProperties": false,
+					},
+				},
+			},
+			"required":             []string{"goal", "steps"},
+			"additionalProperties": false,
+		},
+		Execute: executeTodoWriteTool,
+	},
+	{
+		Name:        "todo_update",
+		Description: "Update one step in the active todo plan after progress is made. Use the existing step_id and set a new status.",
+		Parameters: map[string]any{
+			"type": "object",
+			"properties": map[string]any{
+				"step_id": map[string]any{
+					"type":        "string",
+					"description": "Existing todo step id to update.",
+				},
+				"text": map[string]any{
+					"type":        "string",
+					"description": "Optional replacement text for the step.",
+				},
+				"status": map[string]any{
+					"type":        "string",
+					"description": "New step status.",
+					"enum":        []string{"pending", "in_progress", "completed", "cancelled"},
+				},
+				"notes": map[string]any{
+					"type":        "string",
+					"description": "Optional short note about progress.",
+				},
+			},
+			"required":             []string{"step_id"},
+			"additionalProperties": false,
+		},
+		Execute: executeTodoUpdateTool,
+	},
+	{
+		Name:        "todo_clear",
+		Description: "Clear the active todo plan after the task is fully done or intentionally abandoned.",
+		Parameters:  emptyToolParameters(),
+		Execute:     executeTodoClearTool,
+	},
+	{
 		Name:        "go_charge",
 		Aliases:     []string{"goCharge"},
 		Description: "Actually send the robot back to its charger right now.",

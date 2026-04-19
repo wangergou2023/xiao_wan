@@ -1,6 +1,7 @@
 package llm
 
 import (
+	"encoding/json"
 	"os"
 	"path/filepath"
 	"strings"
@@ -9,6 +10,29 @@ import (
 	"github.com/sashabaranov/go-openai"
 	"github.com/wangergou2023/xiao_wan/chipper/pkg/vars"
 )
+
+type testTodoState struct {
+	ActivePlan *struct {
+		Goal   string `json:"goal"`
+		Status string `json:"status"`
+		Steps  []struct {
+			ID     string `json:"id"`
+			Text   string `json:"text"`
+			Status string `json:"status"`
+			Notes  string `json:"notes"`
+		} `json:"steps"`
+	} `json:"active_plan"`
+	RecentPlans []struct {
+		Goal   string `json:"goal"`
+		Status string `json:"status"`
+		Steps  []struct {
+			ID     string `json:"id"`
+			Text   string `json:"text"`
+			Status string `json:"status"`
+			Notes  string `json:"notes"`
+		} `json:"steps"`
+	} `json:"recent_plans"`
+}
 
 func TestCreateAIReqAddsNativeTools(t *testing.T) {
 	originalConfig := vars.APIConfig
@@ -307,6 +331,167 @@ func TestEditWorkspaceMemoryAfterReadSucceeds(t *testing.T) {
 	}
 	if !strings.Contains(string(data), "用户喜欢吃苹果") {
 		t.Fatalf("expected memory doc to be updated, got %q", string(data))
+	}
+}
+
+func TestTodoToolsPersistActivePlan(t *testing.T) {
+	tmp := t.TempDir()
+	oldWD, err := os.Getwd()
+	if err != nil {
+		t.Fatal(err)
+	}
+	oldWirepodHome := os.Getenv("WIREPOD_HOME")
+	if err := os.Chdir(tmp); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Setenv("WIREPOD_HOME", tmp); err != nil {
+		t.Fatal(err)
+	}
+	defer func() {
+		_ = os.Chdir(oldWD)
+		_ = os.Setenv("WIREPOD_HOME", oldWirepodHome)
+	}()
+
+	toolCalls := []openai.ToolCall{{
+		ID:   "todo_write_1",
+		Type: openai.ToolTypeFunction,
+		Function: openai.FunctionCall{
+			Name: "todo_write",
+			Arguments: `{
+				"goal":"记住主人的水果偏好",
+				"steps":[
+					{"id":"read_user","text":"读取 USER.md","status":"completed"},
+					{"id":"read_memory","text":"读取 MEMORY.md","status":"completed"},
+					{"id":"write_memory","text":"写入苹果偏好","status":"in_progress"}
+				]
+			}`,
+		},
+	}, {
+		ID:   "todo_read_1",
+		Type: openai.ToolTypeFunction,
+		Function: openai.FunctionCall{
+			Name:      "todo_read",
+			Arguments: `{}`,
+		},
+	}, {
+		ID:   "todo_update_1",
+		Type: openai.ToolTypeFunction,
+		Function: openai.FunctionCall{
+			Name:      "todo_update",
+			Arguments: `{"step_id":"write_memory","status":"completed","notes":"已写入 MEMORY.md"}`,
+		},
+	}}
+
+	_, results, needFollowUp := executeNativeToolCalls(toolCalls, nativeToolContext{ESN: "test-esn"})
+	if !needFollowUp {
+		t.Fatalf("expected todo tools to request follow-up")
+	}
+	if len(results) != 3 {
+		t.Fatalf("expected 3 tool results, got %d", len(results))
+	}
+
+	jsonPath := filepath.Join(tmp, "workspace", "state", "todo.json")
+	mdPath := filepath.Join(tmp, "workspace", "TODO.md")
+	if _, err := os.Stat(jsonPath); err != nil {
+		t.Fatalf("expected todo json to exist: %v", err)
+	}
+	if _, err := os.Stat(mdPath); err != nil {
+		t.Fatalf("expected todo markdown to exist: %v", err)
+	}
+
+	data, err := os.ReadFile(jsonPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var state testTodoState
+	if err := json.Unmarshal(data, &state); err != nil {
+		t.Fatal(err)
+	}
+	if state.ActivePlan != nil {
+		t.Fatalf("expected auto-finished todo to clear active plan")
+	}
+	if len(state.RecentPlans) == 0 {
+		t.Fatalf("expected archived todo history after completion")
+	}
+	archived := state.RecentPlans[len(state.RecentPlans)-1]
+	if archived.Goal != "记住主人的水果偏好" {
+		t.Fatalf("unexpected archived todo goal: %q", archived.Goal)
+	}
+	if archived.Status != "completed" {
+		t.Fatalf("expected archived plan status completed, got %q", archived.Status)
+	}
+	if got := archived.Steps[2].Notes; got != "已写入 MEMORY.md" {
+		t.Fatalf("expected updated todo note, got %q", got)
+	}
+
+	mdData, err := os.ReadFile(mdPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	mdText := string(mdData)
+	if !strings.Contains(mdText, "No active plan.") {
+		t.Fatalf("expected todo markdown to show no active plan after auto-finish, got %q", mdText)
+	}
+}
+
+func TestTodoClearRemovesActivePlan(t *testing.T) {
+	tmp := t.TempDir()
+	oldWD, err := os.Getwd()
+	if err != nil {
+		t.Fatal(err)
+	}
+	oldWirepodHome := os.Getenv("WIREPOD_HOME")
+	if err := os.Chdir(tmp); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Setenv("WIREPOD_HOME", tmp); err != nil {
+		t.Fatal(err)
+	}
+	defer func() {
+		_ = os.Chdir(oldWD)
+		_ = os.Setenv("WIREPOD_HOME", oldWirepodHome)
+	}()
+
+	toolCalls := []openai.ToolCall{{
+		ID:   "todo_write_1",
+		Type: openai.ToolTypeFunction,
+		Function: openai.FunctionCall{
+			Name:      "todo_write",
+			Arguments: `{"goal":"测试清空","steps":[{"id":"step_1","text":"做一件事","status":"pending"}]}`,
+		},
+	}, {
+		ID:   "todo_clear_1",
+		Type: openai.ToolTypeFunction,
+		Function: openai.FunctionCall{
+			Name:      "todo_clear",
+			Arguments: `{}`,
+		},
+	}}
+
+	_, results, needFollowUp := executeNativeToolCalls(toolCalls, nativeToolContext{})
+	if !needFollowUp {
+		t.Fatalf("expected todo clear to request follow-up")
+	}
+	if len(results) != 2 {
+		t.Fatalf("expected 2 tool results, got %d", len(results))
+	}
+
+	data, err := os.ReadFile(filepath.Join(tmp, "workspace", "state", "todo.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	var state testTodoState
+	if err := json.Unmarshal(data, &state); err != nil {
+		t.Fatal(err)
+	}
+	if state.ActivePlan != nil {
+		t.Fatalf("expected todo clear to remove active plan")
+	}
+	if len(state.RecentPlans) == 0 {
+		t.Fatalf("expected todo clear to archive the previous active plan")
+	}
+	if got := state.RecentPlans[len(state.RecentPlans)-1].Goal; got != "测试清空" {
+		t.Fatalf("expected archived cleared plan, got %q", got)
 	}
 }
 

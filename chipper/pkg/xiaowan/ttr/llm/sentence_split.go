@@ -45,42 +45,25 @@ func splitFirstSpeechChunk(input string) (string, string, bool) {
 }
 
 func findSpeechChunkBoundary(input string) (int, bool) {
-	inCommand := false
 	runeCount := 0
 	bestPauseBoundary := -1
 	bestBreakBoundary := -1
 	hardBoundary := -1
 
 	for i := 0; i < len(input); {
-		switch {
-		case strings.HasPrefix(input[i:], "{{"):
-			inCommand = true
-			i += len("{{")
-			continue
-		case strings.HasPrefix(input[i:], "}}"):
-			inCommand = false
-			i += len("}}")
-			if runeCount >= speechChunkMinRunes && runeCount <= speechChunkSoftRunes {
-				bestPauseBoundary = i
-			}
-			continue
-		}
-
 		r, size := utf8.DecodeRuneInString(input[i:])
 		runeCount++
-		if !inCommand {
-			if runeCount >= speechChunkMinRunes && runeCount <= speechChunkHardRunes {
-				if boundary, ok := matchStructuredBoundary(input, i); ok {
-					bestBreakBoundary = boundary
-				}
+		if runeCount >= speechChunkMinRunes && runeCount <= speechChunkHardRunes {
+			if boundary, ok := matchStructuredBoundary(input, i); ok {
+				bestBreakBoundary = boundary
 			}
-			if runeCount >= speechChunkMinRunes && runeCount <= speechChunkSoftRunes && isSpeechPauseRune(r) {
-				bestPauseBoundary = i + size
-			}
-			if runeCount >= speechChunkHardRunes {
-				hardBoundary = i + size
-				break
-			}
+		}
+		if runeCount >= speechChunkMinRunes && runeCount <= speechChunkSoftRunes && isSpeechPauseRune(r) {
+			bestPauseBoundary = i + size
+		}
+		if runeCount >= speechChunkHardRunes {
+			hardBoundary = i + size
+			break
 		}
 		i += size
 	}

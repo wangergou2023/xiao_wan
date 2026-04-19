@@ -129,10 +129,6 @@ type LLMCommand struct {
 	SupportedModels []string
 }
 
-// create function which parses from LLM and makes a struct of RobotActions
-
-var ValidLLMCommands []LLMCommand = validLLMCommands()
-
 func ModelIsSupported(cmd LLMCommand, model string) bool {
 	for _, str := range cmd.SupportedModels {
 		if str == "all" || str == model {
@@ -182,20 +178,22 @@ func buildVoiceRuntimePrompt() string {
 }
 
 func buildRobotCommandPrompt(model string, isKG bool) string {
+	_ = model
 	var b strings.Builder
 	b.WriteString("Robot runtime tools and expression rules:\n")
 	b.WriteString("- You are running on a real Anki Vector robot.\n")
-	b.WriteString("- Use {{command||parameter}} only for robot expression and legacy command fallback.\n")
-	b.WriteString("- If you include an emoji, I will make you start over. Square brackets ([]) are not valid command syntax.\n")
+	b.WriteString("- Legacy {{...}} command markup is disabled. Never output brace commands.\n")
+	b.WriteString("- If you include an emoji, I will make you start over.\n")
 	b.WriteString("- Prefer native tools when they can complete the real task directly.\n")
 	b.WriteString("- Prefer direct answers for normal chat. Do not call tools just to sound capable.\n")
-	b.WriteString("- Prefer playAnimation or playAnimationWI when emotion matters.\n")
-	b.WriteString("- Head and lift commands are subtle physical gestures. Use at most one small motor gesture near a sentence and do not chain them repeatedly.\n")
 	b.WriteString("- For physical task requests, the real task matters more than emotional gestures.\n")
-	b.WriteString("- If native function tools are available, prefer them for charging, taking photos, fireworks, backing away, and file or command operations. Keep {{command||parameter}} as fallback behavior.\n")
+	b.WriteString("- Use native tools for charging, taking photos, fireworks, backing away, file operations, reminders, time, weather, and system work when needed.\n")
 	b.WriteString("- Native tools also exist for current time, weather, and scheduled reminder jobs.\n")
+	b.WriteString("- Todo planning tools exist at `workspace/state/todo.json` and `workspace/TODO.md`.\n")
 	b.WriteString("- Safe file and command tools exist for workspace files, memory files, settings, explicit command inspection, and system operations when truly needed.\n")
 	b.WriteString("- Treat `workspace/` as your file working root. Important docs live at `workspace/AGENTS.md`, `workspace/IDENTITY.md`, `workspace/SOUL.md`, `workspace/USER.md`, and `workspace/memory/MEMORY.md`.\n")
+	b.WriteString("- For multi-step work, create a short todo plan first with todo_write, keep it to 2-6 steps, and update progress with todo_update.\n")
+	b.WriteString("- Use todo_read before resuming a paused task, and todo_clear after the task is finished or abandoned.\n")
 	b.WriteString("- For memorable user facts or identity updates, read the target file first and prefer small edits over rewriting the entire file.\n")
 	b.WriteString("- If a workspace file is missing and you truly need it, you may create it with write_file.\n")
 	b.WriteString("- Long-term memory lives in `workspace/memory/MEMORY.md`. User profile facts live in `workspace/USER.md`. Identity/personality lives in `workspace/IDENTITY.md` and `workspace/SOUL.md`.\n")
@@ -208,15 +206,15 @@ func buildRobotCommandPrompt(model string, isKG bool) string {
 	b.WriteString("- Use cron_add, cron_list, and cron_remove for scheduled reminders or recurring spoken tasks.\n")
 	b.WriteString("- Do not use file or command tools for casual conversation, speculation, or facts you already know from context.\n")
 	b.WriteString("\nImportant task rules:\n")
-	b.WriteString("- If the user asks you to go home, return to the charger, go charge, go back to charge, head to the charger, or similar, you MUST either call the native go_charge tool or include {{goCharge||now}} in your response.\n")
-	b.WriteString("- If the user asks you to actually take a photo, snap a picture, or capture a photo, call the native take_photo tool when available, otherwise use {{takePhoto||now}}. If the user wants visual analysis of the current scene, use getImage instead.\n")
-	b.WriteString("- If the user asks for fireworks, celebration, or new year style celebration, prefer the native celebrate_fireworks tool, otherwise use {{celebrateFireworks||now}}.\n")
-	b.WriteString("- If the user asks the robot to move back or give space, prefer the native back_away tool, otherwise use {{backAway||now}}.\n")
+	b.WriteString("- If the user asks you to go home, return to the charger, go charge, go back to charge, head to the charger, or similar, you MUST call the native go_charge tool.\n")
+	b.WriteString("- If the user asks you to actually take a photo, snap a picture, or capture a photo, call the native take_photo tool.\n")
+	b.WriteString("- If the user asks for fireworks, celebration, or new year style celebration, call the native celebrate_fireworks tool.\n")
+	b.WriteString("- If the user asks the robot to move back or give space, call the native back_away tool.\n")
 	b.WriteString("\nConversation mode rules:\n")
 	if isKG && vars.APIConfig.Knowledge.SaveChat {
-		b.WriteString("- You are in conversation mode. If you ask a question near the end of your response, you MUST use newVoiceRequest. If you want to end the conversation, do not use it.\n")
+		b.WriteString("- You are in conversation mode. Asking a natural follow-up question is allowed when it helps the conversation continue.\n")
 	} else {
-		b.WriteString("- You are not in conversation mode. Do not ask follow-up questions and do not use newVoiceRequest.\n")
+		b.WriteString("- You are not in conversation mode. Do not ask follow-up questions.\n")
 	}
 	b.WriteString("\nExamples:\n")
 	b.WriteString("User: 回家去充电\nResponse: 好的，我现在回充电座。\n")
@@ -224,14 +222,7 @@ func buildRobotCommandPrompt(model string, isKG bool) string {
 	b.WriteString("User: 放个烟花庆祝一下\nResponse: 好呀，我们庆祝一下。\n")
 	b.WriteString("User: 你往后退一点\nResponse: 好的，我退后一点。\n")
 	b.WriteString("User: 记住我喜欢吃苹果\nResponse: 好的，我先看看长期记忆文件，然后把这条偏好记下来。\n")
-	b.WriteString("\nValid legacy command catalog:")
-	for _, cmd := range ValidLLMCommands {
-		if ModelIsSupported(cmd, model) {
-			b.WriteString("\n\nCommand Name: " + cmd.Command)
-			b.WriteString("\nDescription: " + cmd.Description)
-			b.WriteString("\nParameter choices: " + cmd.ParamChoices)
-		}
-	}
+	b.WriteString("User: 帮我整理一下今天要做什么\nResponse: 好的，我先列一个简短待办，再一步一步处理。\n")
 	return b.String()
 }
 
@@ -259,70 +250,14 @@ func createPromptWithMemory(origPrompt, model, esn string, isKG bool) string {
 }
 
 func GetActionsFromString(input string) []RobotAction {
-	splitInput := strings.Split(input, "{{")
-	if len(splitInput) == 1 {
-		return []RobotAction{
-			{
-				Action:    ActionSayText,
-				Parameter: input,
-			},
-		}
+	cleaned := strings.TrimSpace(removeSpecialCharacters(input))
+	if cleaned == "" {
+		return nil
 	}
-	var actions []RobotAction
-	for _, spl := range splitInput {
-		if strings.TrimSpace(spl) == "" {
-			continue
-		}
-		if !strings.Contains(spl, "}}") {
-			// sayText
-			action := RobotAction{
-				Action:    ActionSayText,
-				Parameter: strings.TrimSpace(spl),
-			}
-			actions = append(actions, action)
-			continue
-		}
-
-		commandAndTail := strings.SplitN(spl, "}}", 2)
-		commandText := strings.TrimSpace(commandAndTail[0])
-		cmdPlusParam := strings.SplitN(commandText, "||", 2)
-		cmd := strings.TrimSpace(cmdPlusParam[0])
-		param := ""
-		// 某些流式片段里模型会输出 {{lookDownShy}} 这种无参数命令。
-		// 对这类“now”型命令自动补默认参数，避免预取阶段因切片越界崩溃。
-		if len(cmdPlusParam) > 1 {
-			param = strings.TrimSpace(cmdPlusParam[1])
-		} else {
-			param = "now"
-		}
-		action := CmdParamToAction(cmd, param)
-		if action.Action != -1 {
-			actions = append(actions, action)
-		}
-		if len(commandAndTail) > 1 {
-			action := RobotAction{
-				Action:    ActionSayText,
-				Parameter: strings.TrimSpace(commandAndTail[1]),
-			}
-			actions = append(actions, action)
-		}
-	}
-	return actions
-}
-
-func CmdParamToAction(cmd, param string) RobotAction {
-	for _, command := range ValidLLMCommands {
-		if cmd == command.Command {
-			return RobotAction{
-				Action:    command.Action,
-				Parameter: param,
-			}
-		}
-	}
-	logger.Println("LLM tried to do a command which doesn't exist: " + cmd + " (param: " + param + ")")
-	return RobotAction{
-		Action: -1,
-	}
+	return []RobotAction{{
+		Action:    ActionSayText,
+		Parameter: cleaned,
+	}}
 }
 
 // DoPlayAnimation 通过 robot 控制层播放会打断语音的动画。

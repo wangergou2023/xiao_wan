@@ -24,8 +24,9 @@ func TestCreatePromptBuildsLayeredRuntimeSections(t *testing.T) {
 		"Workspace guidance:",
 		"Robot runtime tools and expression rules:",
 		"Long-term memory lives in `workspace/memory/MEMORY.md`.",
+		"workspace/state/todo.json",
 		"Conversation mode rules:",
-		"Valid legacy command catalog:",
+		"Legacy {{...}} command markup is disabled.",
 	}
 	for _, want := range checks {
 		if !strings.Contains(prompt, want) {
@@ -44,7 +45,7 @@ func TestCreatePromptNonConversationModeDisablesNewVoiceRequest(t *testing.T) {
 	vars.APIConfig.Knowledge.SaveChat = false
 
 	prompt := CreatePrompt("BASE", "glm-5.1", false)
-	want := "You are not in conversation mode. Do not ask follow-up questions and do not use newVoiceRequest."
+	want := "You are not in conversation mode. Do not ask follow-up questions."
 	if !strings.Contains(prompt, want) {
 		t.Fatalf("expected non-conversation rule in prompt, got:\n%s", prompt)
 	}

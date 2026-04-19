@@ -41,6 +41,12 @@ func CreateAIReq(transcribedText, esn string, gpt3tryagain, isKG bool) openai.Ch
 	smsg.Content = createPromptWithMemory(smsg.Content, model, esn, isKG)
 
 	nChat = append(nChat, smsg)
+	if todoPrompt := strings.TrimSpace(buildAutoTodoSystemPrompt(transcribedText)); todoPrompt != "" {
+		nChat = append(nChat, openai.ChatCompletionMessage{
+			Role:    openai.ChatMessageRoleSystem,
+			Content: todoPrompt,
+		})
+	}
 	if vars.APIConfig.Knowledge.SaveChat {
 		rchat := GetChat(esn)
 		logger.Println("Using remembered chats, length of " + fmt.Sprint(len(rchat.Chats)) + " messages")

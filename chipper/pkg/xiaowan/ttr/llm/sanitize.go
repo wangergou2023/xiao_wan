@@ -23,7 +23,28 @@ func isMn(r rune) bool {
 	return false
 }
 
-// removeSpecialCharacters 把 LLM 输出规整成更适合 TTS 和命令解析的纯文本。
+// stripLegacyCommandMarkup removes deprecated {{...}} command syntax entirely.
+func stripLegacyCommandMarkup(input string) string {
+	if !strings.Contains(input, "{{") {
+		return input
+	}
+	var b strings.Builder
+	for i := 0; i < len(input); {
+		if strings.HasPrefix(input[i:], "{{") {
+			end := strings.Index(input[i+2:], "}}")
+			if end < 0 {
+				break
+			}
+			i += 2 + end + 2
+			continue
+		}
+		b.WriteByte(input[i])
+		i++
+	}
+	return b.String()
+}
+
+// removeSpecialCharacters 把 LLM 输出规整成更适合 TTS 的纯文本。
 func removeSpecialCharacters(str string) string {
 	t := transform.Chain(norm.NFD, transform.RemoveFunc(isMn), norm.NFC)
 	result, _, _ := transform.String(t, str)
@@ -49,7 +70,7 @@ func removeSpecialCharacters(str string) string {
 	result = strings.ReplaceAll(result, "™", "(tm)")
 	result = strings.ReplaceAll(result, "@", "(a)")
 	result = strings.ReplaceAll(result, " AI ", " A. I. ")
-	return result
+	return stripLegacyCommandMarkup(result)
 }
 
 // removeEmojis 过滤掉机器人播报和动作协议中不稳定的 emoji 字符。

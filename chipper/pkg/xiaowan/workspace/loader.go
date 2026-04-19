@@ -13,6 +13,7 @@ type Docs struct {
 	Soul      string
 	User      string
 	Memory    string
+	Todo      string
 }
 
 // LoadDocs 读取 workspace 文档层。
@@ -26,6 +27,7 @@ func LoadDocs() Docs {
 		Soul:      readWorkspaceFile("SOUL.md"),
 		User:      readWorkspaceFile("USER.md"),
 		Memory:    readWorkspaceFile(filepath.Join("memory", "MEMORY.md")),
+		Todo:      readWorkspaceFile("TODO.md"),
 	}
 }
 
@@ -49,6 +51,11 @@ func BuildPromptContext() string {
 	}
 	if strings.TrimSpace(docs.Memory) != "" {
 		sections = append(sections, "workspace/memory/MEMORY.md:\n"+strings.TrimSpace(docs.Memory))
+	}
+	if strings.TrimSpace(docs.Todo) != "" {
+		sections = append(sections, "workspace/TODO.md:\n"+strings.TrimSpace(docs.Todo))
+	} else if todoPrompt := strings.TrimSpace(BuildTodoPromptContext()); todoPrompt != "" {
+		sections = append(sections, todoPrompt)
 	}
 	return strings.Join(sections, "\n\n")
 }
@@ -81,6 +88,17 @@ func ResolveWritableDocPath(rel string) string {
 	}
 	roots := WorkspaceRoots()
 	if len(roots) == 0 {
+		if wd, err := os.Getwd(); err == nil {
+			base := filepath.Base(wd)
+			switch base {
+			case "workspace":
+				return filepath.Join(wd, rel)
+			case "chipper":
+				return filepath.Join(wd, "workspace", rel)
+			default:
+				return filepath.Join(wd, "workspace", rel)
+			}
+		}
 		return rel
 	}
 	return filepath.Join(roots[0], rel)
