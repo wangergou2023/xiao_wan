@@ -548,6 +548,7 @@ func executeNativeToolCalls(toolCalls []openai.ToolCall, ctx nativeToolContext) 
 	var toolResults []openai.ChatCompletionMessage
 	needFollowUp := false
 	readPaths := map[string]struct{}{}
+	seenActionCalls := map[string]struct{}{}
 
 	for _, call := range toolCalls {
 		name := strings.TrimSpace(call.Function.Name)
@@ -579,6 +580,23 @@ func executeNativeToolCalls(toolCalls []openai.ToolCall, ctx nativeToolContext) 
 				})
 			}
 			continue
+		}
+
+		if _, isAction := nativeToolAction(name); isAction {
+			actionKey := strings.ToLower(strings.TrimSpace(name)) + "|" + strings.TrimSpace(call.Function.Arguments)
+			if _, seen := seenActionCalls[actionKey]; seen {
+				logger.Println("LLM duplicate native action skipped: " + name)
+				if call.ID != "" {
+					toolResults = append(toolResults, openai.ChatCompletionMessage{
+						Role:       "tool",
+						ToolCallID: call.ID,
+						Name:       name,
+						Content:    `{"status":"ok","state":"skipped_duplicate","message":"duplicate native action skipped"}`,
+					})
+				}
+				continue
+			}
+			seenActionCalls[actionKey] = struct{}{}
 		}
 
 		result := def.Execute(call, ctx)

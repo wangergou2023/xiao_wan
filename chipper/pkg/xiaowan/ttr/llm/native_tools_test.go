@@ -961,3 +961,35 @@ func TestExecuteNativeToolCallsLegacyAliasStillWorks(t *testing.T) {
 		t.Fatalf("expected scheduled status, got %s", results[0].Content)
 	}
 }
+
+func TestExecuteNativeToolCallsDedupesDuplicateNativeActions(t *testing.T) {
+	toolCalls := []openai.ToolCall{{
+		ID:   "photo_1",
+		Type: openai.ToolTypeFunction,
+		Function: openai.FunctionCall{
+			Name:      "take_photo",
+			Arguments: `{}`,
+		},
+	}, {
+		ID:   "photo_2",
+		Type: openai.ToolTypeFunction,
+		Function: openai.FunctionCall{
+			Name:      "take_photo",
+			Arguments: `{}`,
+		},
+	}}
+
+	deferred, results, needFollowUp := executeNativeToolCalls(toolCalls, nativeToolContext{})
+	if needFollowUp {
+		t.Fatalf("expected no follow-up for native actions")
+	}
+	if len(deferred) != 1 {
+		t.Fatalf("expected exactly 1 deferred action, got %d", len(deferred))
+	}
+	if len(results) != 2 {
+		t.Fatalf("expected 2 tool results, got %d", len(results))
+	}
+	if !strings.Contains(results[1].Content, `"skipped_duplicate"`) {
+		t.Fatalf("expected duplicate tool call to be skipped, got %s", results[1].Content)
+	}
+}
