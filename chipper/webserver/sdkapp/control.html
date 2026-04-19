@@ -16,112 +16,76 @@
 
 <body onload="updateControlButtons()">
   <div id="outer">
-    <div id="content" class="page-shell">
-      <section class="home-hero">
-        <div class="hero-copy hero-copy-rich">
-          <p class="hero-badge">Xiao Wan Device Control</p>
-          <h1>小丸设备控制</h1>
-          <p class="hero-subtitle">这是偏底层的联调页：先看视频流，再决定要不要接管 behavior control，最后再播报或键盘操控。</p>
-          <div class="hero-pills">
-            <span>Camera</span>
-            <span>Behavior Control</span>
-            <span>Keyboard</span>
-            <span>Speech</span>
-          </div>
+    <div id="content" class="page-shell minimal-shell">
+      <section class="minimal-topbar minimal-topbar-tight">
+        <div class="minimal-titleblock">
+          <p class="minimal-kicker">Xiao Wan</p>
+          <h1>设备控制</h1>
+          <p class="minimal-copy">相机、behavior control、文本播报都放在这里做联调。</p>
         </div>
-        <div class="hero-status-card setup-status-card">
-          <p class="hero-status-label">返回入口</p>
+        <div class="minimal-statusblock minimal-backblock">
           <a class="setup-back-link" href="#" onclick="goBackToSettings()">
             <i class="fa-solid fa-reply"></i>
-            <span>返回设备设置页</span>
+            <span>返回设备设置</span>
           </a>
-          <div class="hero-note-list">
-            <p>多数动作前需要先接管 behavior control。</p>
-            <p>键盘控制仅适合联调，不建议长时间开启。</p>
-          </div>
         </div>
       </section>
 
-      <section class="section-panel story-card">
-        <div class="section-heading section-heading-inline">
-          <div>
-            <p class="section-kicker">Control Flow</p>
-            <h2>推荐使用顺序</h2>
+      <div class="minimal-sdk-grid" id="sdkActions">
+        <section class="minimal-panel simple-panel">
+          <div class="minimal-panel-head">
+            <h2>摄像头</h2>
+            <p>先开流确认视角。</p>
           </div>
-          <p>先看画面，再接管控制，最后发动作或文本。</p>
-        </div>
-        <div class="steps-grid compact-steps-grid">
-          <div class="mini-card"><span class="step-index">01</span><h3>开视频流</h3><p>先确认视角和连接是正常的。</p></div>
-          <div class="mini-card"><span class="step-index">02</span><h3>接管控制</h3><p>行为控制拿到后，镜像、键盘和播报才会开放。</p></div>
-          <div class="mini-card"><span class="step-index">03</span><h3>做联调</h3><p>发文字、推音频、试镜像模式。</p></div>
-        </div>
-      </section>
-
-      <div class="sdk-dashboard" id="sdkActions">
-        <section class="section-panel sdk-card">
-          <div class="sdk-panel-header">
-            <div>
-              <p class="hero-badge">Camera</p>
-              <h2>摄像头画面</h2>
-              <p class="panel-subtitle">未开流时显示占位区；开流后会直接把设备画面塞进下面容器。</p>
-            </div>
-          </div>
-          <div class="sdk-preview" id="camStream">
+          <div class="sdk-preview minimal-preview" id="camStream">
             <div class="sdk-empty-state">未开启视频流时，这里会显示设备画面。</div>
           </div>
-          <div class="sdk-option-list dual-option-list">
+          <div class="sdk-option-list dual-option-list compact-option-list">
             <label><input type="radio" name="cam" id="cam_on" onclick="showCamStream()">开始视频流</label>
             <label><input type="radio" name="cam" id="cam_off" onclick="stopCamStream()" checked>停止视频流</label>
           </div>
         </section>
 
-        <section class="section-panel sdk-card">
-          <div class="sdk-panel-header">
-            <div>
-              <p class="hero-badge">Control</p>
-              <h2>行为控制</h2>
-              <p class="panel-subtitle">执行大部分设备动作前，需要先接管 behavior control。</p>
-            </div>
+        <section class="minimal-panel simple-panel">
+          <div class="minimal-panel-head">
+            <h2>行为控制</h2>
+            <p>大部分设备动作前要先接管。</p>
           </div>
-          <div class="sdk-option-list dual-option-list">
+          <div class="sdk-option-list dual-option-list compact-option-list">
             <label><input type="radio" name="control" id="assume_control"
                 onclick="sendForm('/api-sdk/assume_behavior_control?priority=high'); updateControlButtons();">接管</label>
             <label><input type="radio" name="control" id="release_control"
                 onclick="sendForm('/api-sdk/release_behavior_control'); updateControlButtons();" checked>释放</label>
           </div>
-          <div class="sdk-option-list dual-option-list">
+          <div class="sdk-option-list dual-option-list compact-option-list">
             <label><input type="radio" name="keycontrol" id="key_control_on" onclick="toggleKeyboard()" disabled>开启键盘控制</label>
             <label><input type="radio" name="keycontrol" id="key_control_off" onclick="toggleKeyboard()" checked disabled>关闭键盘控制</label>
           </div>
-          <div class="sdk-option-list dual-option-list">
+          <div class="sdk-option-list dual-option-list compact-option-list">
             <label><input type="radio" name="mirror" id="mirror_on" onclick="sendForm('/api-sdk/mirror_mode?enable=true')" disabled>开启镜像模式</label>
             <label><input type="radio" name="mirror" id="mirror_off" onclick="sendForm('/api-sdk/mirror_mode?enable=false')" checked disabled>关闭镜像模式</label>
           </div>
           <div class="sdk-keymap" id="keysKey" style="display: none;">
-            <p class="sdk-note">键盘映射</p>
-            <p>W / A / S / D 控轮子，R / F 控手臂，T / G 控头部。</p>
+            <p class="sdk-note">W / A / S / D 控轮子，R / F 控手臂，T / G 控头部。</p>
           </div>
         </section>
 
-        <section class="section-panel sdk-card">
-          <div class="sdk-panel-header">
-            <div>
-              <p class="hero-badge">Voice</p>
-              <h2>文本播报与音频</h2>
-              <p class="panel-subtitle">适合快速验证设备播报、中文文本和音频回放链路。</p>
-            </div>
+        <section class="minimal-panel simple-panel">
+          <div class="minimal-panel-head">
+            <h2>播报与音频</h2>
+            <p>快速验证文本和 wav 回放链路。</p>
           </div>
-          <div class="sdk-form-stack">
+          <div class="sdk-form-stack compact-stack">
             <label for="textSay">让机器人说一句话</label>
             <input class="tinput" name="textSay" id="textSay" type="text" placeholder="输入要让机器人说的话" disabled />
-            <div class="sdk-button-row">
+            <div class="panel-actions">
               <button onclick="sayText()" type="submit">发送播报</button>
             </div>
           </div>
-          <div class="sdk-form-stack">
+          <div class="sdk-form-stack compact-stack">
             <label for="fileInput">发送 wav 音频</label>
             <input type="file" id="fileInput" accept=".wav">
-            <div class="sdk-button-row">
+            <div class="panel-actions">
               <button id="uploadButton" style="display: none;" type="submit">发送音频</button>
             </div>
             <audio id="audioOutput" controls></audio>

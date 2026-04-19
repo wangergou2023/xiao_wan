@@ -16,121 +16,75 @@
 
 <body>
   <div id="outer">
-    <div id="content" class="page-shell">
-      <section class="home-hero">
-        <div class="hero-copy hero-copy-rich">
-          <p class="hero-badge">Xiao Wan Console</p>
-          <h1>小丸控制台</h1>
-          <p class="hero-subtitle">一个重新整理过的首页：把配置、设备接入、日志和认证入口拆成更清楚的工作台，而不是一屏堆满表单。</p>
-          <div class="hero-pills">
-            <span>服务配置</span>
-            <span>设备接入</span>
-            <span>运行日志</span>
-            <span>认证与配网</span>
-          </div>
+    <div id="content" class="page-shell minimal-shell">
+      <section class="minimal-topbar">
+        <div class="minimal-titleblock">
+          <p class="minimal-kicker">Xiao Wan</p>
+          <h1>控制台</h1>
+          <p class="minimal-copy">只保留核心入口，别的都往下折叠。</p>
         </div>
-        <div class="hero-status-card">
-          <p class="hero-status-label">机器人状态</p>
+        <div class="minimal-statusblock">
+          <p class="minimal-label">机器人状态</p>
           <div id="botStats"></div>
-          <div class="hero-note-list">
-            <p>首页只放高频入口，细节配置进入对应页面处理。</p>
-            <p>如果要调模型、记忆或视觉上下文，优先去“服务设置”。</p>
-          </div>
         </div>
       </section>
 
-      <section class="section-panel story-card">
-        <div class="section-heading section-heading-inline">
-          <div>
-            <p class="section-kicker">Workflow</p>
-            <h2>今天先做哪一步</h2>
-          </div>
-          <p>按这个顺序走，通常最省事。</p>
-        </div>
-        <div class="steps-grid">
-          <div class="mini-card">
-            <span class="step-index">01</span>
-            <h3>先配服务</h3>
-            <p>配置 BigModel、OpenAI、自定义接口和长期记忆。</p>
-          </div>
-          <div class="mini-card">
-            <span class="step-index">02</span>
-            <h3>再连机器人</h3>
-            <p>从设备页进入 SDK 会话，调试控制、摄像头和设备设置。</p>
-          </div>
-          <div class="mini-card">
-            <span class="step-index">03</span>
-            <h3>最后看日志</h3>
-            <p>对话、动作执行、接入异常都能在这里快速定位。</p>
-          </div>
-        </div>
-      </section>
-
-      <section class="home-section">
-        <div class="section-heading">
+      <section class="minimal-section">
+        <div class="minimal-section-head">
           <h2>主入口</h2>
-          <p>保留最常用的四个入口，避免首页继续膨胀。</p>
         </div>
-        <div class="main-nav-parent nav-grid-large">
-          <div class="main-nav-child nav-card-featured">
-            <a href="setup.html">
-              <i class="fa-solid fa-gear"></i>
-              <span>
-                <span class="nav-title">服务设置</span>
-                <span class="nav-desc">大模型、长期记忆、天气、视觉上下文</span>
-              </span>
-            </a>
-          </div>
-          <div class="main-nav-child nav-card-featured">
-            <a href="/sdkapp">
-              <i class="fa-solid fa-toolbox"></i>
-              <span>
-                <span class="nav-title">机器人设置</span>
-                <span class="nav-desc">设备接入、行为控制、相机和本体参数</span>
-              </span>
-            </a>
-          </div>
-          <div class="main-nav-child">
-            <a href="#" onclick="showBotAuth(); return false;">
-              <i class="fa-solid fa-robot" id="icon-BotAuth" name="icon"></i>
-              <span>
-                <span class="nav-title">机器人接入</span>
-                <span class="nav-desc">认证、断开、OSKR 或开发机 SSH 配置</span>
-              </span>
-            </a>
-          </div>
-          <div class="main-nav-child">
-            <a href="#" onclick="showLog(); return false;">
-              <i class="fa-solid fa-file-lines" id="icon-Logs" name="icon"></i>
-              <span>
-                <span class="nav-title">运行日志</span>
-                <span class="nav-desc">实时查看语音、LLM、动作与连接输出</span>
-              </span>
-            </a>
-          </div>
+        <div class="minimal-linklist">
+          <a class="minimal-linkcard" href="setup.html">
+            <span class="minimal-linkicon"><i class="fa-solid fa-gear"></i></span>
+            <span class="minimal-linkbody">
+              <strong>服务设置</strong>
+              <small>模型、记忆、天气、视觉上下文</small>
+            </span>
+            <span class="minimal-linkarrow">↗</span>
+          </a>
+          <a class="minimal-linkcard" href="/sdkapp">
+            <span class="minimal-linkicon"><i class="fa-solid fa-toolbox"></i></span>
+            <span class="minimal-linkbody">
+              <strong>机器人</strong>
+              <small>设备接入、控制、相机和本体设置</small>
+            </span>
+            <span class="minimal-linkarrow">↗</span>
+          </a>
+          <a class="minimal-linkcard" href="#" onclick="showLog(); return false;">
+            <span class="minimal-linkicon"><i class="fa-solid fa-file-lines" id="icon-Logs" name="icon"></i></span>
+            <span class="minimal-linkbody">
+              <strong>运行日志</strong>
+              <small>对话、动作执行、连接输出</small>
+            </span>
+            <span class="minimal-linkarrow">展开</span>
+          </a>
+        </div>
+      </section>
+
+      <section class="minimal-section minimal-section-subtle">
+        <div class="minimal-section-head minimal-section-head-inline">
+          <h2>低频工具</h2>
+          <a href="#" onclick="showBotAuth(); return false;">
+            <i class="fa-solid fa-robot" id="icon-BotAuth" name="icon"></i>
+            <span>机器人接入 / OSKR</span>
+          </a>
         </div>
       </section>
 
       <div id="section-botauth" style="display: none">
-        <div class="section-panel section-stack section-panel-wide">
-          <div class="section-heading section-heading-inline">
-            <div>
-              <p class="section-kicker">Robot Auth</p>
-              <h2>机器人接入</h2>
-            </div>
-            <p>给量产机做认证，或者给 OSKR / 开发解锁机器做 SSH 预配置。</p>
+        <div class="section-panel section-stack section-panel-wide minimal-panel">
+          <div class="minimal-panel-head">
+            <h2>机器人接入</h2>
+            <p>认证量产机，或者给 OSKR / 开发机做 SSH 预配置。</p>
           </div>
-          <div class="editorial-grid">
-            <div class="fieldset-card stack-tight">
-              <p class="section-kicker">Connection</p>
-              <h3>当前接入状态</h3>
+          <div class="minimal-two-col">
+            <div class="minimal-cardblock">
+              <p class="minimal-label">当前状态</p>
               <div id="disconnectButton"></div>
               <div id="botAuth"></div>
             </div>
-            <div class="fieldset-card stack-tight">
-              <p class="section-kicker">OSKR / Dev</p>
-              <h3>SSH 预设置</h3>
-              <small class="desc">适用于 1.4 及以上固件。先在这里填 IP 和 SSH Key，再回到左侧做正式接入。</small>
+            <div class="minimal-cardblock">
+              <p class="minimal-label">SSH 预设置</p>
               <div id="oskrSetupProgress"></div>
               <div id="oskrSetup" class="stack-tight">
                 <input class="tinput" type="text" id="sshIp" name="sshIp" placeholder="机器人 IP 地址" />
@@ -145,15 +99,12 @@
       </div>
 
       <div id="section-log" style="display: none">
-        <div class="section-panel section-stack section-panel-wide">
-          <div class="section-heading section-heading-inline">
-            <div>
-              <p class="section-kicker">Live Logs</p>
-              <h2>运行日志</h2>
-            </div>
-            <p>这里会持续刷新语音、LLM、动作执行和连接日志。</p>
+        <div class="section-panel section-stack section-panel-wide minimal-panel">
+          <div class="minimal-panel-head">
+            <h2>运行日志</h2>
+            <p>实时刷新语音、LLM、动作执行和连接输出。</p>
           </div>
-          <div class="toolbar-inline">
+          <div class="toolbar-inline minimal-toolbar">
             <label class="toggle-line" for="logdebug">
               <input id="logdebug" name="logdebug" type="checkbox" />
               <span>显示全部日志</span>

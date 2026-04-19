@@ -16,107 +16,45 @@
 
 <body>
   <div id="outer">
-    <div id="content" class="page-shell">
-      <section class="home-hero">
-        <div class="hero-copy hero-copy-rich">
-          <p class="hero-badge">Xiao Wan Settings</p>
-          <h1>小丸设置台</h1>
-          <p class="hero-subtitle">这次不再像旧页面那样把所有东西平铺开。现在按“模型 / 记忆 / 天气”拆分，先选任务，再展开对应配置区。</p>
-          <div class="hero-pills">
-            <span>LLM</span>
-            <span>长期记忆</span>
-            <span>BigModel 公共配置</span>
-            <span>视觉上下文</span>
-          </div>
+    <div id="content" class="page-shell minimal-shell">
+      <section class="minimal-topbar minimal-topbar-tight">
+        <div class="minimal-titleblock">
+          <p class="minimal-kicker">Xiao Wan</p>
+          <h1>服务设置</h1>
+          <p class="minimal-copy">只看当前要配的东西，不把所有说明摊满整页。</p>
         </div>
-        <div class="hero-status-card setup-status-card">
-          <p class="hero-status-label">页面导航</p>
+        <div class="minimal-statusblock minimal-backblock">
           <a class="setup-back-link" href="index.html">
             <i class="fa-solid fa-reply"></i>
-            <span>返回控制台首页</span>
+            <span>返回控制台</span>
           </a>
-          <div class="hero-note-list">
-            <p>建议先配置“大模型”。</p>
-            <p>长期记忆和天气都是后续增强项。</p>
-          </div>
         </div>
       </section>
 
-      <section class="section-panel story-card">
-        <div class="section-heading section-heading-inline">
-          <div>
-            <p class="section-kicker">Recommended Order</p>
-            <h2>推荐配置顺序</h2>
-          </div>
-          <p>先把基础能力接通，再决定要不要补天气和长期记忆。</p>
-        </div>
-        <div class="steps-grid">
-          <div class="mini-card">
-            <span class="step-index">01</span>
-            <h3>选择模型提供商</h3>
-            <p>BigModel、OpenAI 或自定义兼容接口。</p>
-          </div>
-          <div class="mini-card">
-            <span class="step-index">02</span>
-            <h3>保存公共配置</h3>
-            <p>统一填 BigModel 的 STT / LLM / TTS 参数。</p>
-          </div>
-          <div class="mini-card">
-            <span class="step-index">03</span>
-            <h3>按需补长期记忆</h3>
-            <p>再把值得长期保存的用户信息写进去。</p>
-          </div>
-        </div>
-      </section>
-
-      <section class="home-section">
-        <div class="section-heading">
-          <h2>设置分类</h2>
-          <p>点卡片切换区域，避免把所有表单一次性堆满。</p>
-        </div>
-        <div class="main-nav-parent nav-grid-large">
-          <div class="main-nav-child nav-card-featured">
-            <a href="#" onclick="showKG(); return false;">
-              <i class="fa-solid fa-diagram-project" id="icon-KG" name="icon"></i>
-              <span>
-                <span class="nav-title">大模型</span>
-                <span class="nav-desc">对话模型、BigModel 公共参数、视觉上下文</span>
-              </span>
-            </a>
-          </div>
-          <div class="main-nav-child nav-card-featured">
-            <a href="#" onclick="showMemory(); return false;">
-              <i class="fa-solid fa-brain" id="icon-Memory" name="icon"></i>
-              <span>
-                <span class="nav-title">长期记忆</span>
-                <span class="nav-desc">维护机器人长期可读的自由文本记忆</span>
-              </span>
-            </a>
-          </div>
-          <div class="main-nav-child">
-            <a href="#" onclick="showWeather(); return false;">
-              <i class="fa-solid fa-cloud-sun" id="icon-Weather" name="icon"></i>
-              <span>
-                <span class="nav-title">天气</span>
-                <span class="nav-desc">给机器人接天气服务，按需启用就行</span>
-              </span>
-            </a>
-          </div>
+      <section class="minimal-section">
+        <div class="minimal-tabbar">
+          <a href="#" onclick="showKG(); return false;" class="minimal-tab is-primary">
+            <i class="fa-solid fa-diagram-project" id="icon-KG" name="icon"></i>
+            <span>大模型</span>
+          </a>
+          <a href="#" onclick="showMemory(); return false;" class="minimal-tab">
+            <i class="fa-solid fa-brain" id="icon-Memory" name="icon"></i>
+            <span>长期记忆</span>
+          </a>
+          <a href="#" onclick="showWeather(); return false;" class="minimal-tab">
+            <i class="fa-solid fa-cloud-sun" id="icon-Weather" name="icon"></i>
+            <span>天气</span>
+          </a>
         </div>
       </section>
 
       <div id="section-weather" style="display: none">
-        <div class="section-panel section-stack section-panel-wide">
-          <div class="section-heading section-heading-inline">
-            <div>
-              <p class="section-kicker">Weather</p>
-              <h3>天气接口设置</h3>
-            </div>
-            <p>如果你希望机器人能回答天气问题，就在这里接入天气服务。</p>
+        <div class="section-panel section-stack section-panel-wide minimal-panel">
+          <div class="minimal-panel-head">
+            <h2>天气接口</h2>
+            <p>需要天气问答时再开。</p>
           </div>
-          <div class="fieldset-card stack-tight">
-            <p class="section-kicker">Weather Provider</p>
-            <p>请选择你要使用的天气服务提供商。</p>
+          <div class="minimal-cardblock">
             <div id="addWeatherProviderAPI"></div>
             <form id="weatherAPIAddForm" class="form-grid">
               <div>
@@ -141,20 +79,13 @@
       </div>
 
       <div id="section-kg" style="display: none">
-        <div class="section-panel section-stack section-panel-wide">
-          <div class="section-heading section-heading-inline">
-            <div>
-              <p class="section-kicker">LLM Stack</p>
-              <h3>大模型设置</h3>
-            </div>
-            <p>这里决定普通意图未命中时如何接入对话模型、TTS 与视觉上下文。</p>
+        <div class="section-panel section-stack section-panel-wide minimal-panel">
+          <div class="minimal-panel-head">
+            <h2>大模型</h2>
+            <p>先选提供商，再补公共配置和视觉上下文。</p>
           </div>
 
-          <div class="fieldset-card stack-tight">
-            <p class="section-kicker">LLM Provider</p>
-            <div class="setup-note">
-              <strong>说明：</strong>BigModel 的 STT、LLM、TTS 都可以在这个页面里统一配置；旧环境变量只作为兼容回退。
-            </div>
+          <div class="minimal-cardblock">
             <div id="addKGProviderAPI" class="status-card"></div>
             <form id="kgAPIAddForm" class="stack-tight">
               <div class="form-grid">
@@ -168,14 +99,11 @@
                   </select>
                 </div>
               </div>
-              <small class="desc">推荐优先使用 BigModel；如果你有 OpenAI key 或本地兼容接口，再选对应选项。</small>
-              <div class="setup-note">
-                <strong>建议顺序：</strong>先选提供商并保存，再填 BigModel 公共配置，最后按需打开视觉上下文。
-              </div>
 
               <div id="openAIInput" class="provider-panel">
-                <p class="section-kicker">OpenAI</p>
-                <small class="form-help">适合直接接入 OpenAI 官方对话能力。</small>
+                <div class="minimal-subhead">
+                  <h3>OpenAI</h3>
+                </div>
                 <div class="form-grid">
                   <div>
                     <label for="openaiKey">API Key</label>
@@ -186,16 +114,16 @@
                     <input type="text" name="openAIPrompt" id="openAIPrompt" placeholder="留空则使用默认提示词" />
                   </div>
                 </div>
-                <small class="desc">留空提示词则使用内置默认值。</small>
               </div>
 
               <div id="bigModelInput" class="provider-panel">
-                <p class="section-kicker">BigModel</p>
-                <small class="form-help">这里使用智谱 BigModel 官方对话补全接口。若留空 API Key 和模型名，则回退使用下方公共配置。</small>
+                <div class="minimal-subhead">
+                  <h3>BigModel</h3>
+                </div>
                 <div class="form-grid">
                   <div>
                     <label for="bigmodelKey">API Key</label>
-                    <input type="text" name="bigmodelKey" id="bigmodelKey" placeholder="留空则复用下方 BigModel 公共配置" />
+                    <input type="text" name="bigmodelKey" id="bigmodelKey" placeholder="留空则复用下方公共配置" />
                   </div>
                   <div>
                     <label for="bigmodelModel">模型名称</label>
@@ -209,8 +137,9 @@
               </div>
 
               <div id="customAIInput" class="provider-panel">
-                <p class="section-kicker">Custom Compatible API</p>
-                <small class="form-help">适用于 Ollama、vLLM，或者你自己的 OpenAI 兼容网关。</small>
+                <div class="minimal-subhead">
+                  <h3>自定义兼容接口</h3>
+                </div>
                 <div class="form-grid">
                   <div>
                     <label for="customKey">API Key</label>
@@ -232,7 +161,7 @@
               </div>
 
               <div id="llmDefaultsNote" class="setup-note" style="display: none;">
-                <strong>默认行为：</strong>配置好大模型后，会自动启用未命中回退、机器人动作和对话记忆。想清空上下文时，可以随时 <a href="#" onclick="deleteSavedChats(); return false;">删除已保存对话</a>。
+                <strong>默认行为：</strong>配置好后，会自动启用未命中回退、动作和对话记忆。需要时可 <a href="#" onclick="deleteSavedChats(); return false;">删除已保存对话</a>。
               </div>
             </form>
             <div class="panel-actions">
@@ -240,10 +169,11 @@
             </div>
           </div>
 
-          <div class="editorial-grid">
-            <div id="bigModelSharedInput" class="fieldset-card stack-tight">
-              <p class="section-kicker">Shared BigModel</p>
-              <p class="form-help">这部分会被 BigModel STT / LLM / TTS 共同复用，建议统一填写。</p>
+          <div class="minimal-two-col">
+            <div id="bigModelSharedInput" class="minimal-cardblock">
+              <div class="minimal-subhead">
+                <h3>BigModel 公共配置</h3>
+              </div>
               <div class="form-grid">
                 <div class="form-grid-span-2">
                   <label for="bigmodelSharedKey">BigModel API Key</label>
@@ -274,21 +204,21 @@
                   <input type="text" name="bigmodelTTSVolume" id="bigmodelTTSVolume" placeholder="1.0" />
                 </div>
               </div>
-              <small class="desc">TTS 推荐使用 <code>glm-tts</code>，不要把聊天模型名填到 TTS 模型栏。</small>
               <div class="panel-actions">
-                <button onclick="sendBigModelConfig()">保存 BigModel 公共配置</button>
+                <button onclick="sendBigModelConfig()">保存公共配置</button>
               </div>
               <div id="bigModelConfigStatus" class="status-card"></div>
             </div>
 
-            <div id="visionInput" class="fieldset-card stack-tight">
-              <p class="section-kicker">Vision Context</p>
-              <h4>视觉与人脸上下文</h4>
+            <div id="visionInput" class="minimal-cardblock">
+              <div class="minimal-subhead">
+                <h3>视觉上下文</h3>
+              </div>
               <label class="toggle-line" for="visionEnableFaceContext">
                 <input type="checkbox" id="visionEnableFaceContext" />
                 <span>启用人脸上下文</span>
               </label>
-              <small class="form-help">打开后，设备识别到已知人脸时，会把“当前面前是谁”作为对话上下文交给大模型。</small>
+              <small class="form-help">识别到已知人脸时，把“当前面前是谁”交给大模型。</small>
               <div class="panel-actions">
                 <button onclick="sendVisionConfig()">保存视觉设置</button>
               </div>
@@ -299,18 +229,12 @@
       </div>
 
       <div id="section-memory" style="display: none">
-        <div class="section-panel section-stack section-panel-wide">
-          <div class="section-heading section-heading-inline">
-            <div>
-              <p class="section-kicker">Long-term Memory</p>
-              <h3>长期记忆</h3>
-            </div>
-            <p>这里直接维护自由文本长期记忆，机器人以后读取到的就是这段内容。</p>
+        <div class="section-panel section-stack section-panel-wide minimal-panel">
+          <div class="minimal-panel-head">
+            <h2>长期记忆</h2>
+            <p>这里直接维护机器人长期读取的自由文本。</p>
           </div>
-          <div class="fieldset-card stack-tight">
-            <div class="setup-note">
-              <strong>说明：</strong>不再限制成固定字段。自然语言、列表、备忘录都可以，只要是值得长期保存的内容就行。
-            </div>
+          <div class="minimal-cardblock">
             <form id="memoryProfileForm" class="stack-tight">
               <div class="form-grid">
                 <div>
@@ -322,7 +246,6 @@
                 <label for="memoryText">长期记忆内容</label>
                 <textarea id="memoryText" rows="14" placeholder="例如&#10;- 主人叫王二狗&#10;- 家住东北&#10;- 打招呼时可以自然一点&#10;- 喜欢聊做饭、日常、机器人"></textarea>
               </div>
-              <small class="desc">这里只放长期稳定的信息，不建议把每次聊天细节全都塞进来。</small>
             </form>
             <div class="panel-actions">
               <button onclick="saveLongTermMemory()">保存长期记忆</button>
@@ -333,13 +256,10 @@
       </div>
 
       <div id="section-restart" style="display: none">
-        <div class="section-panel section-stack section-panel-wide">
-          <div class="section-heading section-heading-inline">
-            <div>
-              <p class="section-kicker">Restart</p>
-              <h3>重启 Wire-Pod</h3>
-            </div>
-            <p>如果你刚改完初始化项、想立即生效，可以在这里重启。</p>
+        <div class="section-panel section-stack section-panel-wide minimal-panel">
+          <div class="minimal-panel-head">
+            <h2>重启 Wire-Pod</h2>
+            <p>如果刚改完初始化项、想立即生效，可以在这里重启。</p>
           </div>
           <div id="restart"></div>
           <div class="panel-actions">

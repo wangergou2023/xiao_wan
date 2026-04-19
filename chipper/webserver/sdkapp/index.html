@@ -16,57 +16,36 @@
 
 <body>
   <div id="outer">
-    <div id="content" class="page-shell">
-      <section class="home-hero">
-        <div class="hero-copy hero-copy-rich">
-          <p class="hero-badge">Xiao Wan Device Access</p>
-          <h1>小丸设备接入</h1>
-          <p class="hero-subtitle">这里专门负责设备侧会话：从已发现的机器人里选一台，连上后进入本体设置或控制页面。</p>
-          <div class="hero-pills">
-            <span>选择设备</span>
-            <span>建立 SDK 会话</span>
-            <span>进入设备页</span>
-          </div>
+    <div id="content" class="page-shell minimal-shell">
+      <section class="minimal-topbar minimal-topbar-tight">
+        <div class="minimal-titleblock">
+          <p class="minimal-kicker">Xiao Wan</p>
+          <h1>设备接入</h1>
+          <p class="minimal-copy">先选机器人，再进入控制或设置页面。</p>
         </div>
-        <div class="hero-status-card setup-status-card">
-          <p class="hero-status-label">返回入口</p>
+        <div class="minimal-statusblock minimal-backblock">
           <a class="setup-back-link" href="../index.html">
             <i class="fa-solid fa-reply"></i>
-            <span>返回控制台首页</span>
+            <span>返回控制台</span>
           </a>
-          <div class="hero-note-list">
-            <p>这里只做设备选择，不堆设备细节。</p>
-            <p>连接后再进入具体控制与设置页面。</p>
-          </div>
         </div>
       </section>
 
-      <section class="section-panel story-card">
-        <div class="section-heading section-heading-inline">
-          <div>
-            <p class="section-kicker">Device Session</p>
+      <section class="minimal-section">
+        <div class="minimal-panel simple-panel">
+          <div class="minimal-panel-head">
             <h2>选择机器人</h2>
+            <p>建立 SDK 会话后，再进入设备页。</p>
           </div>
-          <p>选中一台机器人后点击连接，即可进入设备侧设置与控制页面。</p>
-        </div>
-        <div class="editorial-grid align-start-grid">
-          <div class="fieldset-card stack-tight">
+          <div class="minimal-cardblock compact-cardblock">
             <label for="botList">已发现设备</label>
             <select id="botList" name="botList"></select>
             <div class="panel-actions">
               <button onclick="connectSDK()">连接设备</button>
             </div>
-          </div>
-          <div class="mini-card mini-card-note">
-            <p class="section-kicker">What you can do next</p>
-            <ul class="feature-list compact-list">
-              <li>进入设备设置页改音量、眼睛颜色、人脸和照片。</li>
-              <li>进入控制页调试相机、行为控制和播报。</li>
-              <li>所有原有 JS 钩子保持不变，只是布局重做了。</li>
-            </ul>
+            <div id="authResult"></div>
           </div>
         </div>
-        <div id="authResult"></div>
       </section>
     </div>
   </div>
