@@ -1,6 +1,6 @@
 async function triggerHeyVector() {
   const statusDiv = document.getElementById("heyVectorStatus");
-  statusDiv.innerHTML = "<p>Triggering Hey Vector...</p>";
+  statusDiv.innerHTML = "<p>正在触发 Hey Vector...</p>";
   
   try {
     const response = await fetch("/api-sdk/trigger_wake_word?serial=" + esn, {
@@ -17,7 +17,7 @@ async function triggerHeyVector() {
     const result = await response.text();
     
     if (result.includes("success") || result.includes("ok")) {
-      statusDiv.innerHTML = "<p style='color: var(--fg-color);'>Hey Vector triggered successfully!</p>";
+      statusDiv.innerHTML = "<p>Hey Vector 已触发。</p>";
     } else {
       throw new Error(result || "Unknown error");
     }
@@ -27,7 +27,8 @@ async function triggerHeyVector() {
     }, 5000);
     
   } catch (error) {
-    console.error("Error triggering Hey Vector:");
+    console.error("Error triggering Hey Vector:", error);
+    statusDiv.innerHTML = "<p>触发失败，请稍后再试。</p>";
     
     setTimeout(() => {
       statusDiv.innerHTML = "";

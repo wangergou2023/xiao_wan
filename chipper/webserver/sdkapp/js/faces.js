@@ -14,13 +14,13 @@ function refreshFaceList() {
     .then((response) => response.text())
     .then((response) => {
       if (response.includes("null")) {
-        console.log("no faces exist.");
         showFaceButtons = false;
         var option = document.createElement("option");
-        option.text = "No faces found. You must tell Vector your name.";
+        option.text = "还没有已记录的人脸";
         option.value = "none";
         areThereFaces = false;
         x.add(option);
+        document.getElementById("faceButtons").style.display = "none";
       } else {
         areThereFaces = true;
         jsonResp = JSON.parse(response);
@@ -61,15 +61,14 @@ function showFaceSection() {
 
 function renameFace() {
   if (!areThereFaces) {
-    window.alert("You must register a face first.");
+    window.alert("请先录入一个人脸。");
   } else {
     var x = document.getElementById("faceList");
     oldFaceName = x.value.split(":")[1];
     faceId = x.value.split(":")[0];
-    newFaceName = window.prompt("Enter the new name here:");
-    console.log(newFaceName);
+    newFaceName = window.prompt("请输入新名字：");
     if (newFaceName == "") {
-      window.alert("Face name cannot be empty");
+      window.alert("名字不能为空。");
     } else {
       fetch(
         "/api-sdk/rename_face?serial=" +
@@ -81,7 +80,7 @@ function renameFace() {
           "&newname=" +
           newFaceName
       ).then(function () {
-        alert("Success!");
+        alert("修改成功。");
         refreshFaceList();
       });
     }
@@ -91,13 +90,13 @@ function renameFace() {
 function addFace() {
   var name = document.getElementById("faceInput").value;
   if (name == "") {
-    alert("You must enter a name.");
+    alert("请输入名字。");
     return;
   } else {
     fetch("/api-sdk/add_face?serial=" + esn + "&name=" + name).then(
       function () {
         alert(
-          "Request successfully sent. Vector should now be finding a face to scan."
+          "请求已发送。现在让机器人面对人脸完成录入。"
         );
         refreshFaceList();
       }
@@ -107,13 +106,13 @@ function addFace() {
 
 function deleteFace() {
   if (!areThereFaces) {
-    window.alert("You must register a face first.");
+    window.alert("请先录入一个人脸。");
   } else {
     var x = document.getElementById("faceList");
     faceId = x.value.split(":")[0];
     fetch("/api-sdk/delete_face?serial=" + esn + "&id=" + faceId).then(
       function () {
-        alert("Success!");
+        alert("删除成功。");
         refreshFaceList();
       }
     );

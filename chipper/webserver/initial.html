@@ -2,9 +2,7 @@
 <html>
 
 <head>
-    
   <title>Wire-Pod 初始设置</title>
-  <!-- Meta Apple tags for a PWA like experience. -->
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="theme-color" content="#1e1e1e">
@@ -20,48 +18,95 @@
   <div id="outer">
     <div id="content" class="page-shell">
       <section class="home-hero">
-        <div class="hero-copy">
+        <div class="hero-copy hero-copy-rich">
           <p class="hero-badge">Wire-Pod First Run</p>
           <h1>Wire-Pod 初始设置</h1>
-          <p class="hero-subtitle">先完成最基础的连接方式设置，提交后就能进入完整控制台。</p>
+          <p class="hero-subtitle">先把最基本的连接方式确定下来。初始化完成后，再回到完整控制台配置模型、记忆和天气。</p>
+          <div class="hero-pills">
+            <span>Escape Pod</span>
+            <span>IP 接入</span>
+            <span>快速初始化</span>
+          </div>
         </div>
         <div class="hero-status-card setup-status-card">
           <p class="hero-status-label">初始化状态</p>
           <div id="setup-status" class="status-strip"></div>
-          <p class="panel-subtitle">初始化完成后，更多模型、记忆与天气设置都可以在控制台继续调整。</p>
+          <div class="hero-note-list">
+            <p>这里只做第一步接入，不塞入复杂模型设置。</p>
+            <p>初始化完成后会自动跳回主页。</p>
+          </div>
         </div>
       </section>
-      <div id="config-options" class="section-panel section-stack" style="display: block">
-        <p class="page-lead">欢迎使用 wire-pod。先把最基础的通信方式确定下来，再点击底部按钮提交。</p>
-        <div id="section-conn" class="fieldset-card" style="display: block">
-          <h3>连接方式</h3>
-          <hr class="small-hr">
-          <div class="center" id="connStatus"></div>
-          <select onchange="checkConn()" name="connSelection" id="connSelection">
-            <option value="ep">
-              Escape Pod（适合普通量产机器人）
-            </option>
-            <option value="ip">
-              IP 地址（适合 OSKR / 开发解锁机器人）
-            </option>
-          </select>
-          <div class="center" id="portViz" style="display: none">
-            <label for="portInput">自定义端口（默认 443）</label>
-            <input type="text" id="portInput" name="portInput" placeholder="443" />
+
+      <section class="section-panel story-card">
+        <div class="section-heading section-heading-inline">
+          <div>
+            <p class="section-kicker">Quick Start</p>
+            <h2>初始化流程</h2>
           </div>
-          <hr />
+          <p>只需要决定连接方式，然后提交。</p>
+        </div>
+        <div class="steps-grid">
+          <div class="mini-card">
+            <span class="step-index">01</span>
+            <h3>选择模式</h3>
+            <p>普通量产机选 Escape Pod，OSKR / 开发机可选 IP。</p>
+          </div>
+          <div class="mini-card">
+            <span class="step-index">02</span>
+            <h3>检查端口</h3>
+            <p>IP 模式可按需填自定义端口，默认 443。</p>
+          </div>
+          <div class="mini-card">
+            <span class="step-index">03</span>
+            <h3>提交初始化</h3>
+            <p>初始化成功后自动进入主页继续后续配置。</p>
+          </div>
+        </div>
+      </section>
+
+      <div id="config-options" class="section-panel section-stack section-panel-wide" style="display: block">
+        <div class="section-heading section-heading-inline">
+          <div>
+            <p class="section-kicker">Connection</p>
+            <h3>连接方式</h3>
+          </div>
+          <p>欢迎使用 wire-pod。先把最基础的通信方式确定下来，再点击底部按钮提交。</p>
         </div>
 
-        <div class="setup-note">
-          <strong>提示：</strong>BigModel 的 STT / LLM / TTS Key 与模型参数，现在都统一在“服务器设置”页面中配置，
-          不需要再去脚本里手动输入 token。
+        <div id="section-conn" class="fieldset-card stack-tight" style="display: block">
+          <div class="center" id="connStatus"></div>
+          <div class="form-grid">
+            <div>
+              <label for="connSelection">连接模式</label>
+              <select onchange="checkConn()" name="connSelection" id="connSelection">
+                <option value="ep">Escape Pod（适合普通量产机器人）</option>
+                <option value="ip">IP 地址（适合 OSKR / 开发解锁机器人）</option>
+              </select>
+            </div>
+            <div id="portViz" style="display: none">
+              <label for="portInput">自定义端口（默认 443）</label>
+              <input type="text" id="portInput" name="portInput" placeholder="443" />
+            </div>
+          </div>
         </div>
-        <small class="desc">天气、大模型和 BigModel 公共配置，可以在初始化完成后进入“服务器设置”页面继续填写。</small>
-        <hr />
 
-        <button onclick="sendSetupInfo()">
-          提交设置
-        </button>
+        <div class="editorial-grid">
+          <div class="mini-card mini-card-note">
+            <p class="section-kicker">What happens next</p>
+            <h3>初始化后去哪里</h3>
+            <p>完成后可以进入“服务器设置”继续配置 BigModel、长期记忆和天气接口。</p>
+          </div>
+          <div class="mini-card mini-card-note">
+            <p class="section-kicker">Tip</p>
+            <h3>不需要现在配模型</h3>
+            <p>BigModel 的 STT / LLM / TTS Key 和模型参数，已经统一挪到设置页面里管理。</p>
+          </div>
+        </div>
+
+        <div class="panel-actions">
+          <button onclick="sendSetupInfo()">提交设置</button>
+        </div>
       </div>
     </div>
   </div>
@@ -69,6 +114,5 @@
 <script src="./js/ui.js"></script>
 <script src="./js/main.js"></script>
 <script src="./js/initial.js"></script>
-<!-- <script src="./sdkapp/js/main.js"></script> -->
 
 </html>

@@ -3,7 +3,6 @@
 
 <head>
   <title>小丸控制台</title>
-  <!-- Meta Apple tags for a PWA like experience. -->
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="theme-color" content="#1e1e1e">
@@ -19,105 +18,175 @@
   <div id="outer">
     <div id="content" class="page-shell">
       <section class="home-hero">
-        <div class="hero-copy">
+        <div class="hero-copy hero-copy-rich">
           <p class="hero-badge">Xiao Wan Console</p>
           <h1>小丸控制台</h1>
-          <p class="hero-subtitle">把机器人配置、配网和日志入口收拢到一个更干净的首页。</p>
+          <p class="hero-subtitle">一个重新整理过的首页：把配置、设备接入、日志和认证入口拆成更清楚的工作台，而不是一屏堆满表单。</p>
+          <div class="hero-pills">
+            <span>服务配置</span>
+            <span>设备接入</span>
+            <span>运行日志</span>
+            <span>认证与配网</span>
+          </div>
         </div>
         <div class="hero-status-card">
           <p class="hero-status-label">机器人状态</p>
           <div id="botStats"></div>
+          <div class="hero-note-list">
+            <p>首页只放高频入口，细节配置进入对应页面处理。</p>
+            <p>如果要调模型、记忆或视觉上下文，优先去“服务设置”。</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="section-panel story-card">
+        <div class="section-heading section-heading-inline">
+          <div>
+            <p class="section-kicker">Workflow</p>
+            <h2>今天先做哪一步</h2>
+          </div>
+          <p>按这个顺序走，通常最省事。</p>
+        </div>
+        <div class="steps-grid">
+          <div class="mini-card">
+            <span class="step-index">01</span>
+            <h3>先配服务</h3>
+            <p>配置 BigModel、OpenAI、自定义接口和长期记忆。</p>
+          </div>
+          <div class="mini-card">
+            <span class="step-index">02</span>
+            <h3>再连机器人</h3>
+            <p>从设备页进入 SDK 会话，调试控制、摄像头和设备设置。</p>
+          </div>
+          <div class="mini-card">
+            <span class="step-index">03</span>
+            <h3>最后看日志</h3>
+            <p>对话、动作执行、接入异常都能在这里快速定位。</p>
+          </div>
         </div>
       </section>
 
       <section class="home-section">
         <div class="section-heading">
-          <h2>常用入口</h2>
-          <p>保留最常用的 4 个入口，其他能力都放到对应页面里。</p>
+          <h2>主入口</h2>
+          <p>保留最常用的四个入口，避免首页继续膨胀。</p>
         </div>
-        <div class="main-nav-parent">
-          <div class="main-nav-child">
+        <div class="main-nav-parent nav-grid-large">
+          <div class="main-nav-child nav-card-featured">
             <a href="setup.html">
               <i class="fa-solid fa-gear"></i>
-              <span class="nav-title">服务设置</span>
-              <span class="nav-desc">大模型、语音和记忆配置</span>
+              <span>
+                <span class="nav-title">服务设置</span>
+                <span class="nav-desc">大模型、长期记忆、天气、视觉上下文</span>
+              </span>
             </a>
           </div>
-          <div class="main-nav-child">
+          <div class="main-nav-child nav-card-featured">
             <a href="/sdkapp">
               <i class="fa-solid fa-toolbox"></i>
-              <span class="nav-title">机器人设置</span>
-              <span class="nav-desc">动作、SDK 和设备侧选项</span>
+              <span>
+                <span class="nav-title">机器人设置</span>
+                <span class="nav-desc">设备接入、行为控制、相机和本体参数</span>
+              </span>
             </a>
           </div>
           <div class="main-nav-child">
             <a href="#" onclick="showBotAuth(); return false;">
               <i class="fa-solid fa-robot" id="icon-BotAuth" name="icon"></i>
-              <span class="nav-title">机器人接入</span>
-              <span class="nav-desc">配网、认证和 OSKR 接入</span>
+              <span>
+                <span class="nav-title">机器人接入</span>
+                <span class="nav-desc">认证、断开、OSKR 或开发机 SSH 配置</span>
+              </span>
             </a>
           </div>
           <div class="main-nav-child">
             <a href="#" onclick="showLog(); return false;">
               <i class="fa-solid fa-file-lines" id="icon-Logs" name="icon"></i>
-              <span class="nav-title">运行日志</span>
-              <span class="nav-desc">看对话、动作和调试输出</span>
+              <span>
+                <span class="nav-title">运行日志</span>
+                <span class="nav-desc">实时查看语音、LLM、动作与连接输出</span>
+              </span>
             </a>
           </div>
         </div>
       </section>
 
+      <section class="editorial-grid">
+        <div class="section-panel info-card">
+          <p class="section-kicker">Console Notes</p>
+          <h2>这个首页现在负责什么</h2>
+          <ul class="feature-list">
+            <li>展示机器人在线与电量状态。</li>
+            <li>把服务端设置和设备端设置拆开。</li>
+            <li>把低频但必要的接入与调试功能折叠到下面。</li>
+          </ul>
+        </div>
+        <div class="section-panel info-card">
+          <p class="section-kicker">Tips</p>
+          <h2>适合的使用方式</h2>
+          <ul class="feature-list compact-list">
+            <li>第一次使用：先打开“服务设置”。</li>
+            <li>要调动作或相机：进入“机器人设置”。</li>
+            <li>出问题时：直接打开“运行日志”。</li>
+          </ul>
+        </div>
+      </section>
+
       <div id="section-botauth" style="display: none">
-        <div class="section-panel section-stack">
-        <h2>机器人接入</h2>
-        <p class="panel-subtitle">给机器人做认证，或者接入一台 OSKR / Dev 解锁设备。</p>
-        <hr class="small-hr">
-        <div>
-          <div id="disconnectButton"></div>
-        </div>
-        <div>
-          <div id="botAuth"></div>
-        </div>
-        <hr />
-        <div class="fieldset-card">
-          <p class="section-kicker">OSKR / Dev</p>
-          <h3>配置 OSKR / 开发解锁机器人</h3>
-          <hr class="small-hr">
-          <small class="desc">适用于 1.4 及以上固件。</small>
-          <div id="oskrSetupProgress"></div>
-          <div id="oskrSetup">
-            <p><b>如果你接入的是 OSKR / 开发解锁机器人：</b>在这里填入设备 IP，并上传 SSH Key；完成后再回到上方区域做正式接入。</p>
-            <hr class="small-hr">
-            <input class="tinput" type="text" id="sshIp" name="sshIp" placeholder="机器人 IP 地址" /><br />
-            <input type="file" id="sshKeyFile" name="sshKeyFile" /><br />
-            <hr class="small-hr">
-            <button onclick="doSSHSetup()">开始设置</button>
+        <div class="section-panel section-stack section-panel-wide">
+          <div class="section-heading section-heading-inline">
+            <div>
+              <p class="section-kicker">Robot Auth</p>
+              <h2>机器人接入</h2>
+            </div>
+            <p>给量产机做认证，或者给 OSKR / 开发解锁机器做 SSH 预配置。</p>
           </div>
-        </div>
-        <hr />
+          <div class="editorial-grid">
+            <div class="fieldset-card stack-tight">
+              <p class="section-kicker">Connection</p>
+              <h3>当前接入状态</h3>
+              <div id="disconnectButton"></div>
+              <div id="botAuth"></div>
+            </div>
+            <div class="fieldset-card stack-tight">
+              <p class="section-kicker">OSKR / Dev</p>
+              <h3>SSH 预设置</h3>
+              <small class="desc">适用于 1.4 及以上固件。先在这里填 IP 和 SSH Key，再回到左侧做正式接入。</small>
+              <div id="oskrSetupProgress"></div>
+              <div id="oskrSetup" class="stack-tight">
+                <input class="tinput" type="text" id="sshIp" name="sshIp" placeholder="机器人 IP 地址" />
+                <input type="file" id="sshKeyFile" name="sshKeyFile" />
+                <div class="panel-actions">
+                  <button onclick="doSSHSetup()">开始设置</button>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
       <div id="section-log" style="display: none">
-        <div class="section-panel section-stack">
-        <h2>运行日志</h2>
-        <p class="panel-subtitle">这里会实时显示语音、LLM、动作执行和设备连接日志。</p>
-        <hr class="small-hr">
-        <div class="center">
-          <div style="text-align:left">
-            <input id="logdebug" name="logdebug" type="checkbox" />
-            <label class="checkbox-label" for="logdebug">显示全部日志</label><br />
-            <input id="logscrollbottom" name="logscrollbottom" type="checkbox" />
-            <label class="checkbox-label" for="logscrollbottom">自动滚动到底部</label>
+        <div class="section-panel section-stack section-panel-wide">
+          <div class="section-heading section-heading-inline">
+            <div>
+              <p class="section-kicker">Live Logs</p>
+              <h2>运行日志</h2>
+            </div>
+            <p>这里会持续刷新语音、LLM、动作执行和连接日志。</p>
           </div>
-        </div>
-        <textarea id="botTranscriptedTextArea" rows="7" cols="50">
-          正在加载日志...
-        </textarea>
-        <hr class="log-hr" />
+          <div class="toolbar-inline">
+            <label class="toggle-line" for="logdebug">
+              <input id="logdebug" name="logdebug" type="checkbox" />
+              <span>显示全部日志</span>
+            </label>
+            <label class="toggle-line" for="logscrollbottom">
+              <input id="logscrollbottom" name="logscrollbottom" type="checkbox" />
+              <span>自动滚动到底部</span>
+            </label>
+          </div>
+          <textarea id="botTranscriptedTextArea" rows="7" cols="50">正在加载日志...</textarea>
         </div>
       </div>
-
     </div>
   </div>
 </body>
@@ -127,7 +196,6 @@
 <script src="./js/ssh.js"></script>
 <script src="./sdkapp/js/common.js"></script>
 <script src="./js/battery.js"></script>
-<!-- <script src="./sdkapp/js/main.js"></script> -->
 <script>
   checkInited();
   processBotStats();
