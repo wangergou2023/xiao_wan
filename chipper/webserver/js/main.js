@@ -2,6 +2,43 @@ var GetLog = false;
 
 const getE = (element) => document.getElementById(element);
 
+function getActiveButton() {
+  const active = document.activeElement;
+  return active instanceof HTMLButtonElement ? active : null;
+}
+
+function setButtonBusy(button, busy, busyLabel) {
+  if (!button) {
+    return;
+  }
+  if (busy) {
+    if (!button.dataset.originalLabel) {
+      button.dataset.originalLabel = button.textContent.trim();
+    }
+    button.disabled = true;
+    button.classList.add("is-busy");
+    button.textContent = busyLabel || "处理中...";
+  } else {
+    button.disabled = false;
+    button.classList.remove("is-busy");
+    button.textContent = button.dataset.originalLabel || button.textContent;
+  }
+}
+
+function inferStatusType(message) {
+  const normalized = String(message || "").toLowerCase();
+  if (normalized.includes("error") || normalized.includes("failed") || normalized.includes("unable") || normalized.includes("失败") || normalized.includes("错误")) {
+    return "error";
+  }
+  if (normalized.includes("download") || normalized.includes("saving") || normalized.includes("initializing") || normalized.includes("设置中") || normalized.includes("下载") || normalized.includes("处理中")) {
+    return "warning";
+  }
+  if (normalized.includes("success") || normalized.includes("saved") || normalized.includes("done") || normalized.includes("完成") || normalized.includes("成功")) {
+    return "success";
+  }
+  return "info";
+}
+
 function checkInited() {
   fetch("/api/is_api_v3").then((response) => {
     if (!response.ok) {
@@ -26,12 +63,14 @@ function checkWeather() {
 }
 
 function sendWeatherAPIKey() {
+  const button = getActiveButton();
   const data = {
     provider: getE("weatherProvider").value,
     key: getE("apiKey").value,
   };
 
-  displayMessage("addWeatherProviderAPIStatus", "Saving...");
+  displayMessage("addWeatherProviderAPIStatus", "正在保存天气配置...");
+  setButtonBusy(button, true, "保存中...");
 
   fetch("/api/set_weather_api", {
     method: "POST",
@@ -43,6 +82,12 @@ function sendWeatherAPIKey() {
     .then((response) => response.text())
     .then((response) => {
       displayMessage("addWeatherProviderAPIStatus", response);
+    })
+    .catch((error) => {
+      displayError("addWeatherProviderAPIStatus", `保存天气配置失败：${error}`);
+    })
+    .finally(() => {
+      setButtonBusy(button, false);
     });
 }
 
@@ -65,23 +110,30 @@ function checkKG() {
     "llmDefaultsNote",
   ];
 
-  elements.forEach((el) => (getE(el).style.display = "none"));
+  elements.forEach((el) => {
+    getE(el).style.display = "none";
+    getE(el).classList.remove("is-visible");
+  });
 
   if (provider) {
     if (provider === "openai") {
       getE("openAIInput").style.display = "block";
+      getE("openAIInput").classList.add("is-visible");
       getE("llmDefaultsNote").style.display = "block";
     } else if (provider === "bigmodel") {
       getE("bigModelInput").style.display = "block";
+      getE("bigModelInput").classList.add("is-visible");
       getE("llmDefaultsNote").style.display = "block";
     } else if (provider === "custom") {
       getE("customAIInput").style.display = "block";
+      getE("customAIInput").classList.add("is-visible");
       getE("llmDefaultsNote").style.display = "block";
     }
   }
 }
 
 function sendKGAPIKey() {
+  const button = getActiveButton();
   const provider = getE("kgProvider").value;
   const data = {
     enable: true,
@@ -115,6 +167,9 @@ function sendKGAPIKey() {
     data.commands_enable = false;
   }
 
+  displayMessage("addKGProviderAPIStatus", "正在保存大模型配置...");
+  setButtonBusy(button, true, "保存中...");
+
   fetch("/api/set_kg_api", {
     method: "POST",
     headers: {
@@ -125,11 +180,17 @@ function sendKGAPIKey() {
     .then((response) => response.text())
     .then((response) => {
       displayMessage("addKGProviderAPIStatus", response);
-      alert(response);
+    })
+    .catch((error) => {
+      displayError("addKGProviderAPIStatus", `保存大模型配置失败：${error}`);
+    })
+    .finally(() => {
+      setButtonBusy(button, false);
     });
 }
 
 function sendBigModelConfig() {
+  const button = getActiveButton();
   const toNumber = (value, fallback) => {
     const parsed = parseFloat(value);
     return Number.isFinite(parsed) ? parsed : fallback;
@@ -145,6 +206,9 @@ function sendBigModelConfig() {
     tts_volume: toNumber(getE("bigmodelTTSVolume").value, 1.0),
   };
 
+  displayMessage("bigModelConfigStatus", "正在保存 BigModel 公共配置...");
+  setButtonBusy(button, true, "保存中...");
+
   fetch("/api/set_bigmodel_config", {
     method: "POST",
     headers: {
@@ -155,14 +219,23 @@ function sendBigModelConfig() {
     .then((response) => response.text())
     .then((response) => {
       displayMessage("bigModelConfigStatus", response);
-      alert(response);
+    })
+    .catch((error) => {
+      displayError("bigModelConfigStatus", `保存 BigModel 公共配置失败：${error}`);
+    })
+    .finally(() => {
+      setButtonBusy(button, false);
     });
 }
 
 function sendVisionConfig() {
+  const button = getActiveButton();
   const data = {
     enable_face_context: getE("visionEnableFaceContext").checked,
   };
+
+  displayMessage("visionConfigStatus", "正在保存视觉设置...");
+  setButtonBusy(button, true, "保存中...");
 
   fetch("/api/set_vision_config", {
     method: "POST",
@@ -174,7 +247,12 @@ function sendVisionConfig() {
     .then((response) => response.text())
     .then((response) => {
       displayMessage("visionConfigStatus", response);
-      alert(response);
+    })
+    .catch((error) => {
+      displayError("visionConfigStatus", `保存视觉设置失败：${error}`);
+    })
+    .finally(() => {
+      setButtonBusy(button, false);
     });
 }
 
@@ -183,7 +261,10 @@ function deleteSavedChats() {
     fetch("/api/delete_chats")
       .then((response) => response.text())
       .then(() => {
-        alert("已成功删除所有已保存的对话记录。");
+        displayMessage("addKGProviderAPIStatus", "已成功删除所有已保存的对话记录。");
+      })
+      .catch((error) => {
+        displayError("addKGProviderAPIStatus", `删除已保存对话失败：${error}`);
       });
   }
 }
@@ -256,11 +337,15 @@ function updateLongTermMemory() {
 }
 
 function saveLongTermMemory() {
+  const button = getActiveButton();
   const esn = getE("memoryRobotESN").value || "";
   const data = {
     esn,
     memory_text: getE("memoryText").value,
   };
+
+  displayMessage("memoryStatus", "正在保存长期记忆...");
+  setButtonBusy(button, true, "保存中...");
 
   fetch("/api/set_long_term_memory", {
     method: "POST",
@@ -272,62 +357,41 @@ function saveLongTermMemory() {
     .then((response) => response.text())
     .then((response) => {
       displayMessage("memoryStatus", response);
-      alert(response);
       updateLongTermMemory();
+    })
+    .catch((error) => {
+      displayError("memoryStatus", `保存长期记忆失败：${error}`);
+    })
+    .finally(() => {
+      setButtonBusy(button, false);
     });
-}
-
-function setSTTLanguage() {
-  const data = { language: getE("languageSelection").value };
-
-  displayMessage("languageStatus", "设置中...");
-
-  fetch("/api/set_stt_info", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(data),
-  })
-    .then((response) => response.text())
-    .then((response) => {
-      if (response.includes("downloading")) {
-        displayMessage("languageStatus", "正在下载模型...");
-        updateSTTLanguageDownload();
-      } else {
-        displayMessage("languageStatus", response);
-        getE("languageSelectionDiv").style.display = response.includes("success") ? "block" : "none";
-      }
-    });
-}
-
-function updateSTTLanguageDownload() {
-
-  const interval = setInterval(() => {
-    fetch("/api/get_download_status")
-      .then((response) => response.text())
-      .then((response) => {
-        displayMessage("languageStatus", response.includes("not downloading") ? "正在初始化下载..." : response)
-        if (response.includes("success") || response.includes("error")) {
-          displayMessage("languageStatus", response);
-          getE("languageSelectionDiv").style.display = "block";
-          clearInterval(interval);
-        }
-      });
-  }, 500);
 }
 
 function sendRestart() {
+  const button = getActiveButton();
+  displayMessage("restartStatus", "正在请求重启 wire-pod...");
+  setButtonBusy(button, true, "重启中...");
   fetch("/api/reset")
     .then((response) => response.text())
     .then((response) => {
       displayMessage("restartStatus", response);
+    })
+    .catch((error) => {
+      displayError("restartStatus", `请求重启失败：${error}`);
+    })
+    .finally(() => {
+      setButtonBusy(button, false);
     });
 }
 
 function displayMessage(elementId, message) {
   const element = getE(elementId);
+  if (!element) {
+    return;
+  }
   element.innerHTML = "";
+  element.classList.remove("status-info", "status-success", "status-warning", "status-error");
+  element.classList.add(`status-${inferStatusType(message)}`);
   const p = document.createElement("p");
   p.textContent = message;
   element.appendChild(p);
@@ -335,7 +399,12 @@ function displayMessage(elementId, message) {
 
 function displayError(elementId, message) {
   const element = getE(elementId);
+  if (!element) {
+    return;
+  }
   element.innerHTML = "";
+  element.classList.remove("status-info", "status-success", "status-warning", "status-error");
+  element.classList.add("status-error");
   const error = document.createElement("p");
   error.innerHTML = message;
   element.appendChild(error);
@@ -379,31 +448,16 @@ function showLog() {
   }, 500);
 }
 
-function showLanguage() {
-  toggleVisibility(["section-weather", "section-restart", "section-kg", "section-language", "section-memory"], "section-language", "icon-Language");
-  fetch("/api/get_stt_info")
-    .then((response) => response.json())
-    .then((parsed) => {
-      if (parsed.provider !== "vosk" && parsed.provider !== "whisper.cpp") {
-        displayError("languageStatus", `To set the STT language, the provider must be Vosk or Whisper. The current one is '${parsed.sttProvider}'.`);
-        getE("languageSelectionDiv").style.display = "none";
-      } else {
-        getE("languageSelectionDiv").style.display = "block";
-        getE("languageSelection").value = parsed.language;
-      }
-    });
-}
-
 function showWeather() {
-  toggleVisibility(["section-weather", "section-restart", "section-language", "section-kg", "section-memory"], "section-weather", "icon-Weather");
+  toggleVisibility(["section-weather", "section-restart", "section-kg", "section-memory"], "section-weather", "icon-Weather");
 }
 
 function showKG() {
-  toggleVisibility(["section-weather", "section-restart", "section-language", "section-kg", "section-memory"], "section-kg", "icon-KG");
+  toggleVisibility(["section-weather", "section-restart", "section-kg", "section-memory"], "section-kg", "icon-KG");
 }
 
 function showMemory() {
-  toggleVisibility(["section-weather", "section-restart", "section-language", "section-kg", "section-memory"], "section-memory", "icon-Memory");
+  toggleVisibility(["section-weather", "section-restart", "section-kg", "section-memory"], "section-memory", "icon-Memory");
   updateLongTermMemory();
 }
 

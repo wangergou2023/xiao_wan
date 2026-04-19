@@ -17,7 +17,7 @@
 
 <body>
   <div id="outer">
-    <div id="content" class="">
+    <div id="content" class="page-shell">
       <section class="home-hero">
         <div class="hero-copy">
           <p class="hero-badge">Xiao Wan Settings</p>
@@ -42,7 +42,7 @@
         <div class="main-nav-parent">
           <div class="main-nav-child">
             <a href="#" onclick="showKG(); return false;">
-              <i class="fa solid fa-diagram-project" id="icon-KG" name="icon"></i>
+              <i class="fa-solid fa-diagram-project" id="icon-KG" name="icon"></i>
               <span class="nav-title">大模型</span>
               <span class="nav-desc">配置 OpenAI、BigModel 或自定义兼容接口</span>
             </a>
@@ -56,27 +56,21 @@
           </div>
           <div class="main-nav-child">
             <a href="#" onclick="showWeather(); return false;">
-              <i class="fa solid fa-cloud-sun" id="icon-Weather" name="icon"></i>
+              <i class="fa-solid fa-cloud-sun" id="icon-Weather" name="icon"></i>
               <span class="nav-title">天气</span>
               <span class="nav-desc">按需接入天气服务提供商和 API Key</span>
-            </a>
-          </div>
-          <div class="main-nav-child">
-            <a href="#" onclick="showLanguage(); return false;">
-              <i class="fa-solid fa-language" id="icon-Language" name="icon"></i>
-              <span class="nav-title">识别语言</span>
-              <span class="nav-desc">切换语音识别语言与模型下载流程</span>
             </a>
           </div>
         </div>
       </section>
 
       <div id="section-weather" style="display: none">
-        <div class="section-panel">
+        <div class="section-panel section-stack">
         <h3>天气接口设置</h3>
         <p class="panel-subtitle">如果你希望机器人能回答天气问题，就在这里接入天气服务。</p>
         <hr class="small-hr">
-        <div>
+        <div class="fieldset-card">
+          <p class="section-kicker">Weather Provider</p>
           <p>请选择你要使用的天气服务提供商。</p>
           <hr class="small-hr">
           <div id="addWeatherProviderAPI"></div>
@@ -98,18 +92,19 @@
           <button onclick="sendWeatherAPIKey()">
             应用天气设置
           </button>
-          <div id="addWeatherProviderAPIStatus"></div>
+          <div id="addWeatherProviderAPIStatus" class="status-card"></div>
           <hr />
         </div>
         </div>
       </div>
 
       <div id="section-kg" style="display: none">
-        <div class="section-panel">
+        <div class="section-panel section-stack">
         <h3>大模型设置</h3>
         <p class="panel-subtitle">这里决定机器人在普通意图未命中时，如何接入对话模型、TTS 和视觉上下文。</p>
         <hr class="small-hr">
-        <div>
+        <div class="fieldset-card">
+          <p class="section-kicker">LLM Provider</p>
           <p>当语音请求未被普通意图匹配命中时，会转交给这里配置的大模型。请选择提供商，并只填写该提供商需要的字段。</p>
           <hr class="small-hr">
           <div class="setup-note">
@@ -117,7 +112,7 @@
             旧的环境变量仍可作为兼容回退，但推荐以后统一使用 Web 配置。
           </div>
           <hr class="small-hr">
-          <div id="addKGProviderAPI"></div>
+          <div id="addKGProviderAPI" class="status-card"></div>
           <form id="kgAPIAddForm">
             <label for="kgProvider">大模型提供商：</label>
             <select name="kgProvider" id="kgProvider" form="kgAPIAddForm" onchange="checkKG()">
@@ -127,8 +122,12 @@
               <option value="custom">自定义接口</option>
             </select>
             <small class="desc">推荐优先使用 BigModel；如果你有 OpenAI key 或本地兼容接口，再选择对应选项。</small><br />
-            <span id="openAIInput" style="display: none">
-              <small class="desc">适合直接接入 OpenAI 官方对话能力。</small><br />
+            <div class="setup-note">
+              <strong>建议的配置顺序：</strong>先选提供商并保存，再填写 BigModel 公共配置，最后按需打开视觉上下文。
+            </div>
+            <div id="openAIInput" class="provider-panel" style="display: none">
+              <p class="section-kicker">OpenAI</p>
+              <small class="form-help">适合直接接入 OpenAI 官方对话能力。</small>
               <label for="openaiKey">API Key：</label>
               <input type="text" name="openaiKey" id="openaiKey" placeholder="sk-..." /><br />
               <label for="openaiKey">系统提示词 <small class="desc">（留空则使用默认值）：</small></label><br />
@@ -136,10 +135,11 @@
                   Vector. Keep the response concise yet
                   informative."）</label></small>
               <input type="text" name="openAIPrompt" id="openAIPrompt" placeholder="留空则使用默认提示词" /><br />
-            </span>
+            </div>
 
-            <span id="bigModelInput" style="display: none">
-              <small class="desc">这里使用智谱 BigModel 官方对话补全接口。若留空 API Key 和模型名，则自动回退使用下面的 BigModel 公共配置。</small><br />
+            <div id="bigModelInput" class="provider-panel" style="display: none">
+              <p class="section-kicker">BigModel</p>
+              <small class="form-help">这里使用智谱 BigModel 官方对话补全接口。若留空 API Key 和模型名，则自动回退使用下面的 BigModel 公共配置。</small>
               <label for="bigmodelKey">API Key <small class="desc">（可选，留空则使用下方公共配置）</small>：</label>
               <input type="text" name="bigmodelKey" id="bigmodelKey" placeholder="留空则复用下方 BigModel 公共配置" /><br />
               <label for="bigmodelModel">模型名称 <small class="desc">（留空则使用默认值 glm-5.1）</small>：</label>
@@ -149,10 +149,11 @@
                   Vector. Keep the response concise yet
                   informative."）</label></small>
               <input type="text" name="bigmodelPrompt" id="bigmodelPrompt" placeholder="留空则使用默认提示词" /><br />
-            </span>
+            </div>
 
-            <span id="customAIInput" style="display: none">
-              <small class="desc">适用于 Ollama、vLLM，或者你自己的 OpenAI 兼容网关。</small><br />
+            <div id="customAIInput" class="provider-panel" style="display: none">
+              <p class="section-kicker">Custom Compatible API</p>
+              <small class="form-help">适用于 Ollama、vLLM，或者你自己的 OpenAI 兼容网关。</small>
               <label for="customKey">API Key <small class="desc">（对于 Ollama，通常直接填 'ollama'）</small>：</label>
               <input type="text" name="customKey" id="customKey" placeholder="例如 ollama" /><br />
               <label for="customAIEndpoint">接口地址 <small class="desc">（例如
@@ -165,7 +166,7 @@
                   Vector. Keep the response concise yet
                   informative."）</label></small>
               <input type="text" name="customAIPrompt" id="customAIPrompt" placeholder="留空则使用默认提示词" /><br />
-            </span>
+            </div>
 
             <div id="llmDefaultsNote" class="setup-note" style="display: none;">
               <strong>默认行为：</strong>配置好大模型后，会自动启用未命中回退、机器人动作和对话记忆，无需额外勾选。
@@ -176,7 +177,9 @@
             <div class="setup-note">
               <strong>BigModel 公共配置：</strong>下面这些设置会被 BigModel STT、BigModel LLM 和 BigModel TTS 共同复用。
             </div>
-            <span id="bigModelSharedInput">
+            <div id="bigModelSharedInput" class="fieldset-card">
+              <p class="section-kicker">Shared BigModel</p>
+              <p class="form-help">这部分会被 BigModel STT / LLM / TTS 共同复用，建议统一填在这里。</p>
               <label for="bigmodelSharedKey">BigModel API Key <small class="desc">（建议填写在这里，供 STT / LLM / TTS 共用）</small>：</label>
               <input type="text" name="bigmodelSharedKey" id="bigmodelSharedKey" placeholder="填写你的 BigModel API Key" /><br />
               <label for="bigmodelASRModel">ASR 模型 <small class="desc">（留空则默认 glm-asr-2512）</small>：</label>
@@ -192,19 +195,21 @@
               <input type="text" name="bigmodelTTSSpeed" id="bigmodelTTSSpeed" placeholder="1.0" /><br />
               <label for="bigmodelTTSVolume">TTS 音量 <small class="desc">（默认 1.0）</small>：</label>
               <input type="text" name="bigmodelTTSVolume" id="bigmodelTTSVolume" placeholder="1.0" /><br />
-            </span>
+            </div>
 
             <hr class="small-hr">
             <div class="setup-note">
               <strong>视觉与人脸：</strong>这些选项用于控制“识别人脸后是否提供给大模型”。
             </div>
-            <span id="visionInput">
+            <div id="visionInput" class="fieldset-card">
+              <p class="section-kicker">Vision Context</p>
               <label for="visionEnableFaceContext">
                 <input type="checkbox" id="visionEnableFaceContext" />
                 启用人脸上下文
               </label>
+              <small class="form-help">打开后，设备识别到已知人脸时，会把“当前面前是谁”作为对话上下文给到大模型。</small>
               <small class="desc">识别到已知人脸后，会把“当前面前是谁”注入到大模型上下文。</small><br />
-            </span>
+            </div>
 
           </form>
         </div>
@@ -212,15 +217,17 @@
         <button onclick="sendKGAPIKey()">应用设置</button>
         <button onclick="sendBigModelConfig()">保存 BigModel 公共配置</button>
         <button onclick="sendVisionConfig()">保存视觉设置</button>
-        <div id="addKGProviderAPIStatus"></div>
-        <div id="bigModelConfigStatus"></div>
-        <div id="visionConfigStatus"></div>
+        <div class="status-grid">
+          <div id="addKGProviderAPIStatus" class="status-card"></div>
+          <div id="bigModelConfigStatus" class="status-card"></div>
+          <div id="visionConfigStatus" class="status-card"></div>
+        </div>
         <hr />
         </div>
       </div>
 
       <div id="section-memory" style="display: none">
-        <div class="section-panel">
+        <div class="section-panel section-stack">
         <h3>长期记忆</h3>
         <hr class="small-hr">
         <div class="setup-note">
@@ -237,7 +244,7 @@
           <small class="desc">写成自然语言、列表、备忘录都可以。这里只放值得长期记住的内容。</small><br />
         </form>
         <button onclick="saveLongTermMemory()">保存长期记忆</button>
-        <div id="memoryStatus"></div>
+        <div id="memoryStatus" class="status-card"></div>
         <hr />
         </div>
       </div>
@@ -252,47 +259,11 @@
           <div>
             <button onclick="sendRestart()">重启 Wire-Pod</button>
           </div>
-          <div id="restartStatus"></div>
+          <div id="restartStatus" class="status-card"></div>
           <hr />
         </div>
       </div>
 
-      <div id="section-language" style="display: none">
-        <div class="section-panel">
-        <h2>语音识别语言</h2>
-        <p class="panel-subtitle">只影响 STT 侧语音识别，不会改变大模型的默认回答语言。</p>
-        <hr class="small-hr">
-        <p>设置 wire-pod 使用的语音识别语言。</p>
-        <hr class="small-hr">
-        <div id="languageStatus"></div>
-        <div id="languageSelectionDiv">
-          <div>
-            <select name="languageSelection" id="languageSelection">
-              <option value="en-US">English (US)</option>
-              <option value="it-IT">Italian (IT)</option>
-              <option value="es-ES">Spanish (ES)</option>
-              <option value="fr-FR">French (FR)</option>
-              <option value="de-DE">German (DE)</option>
-              <option value="pt-BR">Portuguese (BR)</option>
-              <option value="pl-PL">Polish (PL)</option>
-              <option value="tr-TR">Turkish (TR)</option>
-              <option value="ko-KR">Korean (KR)</option>
-              <option value="zh-CN">Chinese (CN)</option>
-              <option value="ru-RU">Russian (RU)</option>
-              <option value="nt-NL">Dutch (NL)</option>
-              <option value="uk-UA">Ukrainian (UA)</option>
-              <option value="vi-VN">VietNamese (VN)</option>
-            </select>
-          </div>
-          <div>
-            <hr class="small-hr">
-            <button onclick="setSTTLanguage()">
-              设置语言
-            </button>
-          </div>
-        </div>
-        <hr />
-        </div>
       </div>
     </div>
   </div>

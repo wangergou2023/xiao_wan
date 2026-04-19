@@ -34,22 +34,31 @@
         </div>
       </section>
 
-      <div class="section-panel">
-      <h2 class="center">选择机器人</h2>
-      <p class="panel-subtitle center">选中一台机器人后点击连接，即可进入设备侧设置与控制页面。</p>
-      <hr class="small-hr" />
-      <select id="botList" name="botList"></select><br />
-      <button onclick="connectSDK()">连接设备</button>
-      <hr />
-      <div id="authResult"></div>
+      <div class="section-panel sdk-compact-panel">
+        <div class="sdk-panel-header">
+          <div>
+            <p class="hero-badge">Device Session</p>
+            <h2>选择机器人</h2>
+            <p class="panel-subtitle">选中一台机器人后点击连接，即可进入设备侧设置与控制页面。</p>
+          </div>
+        </div>
+        <hr class="small-hr" />
+        <div class="sdk-form-stack">
+          <select id="botList" name="botList"></select>
+          <div class="sdk-button-row">
+            <button onclick="connectSDK()">连接设备</button>
+          </div>
+        </div>
+        <hr />
+        <div id="authResult"></div>
       </div>
     </div>
   </div>
-</body>
-
-</html>
 <iframe name="hiddenFrame" width="0" height="0" border="0" style="display: none"></iframe>
 <script src="./js/httprequest.js"></script>
 <script src="./js/common.js"></script>
 <script src="../js/ui.js"></script>
 <script src="./js/auth.js"></script>
+</body>
+
+</html>

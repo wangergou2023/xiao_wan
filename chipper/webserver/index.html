@@ -17,7 +17,7 @@
 
 <body>
   <div id="outer">
-    <div id="content" class="">
+    <div id="content" class="page-shell">
       <section class="home-hero">
         <div class="hero-copy">
           <p class="hero-badge">Xiao Wan Console</p>
@@ -45,14 +45,14 @@
           </div>
           <div class="main-nav-child">
             <a href="/sdkapp">
-              <i class="fa solid fa-toolbox"></i>
+              <i class="fa-solid fa-toolbox"></i>
               <span class="nav-title">机器人设置</span>
               <span class="nav-desc">动作、SDK 和设备侧选项</span>
             </a>
           </div>
           <div class="main-nav-child">
             <a href="#" onclick="showBotAuth(); return false;">
-              <i class="fa solid fa-robot" id="icon-BotAuth" name="icon"></i>
+              <i class="fa-solid fa-robot" id="icon-BotAuth" name="icon"></i>
               <span class="nav-title">机器人接入</span>
               <span class="nav-desc">配网、认证和 OSKR 接入</span>
             </a>
@@ -68,7 +68,7 @@
       </section>
 
       <div id="section-botauth" style="display: none">
-        <div class="section-panel">
+        <div class="section-panel section-stack">
         <h2>机器人接入</h2>
         <p class="panel-subtitle">给机器人做认证，或者接入一台 OSKR / Dev 解锁设备。</p>
         <hr class="small-hr">
@@ -79,21 +79,19 @@
           <div id="botAuth"></div>
         </div>
         <hr />
-        <div>
-          <h3>Configure an OSKR/dev-unlocked robot</h3>
+        <div class="fieldset-card">
+          <p class="section-kicker">OSKR / Dev</p>
+          <h3>配置 OSKR / 开发解锁机器人</h3>
           <hr class="small-hr">
-          <small class="desc">Works with firmware 1.4 and above.</small>
+          <small class="desc">适用于 1.4 及以上固件。</small>
           <div id="oskrSetupProgress"></div>
           <div id="oskrSetup">
-            <p><b>If you have an OSKR/dev-unlocked bot;</b> enter the bot's IP
-              address and upload the bot's SSH key here, then click "Set up
-              bot". After that, use the above section to finish setting up
-              your bot.</p>
+            <p><b>如果你接入的是 OSKR / 开发解锁机器人：</b>在这里填入设备 IP，并上传 SSH Key；完成后再回到上方区域做正式接入。</p>
             <hr class="small-hr">
-            <input class="tinput" type="text" id="sshIp" name="sshIp" placeholder="Bot IP address" /><br />
+            <input class="tinput" type="text" id="sshIp" name="sshIp" placeholder="机器人 IP 地址" /><br />
             <input type="file" id="sshKeyFile" name="sshKeyFile" /><br />
             <hr class="small-hr">
-            <button onclick="doSSHSetup()">Set up bot</button>
+            <button onclick="doSSHSetup()">开始设置</button>
           </div>
         </div>
         <hr />
@@ -101,7 +99,7 @@
       </div>
 
       <div id="section-log" style="display: none">
-        <div class="section-panel">
+        <div class="section-panel section-stack">
         <h2>运行日志</h2>
         <p class="panel-subtitle">这里会实时显示语音、LLM、动作执行和设备连接日志。</p>
         <hr class="small-hr">

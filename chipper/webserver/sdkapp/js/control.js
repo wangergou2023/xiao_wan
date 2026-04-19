@@ -78,10 +78,14 @@ document.addEventListener('DOMContentLoaded', function() {
 function toggleKeyboard() {
   if (useKeyboardControl == false) {
     useKeyboardControl = true;
-    keysKey.style.display = "block";
+    if (keysKey) {
+      keysKey.style.display = "block";
+    }
   } else {
     useKeyboardControl = false;
-    keysKey.style.display = "none";
+    if (keysKey) {
+      keysKey.style.display = "none";
+    }
   }
 }
 
@@ -116,12 +120,18 @@ var stream = document.createElement("img");
 function showCamStream() {
   //sendForm('/api-sdk/begin_cam_stream')
   stream.src = "/cam-stream?serial=" + esn;
-  document.getElementById("camStream").appendChild(stream);
+  const camStream = document.getElementById("camStream");
+  if (!camStream.contains(stream)) {
+    camStream.appendChild(stream);
+  }
 }
 
 function stopCamStream() {
   stream.src = "";
-  document.getElementById("camStream").removeChild(stream);
+  const camStream = document.getElementById("camStream");
+  if (camStream.contains(stream)) {
+    camStream.removeChild(stream);
+  }
   sendForm("/api-sdk/stop_cam_stream");
 }
 
