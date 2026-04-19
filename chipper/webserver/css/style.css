@@ -138,9 +138,9 @@ code {
 
 button,
 button[type="submit"] {
-  min-width: 120px;
-  min-height: 40px;
-  padding: 0.52rem 0.82rem;
+  min-width: 104px;
+  min-height: 36px;
+  padding: 0.42rem 0.72rem;
   border: 1px solid transparent;
   border-radius: 999px;
   background: var(--button-color);
@@ -176,7 +176,7 @@ input[type="text"],
 input[type="file"],
 select,
 textarea {
-  width: min(100%, 560px);
+  width: min(100%, 480px);
   border: 1px solid rgba(77, 56, 45, 0.16);
   border-radius: var(--radius-sm);
   background: rgba(255, 255, 255, 0.72);
@@ -191,14 +191,14 @@ textarea {
 input[type="text"],
 input[type="file"],
 select {
-  min-height: 40px;
-  padding: 0.54rem 0.72rem;
+  min-height: 36px;
+  padding: 0.46rem 0.64rem;
 }
 
 textarea {
   width: 100%;
-  min-height: 220px;
-  padding: 0.8rem 0.9rem;
+  min-height: 200px;
+  padding: 0.72rem 0.82rem;
   resize: vertical;
 }
 
@@ -338,8 +338,8 @@ ul, li {
 
 .home-hero {
   display: grid;
-  grid-template-columns: minmax(0, 1.35fr) minmax(280px, 0.85fr);
-  gap: 14px;
+  grid-template-columns: minmax(0, 1.4fr) minmax(240px, 0.78fr);
+  gap: 10px;
   align-items: stretch;
   margin: 0.45rem auto 0.9rem;
 }
@@ -368,7 +368,7 @@ ul, li {
 .hero-copy,
 .hero-status-card,
 .section-panel {
-  padding: 1rem 1.06rem;
+  padding: 0.86rem 0.92rem;
   text-align: left;
 }
 
@@ -454,10 +454,10 @@ ul, li {
 
 .main-nav-parent {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 300px));
-  gap: 10px;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 250px));
+  gap: 8px;
   width: 100%;
-  max-width: 940px;
+  max-width: 860px;
   margin: 0 auto;
   padding: 0;
   text-align: left;
@@ -590,15 +590,15 @@ ul, li {
 .status-strip,
 .sdk-keymap,
 #photoSection > div {
-  padding: 0.72rem 0.78rem;
+  padding: 0.62rem 0.68rem;
   border-radius: var(--radius-md);
 }
 
 .choice-chip-grid,
 .sdk-choice-grid {
   display: grid !important;
-  grid-template-columns: repeat(auto-fit, minmax(168px, 1fr));
-  gap: 0.5rem;
+  grid-template-columns: repeat(auto-fit, minmax(138px, 1fr));
+  gap: 0.42rem;
   width: 100%;
 }
 
@@ -608,8 +608,8 @@ ul, li {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  min-height: 42px;
-  padding: 0.54rem 0.6rem;
+  min-height: 36px;
+  padding: 0.42rem 0.5rem;
   border-radius: var(--radius-sm);
   background: rgba(255, 255, 255, 0.56);
   box-shadow: none;
@@ -807,7 +807,7 @@ ul, li {
 }
 
 .sdk-compact-panel {
-  max-width: 700px;
+  max-width: 620px;
   margin: 0 auto 1rem;
 }
 
@@ -1092,9 +1092,9 @@ canvas {
 
 .steps-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 240px));
-  gap: 10px;
-  margin-top: 0.78rem;
+  grid-template-columns: repeat(auto-fit, minmax(148px, 184px));
+  gap: 8px;
+  margin-top: 0.48rem;
   justify-content: start;
 }
 
@@ -1104,9 +1104,10 @@ canvas {
 
 .mini-card {
   flex-direction: column;
-  gap: 0.36rem;
-  padding: 0.68rem 0.74rem;
+  gap: 0.16rem;
+  padding: 0.42rem 0.48rem;
   text-align: left;
+  border-radius: 12px;
 }
 
 .mini-card h3,
@@ -1115,17 +1116,29 @@ canvas {
   margin: 0;
 }
 
+.mini-card h3 {
+  font-size: 0.72em;
+  line-height: 1.14;
+}
+
+.mini-card p,
+.mini-card ul {
+  font-size: 0.57em;
+  line-height: 1.26;
+  color: var(--text-color-muted);
+}
+
 .mini-card-note {
   min-height: 100%;
 }
 
 .step-index {
   width: fit-content;
-  min-width: 42px;
-  padding: 0.18rem 0.42rem;
+  min-width: 30px;
+  padding: 0.1rem 0.26rem;
   background: rgba(184, 87, 63, 0.1);
   color: var(--fg-color);
-  font-size: 0.62em;
+  font-size: 0.5em;
   font-weight: 700;
 }
 
@@ -1142,7 +1155,7 @@ canvas {
 }
 
 .nav-grid-large {
-  grid-template-columns: repeat(auto-fit, minmax(220px, 300px));
+  grid-template-columns: repeat(auto-fit, minmax(190px, 250px));
 }
 
 .nav-card-featured {
@@ -1164,7 +1177,7 @@ canvas {
   gap: 0.8rem;
   align-items: center;
   justify-content: flex-start;
-  padding: 0.72rem 0.78rem;
+  padding: 0.62rem 0.68rem;
 }
 
 .toggle-line {
@@ -1185,7 +1198,7 @@ canvas {
 .form-grid {
   display: grid !important;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0.75rem;
+  gap: 0.62rem;
   width: 100%;
 }
 
@@ -1245,7 +1258,7 @@ canvas {
 
 
 .sdk-nav-grid {
-  grid-template-columns: repeat(auto-fit, minmax(210px, 280px));
+  grid-template-columns: repeat(auto-fit, minmax(190px, 240px));
 }
 
 #picker {
