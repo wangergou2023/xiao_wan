@@ -9,6 +9,13 @@ import (
 	"golang.org/x/text/unicode/norm"
 )
 
+var (
+	legacyCommandBlockRE      = regexp.MustCompile(`\{\{[^{}]*\}\}`)
+	legacyCommandTailRE       = regexp.MustCompile(`(?i)\b[a-z][a-z0-9_]*(?:\|\|[a-z0-9_]+)\}\}`)
+	legacyCommandOrphanOpenRE = regexp.MustCompile(`\{\{[a-zA-Z][a-zA-Z0-9_]*(?:\|\|[a-zA-Z0-9_]+)?`)
+	legacyCommandBareRE       = regexp.MustCompile(`(?i)\b(?:playAnimationWI|playAnimation|getImage|headUp|headDown|liftUp|liftDown|nod|lookDownShy|raiseArmsHappy|goCharge|takePhoto|celebrateFireworks|backAway|newVoiceRequest)\|\|[a-z0-9_]+`)
+)
+
 // isMn 用于过滤不适合机器人播报的组合字符，同时保留越南语必要音调。
 func isMn(r rune) bool {
 	keepMarks := []rune{'\u0300', '\u0301', '\u0303', '\u0309', '\u0323', '\u0302', '\u031B', '\u0306'}
@@ -23,25 +30,16 @@ func isMn(r rune) bool {
 	return false
 }
 
-// stripLegacyCommandMarkup removes deprecated {{...}} command syntax entirely.
+// stripLegacyCommandMarkup removes deprecated legacy action markup entirely.
 func stripLegacyCommandMarkup(input string) string {
-	if !strings.Contains(input, "{{") {
+	if input == "" {
 		return input
 	}
-	var b strings.Builder
-	for i := 0; i < len(input); {
-		if strings.HasPrefix(input[i:], "{{") {
-			end := strings.Index(input[i+2:], "}}")
-			if end < 0 {
-				break
-			}
-			i += 2 + end + 2
-			continue
-		}
-		b.WriteByte(input[i])
-		i++
-	}
-	return b.String()
+	cleaned := legacyCommandBlockRE.ReplaceAllString(input, "")
+	cleaned = legacyCommandTailRE.ReplaceAllString(cleaned, "")
+	cleaned = legacyCommandOrphanOpenRE.ReplaceAllString(cleaned, "")
+	cleaned = legacyCommandBareRE.ReplaceAllString(cleaned, "")
+	return cleaned
 }
 
 // removeSpecialCharacters 把 LLM 输出规整成更适合 TTS 的纯文本。

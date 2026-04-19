@@ -121,23 +121,6 @@ type RobotAction struct {
 	Parameter string
 }
 
-type LLMCommand struct {
-	Command         string
-	Description     string
-	ParamChoices    string
-	Action          int
-	SupportedModels []string
-}
-
-func ModelIsSupported(cmd LLMCommand, model string) bool {
-	for _, str := range cmd.SupportedModels {
-		if str == "all" || str == model {
-			return true
-		}
-	}
-	return false
-}
-
 func CreatePrompt(origPrompt string, model string, isKG bool) string {
 	sections := []string{origPrompt}
 
@@ -182,10 +165,10 @@ func buildRobotCommandPrompt(model string, isKG bool) string {
 	var b strings.Builder
 	b.WriteString("Robot runtime tools and expression rules:\n")
 	b.WriteString("- You are running on a real Anki Vector robot.\n")
-	b.WriteString("- Legacy {{...}} command markup is disabled. Never output brace commands.\n")
 	b.WriteString("- If you include an emoji, I will make you start over.\n")
 	b.WriteString("- Prefer native tools when they can complete the real task directly.\n")
 	b.WriteString("- Prefer direct answers for normal chat. Do not call tools just to sound capable.\n")
+	b.WriteString("- Do not output fake action syntax, placeholders, or tool-like text in the reply.\n")
 	b.WriteString("- For physical task requests, the real task matters more than emotional gestures.\n")
 	b.WriteString("- Use native tools for charging, taking photos, fireworks, backing away, file operations, reminders, time, weather, and system work when needed.\n")
 	b.WriteString("- Native tools also exist for current time, weather, and scheduled reminder jobs.\n")

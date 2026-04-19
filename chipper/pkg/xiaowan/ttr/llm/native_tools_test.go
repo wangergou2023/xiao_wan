@@ -50,8 +50,12 @@ func TestCreateAIReqAddsNativeTools(t *testing.T) {
 	if len(req.Tools) != len(nativeToolDefinitions) {
 		t.Fatalf("expected %d native tools, got %d", len(nativeToolDefinitions), len(req.Tools))
 	}
-	if req.ToolChoice != "auto" {
-		t.Fatalf("expected tool_choice auto, got %#v", req.ToolChoice)
+	tc, ok := req.ToolChoice.(openai.ToolChoice)
+	if !ok {
+		t.Fatalf("expected forced tool choice for direct charge request, got %#v", req.ToolChoice)
+	}
+	if tc.Function.Name != "go_charge" {
+		t.Fatalf("expected go_charge tool choice, got %#v", tc)
 	}
 	if req.ParallelToolCalls != false {
 		t.Fatalf("expected parallel tool calls disabled, got %#v", req.ParallelToolCalls)

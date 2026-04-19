@@ -26,7 +26,7 @@ func TestCreatePromptBuildsLayeredRuntimeSections(t *testing.T) {
 		"Long-term memory lives in `workspace/memory/MEMORY.md`.",
 		"workspace/state/todo.json",
 		"Conversation mode rules:",
-		"Legacy {{...}} command markup is disabled.",
+		"Do not output fake action syntax, placeholders, or tool-like text in the reply.",
 	}
 	for _, want := range checks {
 		if !strings.Contains(prompt, want) {

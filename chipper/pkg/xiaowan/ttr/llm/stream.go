@@ -41,6 +41,13 @@ func CreateAIReq(transcribedText, esn string, gpt3tryagain, isKG bool) openai.Ch
 	smsg.Content = createPromptWithMemory(smsg.Content, model, esn, isKG)
 
 	nChat = append(nChat, smsg)
+	forcedToolName := detectForcedNativeTool(transcribedText)
+	if forcedToolPrompt := strings.TrimSpace(buildForcedToolSystemPrompt(forcedToolName)); forcedToolPrompt != "" {
+		nChat = append(nChat, openai.ChatCompletionMessage{
+			Role:    openai.ChatMessageRoleSystem,
+			Content: forcedToolPrompt,
+		})
+	}
 	if todoPrompt := strings.TrimSpace(buildAutoTodoSystemPrompt(transcribedText)); todoPrompt != "" {
 		nChat = append(nChat, openai.ChatCompletionMessage{
 			Role:    openai.ChatMessageRoleSystem,
@@ -69,6 +76,9 @@ func CreateAIReq(transcribedText, esn string, gpt3tryagain, isKG bool) openai.Ch
 	}
 	if vars.APIConfig.Knowledge.CommandsEnable {
 		aireq = withNativeTools(aireq)
+		if forcedToolName != "" {
+			aireq = forceNativeToolChoice(aireq, forcedToolName)
+		}
 	}
 	return aireq
 }
