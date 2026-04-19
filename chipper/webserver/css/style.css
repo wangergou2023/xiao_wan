@@ -341,7 +341,8 @@ ul, li {
   grid-template-columns: minmax(0, 1.4fr) minmax(240px, 0.78fr);
   gap: 10px;
   align-items: stretch;
-  margin: 0.45rem auto 0.9rem;
+  margin: 0.28rem auto 0.62rem;
+  max-width: 860px;
 }
 
 .hero-copy,
@@ -380,13 +381,13 @@ ul, li {
   display: inline-flex;
   align-items: center;
   gap: 0.35rem;
-  margin: 0 0 0.45rem;
-  padding: 0.16rem 0.46rem;
+  margin: 0 0 0.34rem;
+  padding: 0.12rem 0.38rem;
   border-radius: 999px;
   border: 1px solid rgba(184, 87, 63, 0.2);
   background: rgba(184, 87, 63, 0.08);
   color: var(--fg-color);
-  font-size: 0.54em;
+  font-size: 0.5em;
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
@@ -394,7 +395,7 @@ ul, li {
 .hero-status-label,
 .section-kicker {
   color: var(--accent-cool);
-  font-size: 0.58em;
+  font-size: 0.54em;
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
@@ -410,6 +411,8 @@ ul, li {
 .hero-subtitle {
   max-width: 24em;
   margin: 0;
+  font-size: 0.76em;
+  line-height: 1.38;
 }
 
 .setup-status-card,
@@ -440,16 +443,23 @@ ul, li {
 }
 
 .home-section {
-  margin: 0 auto 0.85rem;
+  margin: 0 auto 0.58rem;
+  max-width: 860px;
 }
 
 .section-heading {
-  margin-bottom: 0.55rem;
+  margin-bottom: 0.38rem;
   text-align: left;
 }
 
 .section-heading h2 {
-  margin-bottom: 0.16rem;
+  margin-bottom: 0.08rem;
+  font-size: 1.02rem;
+}
+
+.section-heading p {
+  font-size: 0.7em;
+  line-height: 1.34;
 }
 
 .main-nav-parent {
@@ -1060,6 +1070,9 @@ canvas {
 
 .story-card {
   padding: 1rem 1.06rem;
+  width: 100%;
+  max-width: 760px;
+  margin: 0 auto;
 }
 
 .story-card,
@@ -1082,8 +1095,11 @@ canvas {
 
 .editorial-grid {
   display: grid;
-  grid-template-columns: minmax(0, 1.08fr) minmax(280px, 0.92fr);
-  gap: 10px;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 320px));
+  gap: 8px;
+  width: 100%;
+  max-width: 760px;
+  justify-content: start;
 }
 
 .align-start-grid {
@@ -1219,6 +1235,9 @@ canvas {
 
 .section-panel-wide {
   width: 100%;
+  max-width: 860px;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 .dual-option-list {
