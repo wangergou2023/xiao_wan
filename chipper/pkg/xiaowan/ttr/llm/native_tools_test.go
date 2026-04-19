@@ -310,6 +310,73 @@ func TestEditWorkspaceMemoryAfterReadSucceeds(t *testing.T) {
 	}
 }
 
+func TestEditWorkspaceUserAfterRecentReadInPriorTurnSucceeds(t *testing.T) {
+	tmp := t.TempDir()
+	oldWD, err := os.Getwd()
+	if err != nil {
+		t.Fatal(err)
+	}
+	oldWirepodHome := os.Getenv("WIREPOD_HOME")
+	if err := os.Chdir(tmp); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Setenv("WIREPOD_HOME", tmp); err != nil {
+		t.Fatal(err)
+	}
+	defer func() {
+		_ = os.Chdir(oldWD)
+		_ = os.Setenv("WIREPOD_HOME", oldWirepodHome)
+	}()
+
+	if err := os.MkdirAll(filepath.Join(tmp, "workspace"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	userPath := filepath.Join(tmp, "workspace", "USER.md")
+	original := "- **Name:**\n- **What to call them:**\n- **Pronouns:** _(optional)_\n- **Timezone:**\n- **Notes:**\n"
+	if err := os.WriteFile(userPath, []byte(original), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	readTurn := []openai.ToolCall{{
+		ID:   "read_user_1",
+		Type: openai.ToolTypeFunction,
+		Function: openai.FunctionCall{
+			Name:      "read_file",
+			Arguments: `{"path":"workspace/USER.md","mode":"lines","start_line":1,"max_lines":40}`,
+		},
+	}}
+	_, results, _ := executeNativeToolCalls(readTurn, nativeToolContext{ESN: "0dd1c497"})
+	if len(results) != 1 || !strings.Contains(results[0].Content, `"status":"ok"`) {
+		t.Fatalf("expected prior read to succeed, got %#v", results)
+	}
+
+	editTurn := []openai.ToolCall{{
+		ID:   "edit_user_1",
+		Type: openai.ToolTypeFunction,
+		Function: openai.FunctionCall{
+			Name:      "edit_file",
+			Arguments: `{"path":"workspace/USER.md","old_text":"- **Name:**\n- **What to call them:**\n- **Pronouns:** _(optional)_\n- **Timezone:**\n- **Notes:**\n","new_text":"- **Name:** 王大胆\n- **What to call them:** 主人\n- **Pronouns:** _(optional)_\n- **Timezone:**\n- **Notes:** 小丸的主人，把小丸当作桌面宠物\n"}`,
+		},
+	}}
+	_, results, needFollowUp := executeNativeToolCalls(editTurn, nativeToolContext{ESN: "0dd1c497"})
+	if !needFollowUp {
+		t.Fatalf("expected edit tool to request follow-up")
+	}
+	if len(results) != 1 {
+		t.Fatalf("expected 1 tool result, got %d", len(results))
+	}
+	if strings.Contains(results[0].Content, "call read_file on the same path first") {
+		t.Fatalf("expected prior-turn read to satisfy guard, got %s", results[0].Content)
+	}
+	data, err := os.ReadFile(userPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(string(data), "王大胆") {
+		t.Fatalf("expected USER.md to be updated, got %q", string(data))
+	}
+}
+
 func TestWriteFileRequiresOverwriteForExistingFile(t *testing.T) {
 	tmp := t.TempDir()
 	oldWD, err := os.Getwd()

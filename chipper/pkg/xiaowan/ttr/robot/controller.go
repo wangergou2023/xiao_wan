@@ -181,7 +181,70 @@ func TakePhoto(robot *vector.Vector) error {
 
 // CelebrateFireworks 播放一个固定的烟花庆祝动画。
 func CelebrateFireworks(robot *vector.Vector) error {
-	return PlayAnimationWithSDK(robot, "anim_holiday_hny_fireworks_01", 1, false, false, false)
+	if robot == nil {
+		return errors.New("robot is nil")
+	}
+	logger.Println("CelebrateFireworks: requesting behavior control for " + robot.Cfg.SerialNo)
+	ctx, cancel := context.WithTimeout(context.Background(), 8*time.Second)
+	defer cancel()
+
+	r, err := robot.Conn.BehaviorControl(ctx)
+	if err != nil {
+		logger.Println("CelebrateFireworks: behavior control open failed for " + robot.Cfg.SerialNo + ": " + err.Error())
+		return err
+	}
+
+	if err := r.Send(&vectorpb.BehaviorControlRequest{
+		RequestType: &vectorpb.BehaviorControlRequest_ControlRequest{
+			ControlRequest: &vectorpb.ControlRequest{
+				Priority: vectorpb.ControlRequest_OVERRIDE_BEHAVIORS,
+			},
+		},
+	}); err != nil {
+		logger.Println("CelebrateFireworks: behavior control request failed for " + robot.Cfg.SerialNo + ": " + err.Error())
+		return err
+	}
+
+	granted := false
+	for !granted {
+		ctrlresp, err := r.Recv()
+		if err != nil {
+			logger.Println("CelebrateFireworks: behavior control recv failed for " + robot.Cfg.SerialNo + ": " + err.Error())
+			return err
+		}
+		if ctrlresp.GetControlGrantedResponse() != nil {
+			granted = true
+		}
+	}
+
+	logger.Println("CelebrateFireworks: control granted for " + robot.Cfg.SerialNo + ", playing animation")
+	_, err = robot.Conn.PlayAnimation(ctx, &vectorpb.PlayAnimationRequest{
+		Animation:       &vectorpb.Animation{Name: "anim_holiday_hny_fireworks_01"},
+		Loops:           1,
+		IgnoreBodyTrack: false,
+		IgnoreHeadTrack: false,
+		IgnoreLiftTrack: false,
+	})
+	if err != nil {
+		logger.Println("CelebrateFireworks: play animation failed for " + robot.Cfg.SerialNo + ": " + err.Error())
+	} else {
+		logger.Println("CelebrateFireworks: animation finished for " + robot.Cfg.SerialNo)
+	}
+
+	releaseErr := r.Send(&vectorpb.BehaviorControlRequest{
+		RequestType: &vectorpb.BehaviorControlRequest_ControlRelease{
+			ControlRelease: &vectorpb.ControlRelease{},
+		},
+	})
+	if releaseErr != nil {
+		logger.Println("CelebrateFireworks: control release failed for " + robot.Cfg.SerialNo + ": " + releaseErr.Error())
+		if err == nil {
+			err = releaseErr
+		}
+	} else {
+		logger.Println("CelebrateFireworks: control released for " + robot.Cfg.SerialNo)
+	}
+	return err
 }
 
 // BackAway 让机器人短暂后退一下，适合“离远点/往后退一点”这种请求。

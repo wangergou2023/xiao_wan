@@ -5,6 +5,8 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
+	"time"
 
 	"github.com/sashabaranov/go-openai"
 	"github.com/wangergou2023/xiao_wan/chipper/pkg/logger"
@@ -21,6 +23,18 @@ type nativeToolExecution struct {
 	ResultContent string
 	NeedsFollowUp bool
 }
+
+type recentWorkspaceRead struct {
+	path   string
+	readAt time.Time
+}
+
+var (
+	recentWorkspaceReadsMu sync.Mutex
+	recentWorkspaceReads   = map[string]map[string]time.Time{}
+)
+
+const recentWorkspaceReadTTL = 15 * time.Minute
 
 type nativeToolDefinition struct {
 	Name        string
@@ -460,7 +474,7 @@ func executeNativeToolCalls(toolCalls []openai.ToolCall, ctx nativeToolContext) 
 			}
 			continue
 		}
-		if guardResult, guarded := guardWorkspaceDocMutation(call, readPaths); guarded {
+		if guardResult, guarded := guardWorkspaceDocMutation(call, ctx, readPaths); guarded {
 			needFollowUp = needFollowUp || guardResult.NeedsFollowUp
 			if call.ID != "" {
 				content := strings.TrimSpace(guardResult.ResultContent)
@@ -480,7 +494,7 @@ func executeNativeToolCalls(toolCalls []openai.ToolCall, ctx nativeToolContext) 
 		result := def.Execute(call, ctx)
 		deferred = append(deferred, result.Deferred...)
 		needFollowUp = needFollowUp || result.NeedsFollowUp
-		recordReadPath(call, readPaths)
+		recordReadPath(call, ctx, readPaths)
 		if call.ID != "" {
 			content := strings.TrimSpace(result.ResultContent)
 			if content == "" {
@@ -498,7 +512,7 @@ func executeNativeToolCalls(toolCalls []openai.ToolCall, ctx nativeToolContext) 
 	return deferred, toolResults, needFollowUp
 }
 
-func guardWorkspaceDocMutation(call openai.ToolCall, readPaths map[string]struct{}) (nativeToolExecution, bool) {
+func guardWorkspaceDocMutation(call openai.ToolCall, ctx nativeToolContext, readPaths map[string]struct{}) (nativeToolExecution, bool) {
 	name := canonicalNativeToolName(strings.TrimSpace(call.Function.Name))
 	switch name {
 	case "edit_file":
@@ -514,7 +528,7 @@ func guardWorkspaceDocMutation(call openai.ToolCall, readPaths map[string]struct
 			return toolErrorResult(err), true
 		}
 		normalized = strings.ToLower(normalized)
-		if _, ok := readPaths[normalized]; !ok {
+		if !hasRecentWorkspaceRead(ctx.ESN, normalized, readPaths) {
 			return toolErrorResultString("before editing a key workspace document, call read_file on the same path first"), true
 		}
 	case "write_file":
@@ -530,7 +544,7 @@ func guardWorkspaceDocMutation(call openai.ToolCall, readPaths map[string]struct
 			return toolErrorResult(err), true
 		}
 		normalized = strings.ToLower(normalized)
-		if _, ok := readPaths[normalized]; ok {
+		if hasRecentWorkspaceRead(ctx.ESN, normalized, readPaths) {
 			return nativeToolExecution{}, false
 		}
 		if existing, _ := workspaceDocExists(normalized); existing {
@@ -540,7 +554,7 @@ func guardWorkspaceDocMutation(call openai.ToolCall, readPaths map[string]struct
 	return nativeToolExecution{}, false
 }
 
-func recordReadPath(call openai.ToolCall, readPaths map[string]struct{}) {
+func recordReadPath(call openai.ToolCall, ctx nativeToolContext, readPaths map[string]struct{}) {
 	if canonicalNativeToolName(strings.TrimSpace(call.Function.Name)) != "read_file" {
 		return
 	}
@@ -555,7 +569,63 @@ func recordReadPath(call openai.ToolCall, readPaths map[string]struct{}) {
 	if err != nil {
 		return
 	}
-	readPaths[strings.ToLower(normalized)] = struct{}{}
+	normalized = strings.ToLower(normalized)
+	readPaths[normalized] = struct{}{}
+	rememberWorkspaceRead(ctx.ESN, normalized)
+}
+
+func rememberWorkspaceRead(esn, normalized string) {
+	esn = strings.TrimSpace(esn)
+	normalized = strings.TrimSpace(strings.ToLower(normalized))
+	if esn == "" || normalized == "" {
+		return
+	}
+	recentWorkspaceReadsMu.Lock()
+	defer recentWorkspaceReadsMu.Unlock()
+	pruneRecentWorkspaceReadsLocked()
+	byPath, ok := recentWorkspaceReads[esn]
+	if !ok {
+		byPath = map[string]time.Time{}
+		recentWorkspaceReads[esn] = byPath
+	}
+	byPath[normalized] = time.Now()
+}
+
+func hasRecentWorkspaceRead(esn, normalized string, readPaths map[string]struct{}) bool {
+	normalized = strings.TrimSpace(strings.ToLower(normalized))
+	if normalized == "" {
+		return false
+	}
+	if _, ok := readPaths[normalized]; ok {
+		return true
+	}
+	esn = strings.TrimSpace(esn)
+	if esn == "" {
+		return false
+	}
+	recentWorkspaceReadsMu.Lock()
+	defer recentWorkspaceReadsMu.Unlock()
+	pruneRecentWorkspaceReadsLocked()
+	byPath, ok := recentWorkspaceReads[esn]
+	if !ok {
+		return false
+	}
+	_, ok = byPath[normalized]
+	return ok
+}
+
+func pruneRecentWorkspaceReadsLocked() {
+	cutoff := time.Now().Add(-recentWorkspaceReadTTL)
+	for esn, byPath := range recentWorkspaceReads {
+		for path, readAt := range byPath {
+			if readAt.Before(cutoff) {
+				delete(byPath, path)
+			}
+		}
+		if len(byPath) == 0 {
+			delete(recentWorkspaceReads, esn)
+		}
+	}
 }
 
 func canonicalNativeToolName(name string) string {
