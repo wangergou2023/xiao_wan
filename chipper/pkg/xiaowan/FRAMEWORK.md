@@ -1,146 +1,146 @@
-# XiaoWan Framework
+# XiaoWan 框架说明
 
-This document describes the current XiaoWan code framework as it exists in this repo today.
+本文档描述当前仓库里的 XiaoWan 代码框架。
 
-It is meant to answer three practical questions:
+它主要回答三个实际问题：
 
-1. Where the runtime starts
-2. How a voice request flows through the system
-3. Which package owns memory, workspace, tools, planning, and robot control
+1. 运行时从哪里启动
+2. 一次语音请求如何流经整个系统
+3. 哪个包负责记忆、工作区、工具、规划和机器人控制
 
-## 1. Top-Level Runtime
+## 1. 顶层运行时
 
-The runtime is still built on top of the wire-pod / chipper server stack.
+整个运行时仍然构建在 wire-pod / chipper 服务器栈之上。
 
-- Server bootstrap: `chipper/pkg/initwirepod/startserver.go`
-- Main service layers started there:
-  - config web server
-  - sdk app web server
-  - chipper gRPC + REST service
-  - STT request processor
-  - cron scheduler
-  - mDNS / robot discovery
+- 服务启动入口：`chipper/pkg/initwirepod/startserver.go`
+- 那里启动的主要服务层：
+  - 配置 web 服务器
+  - sdk app web 服务器
+  - chipper gRPC + REST 服务
+  - STT 请求处理器
+  - cron 定时器
+  - mDNS / 机器人发现
 
-The important entry sequence is:
+重要启动顺序如下：
 
 - `BeginWirepodSpecific(...)`
-  - initializes logging
-  - loads config via `vars.Init()`
-  - initializes cron via `cronpkg.Init()`
-  - creates the preqs voice processor
-  - starts the sdk web server
+  - 初始化日志
+  - 通过 `vars.Init()` 加载配置
+  - 通过 `cronpkg.Init()` 初始化 cron
+  - 创建 preqs 语音处理器
+  - 启动 sdk web 服务器
 - `StartChipper()`
-  - loads TLS certs
-  - starts the chipper gRPC / HTTP listeners
-  - exposes the runtime to the robot and setup clients
+  - 加载 TLS 证书
+  - 启动 chipper 的 gRPC / HTTP 监听器
+  - 把运行时暴露给机器人和初始化客户端
 
-## 2. Package Layout
+## 2. 包结构
 
-The current XiaoWan-specific logic lives mainly under `chipper/pkg/xiaowan`.
+当前 XiaoWan 相关逻辑主要在 `chipper/pkg/xiaowan` 下面。
 
-### Core packages
+### 核心包
 
 - `chipper/pkg/xiaowan/preqs`
-  - earliest request-processing layer
-  - receives speech/STT-side requests and passes them downstream
+  - 最早期的请求处理层
+  - 接收语音 / STT 侧请求并继续向下传递
 - `chipper/pkg/xiaowan/ttr`
   - "text to response"
-  - owns intent dispatch, LLM orchestration, robot execution
+  - 负责 intent 分发、LLM 编排、机器人执行
 - `chipper/pkg/xiaowan/stt`
-  - STT engine integration
+  - STT 引擎集成
 - `chipper/pkg/xiaowan/speechrequest`
-  - request shaping and audio preparation helpers
+  - 请求整形与音频预处理辅助
 
-### State and context packages
+### 状态与上下文包
 
 - `chipper/pkg/xiaowan/workspace`
-  - workspace file discovery and prompt context assembly
-  - TODO state persistence
+  - 工作区文件发现与 prompt 上下文组装
+  - TODO 状态持久化
 - `chipper/pkg/xiaowan/memory`
-  - long-term memory document management
+  - 长期记忆文档管理
 - `chipper/pkg/xiaowan/vision`
-  - live face context observation and prompt injection
+  - 实时人脸上下文观察与 prompt 注入
 - `chipper/pkg/xiaowan/skills`
-  - workspace skill loading
+  - 工作区 skill 加载
 - `chipper/pkg/xiaowan/cron`
-  - scheduled reminder/job execution
+  - 定时提醒 / 任务执行
 
-### Response / robot execution packages
+### 响应 / 机器人执行包
 
 - `chipper/pkg/xiaowan/ttr/llm`
-  - builds prompts
-  - creates chat requests
-  - manages native tool calls
-  - streams LLM output into speech
+  - 构建 prompt
+  - 创建 chat 请求
+  - 管理原生 tool call
+  - 把 LLM 流式输出转成播报
 - `chipper/pkg/xiaowan/ttr/robot`
-  - direct robot-side behavior control
-  - TTS, motion, animation, charger, photo, fireworks, interrupt handling
+  - 机器人侧直接行为控制
+  - TTS、动作、动画、回充、拍照、烟花、中断处理
 - `chipper/pkg/xiaowan/ttr/intent`
-  - compatibility intent handling and parameter parsing
+  - 兼容旧 intent 的处理与参数解析
 
-### Lower-level robot access
+### 更底层的机器人访问
 
 - `chipper/pkg/vector`
-  - Vector connection/session wrapper
+  - Vector 连接 / 会话封装
 - `chipper/pkg/sdk-wrapper`
-  - thin wrappers around SDK capabilities: motors, camera, faces, settings, voice, etc.
+  - 对 SDK 能力做一层薄封装：电机、相机、人脸、设置、语音等
 
-## 3. Voice Request Flow
+## 3. 语音请求流
 
-Current high-level flow:
+当前高层流程：
 
-1. Audio arrives
-2. STT converts it to text
-3. `preqs` passes text into the response layer
-4. `ttr/llm` builds the request and streams the answer
-5. native tools may run during the turn
-6. text is spoken through robot TTS
-7. deferred robot actions run if needed
-8. remembered chat / todo / workspace files are updated
+1. 音频到达
+2. STT 转成文本
+3. `preqs` 把文本传给响应层
+4. `ttr/llm` 构建请求并流式返回答案
+5. 当前轮次中可能会执行原生工具
+6. 文本通过机器人 TTS 说出来
+7. 如果需要，延迟机器人动作会在后面执行
+8. remembered chat / todo / workspace 文件被更新
 
-### Important entry point
+### 重要入口
 
-- Compatibility facade: `chipper/pkg/xiaowan/ttr/facade.go`
-- Main LLM response entry: `chipper/pkg/xiaowan/ttr/llm/stream.go`
+- 兼容门面：`chipper/pkg/xiaowan/ttr/facade.go`
+- 主 LLM 响应入口：`chipper/pkg/xiaowan/ttr/llm/stream.go`
   - `StreamingKGSim(...)`
 
-### Request creation
+### 请求创建
 
-`CreateAIReq(...)` in `chipper/pkg/xiaowan/ttr/llm/stream.go` assembles:
+`chipper/pkg/xiaowan/ttr/llm/stream.go` 里的 `CreateAIReq(...)` 会组装：
 
-- base system prompt
-- workspace prompt context
-- current face context
-- remembered chat history
-- optional direct-action forcing prompt
-- optional auto-todo planning prompt
-- current user message
+- 基础系统提示词
+- 工作区 prompt 上下文
+- 当前人脸上下文
+- remembered chat 历史
+- 可选的直接动作强制 prompt
+- 可选的自动 todo 规划 prompt
+- 当前用户消息
 
-Then it enables native function tools when command support is on.
+然后在开启命令支持时启用原生 function tool。
 
-## 4. Prompt Architecture
+## 4. Prompt 架构
 
-Prompt building is centered in:
+Prompt 构建核心在：
 
 - `chipper/pkg/xiaowan/ttr/llm/commands.go`
 
-Current prompt layers:
+当前 prompt 层次：
 
-- base assistant/system prompt
-- runtime voice rules
-- workspace document context
-- skill catalog / active skills
-- robot runtime rules
-- long-term memory context
-- live face context
+- 基础 assistant / system prompt
+- 运行时语音规则
+- 工作区文档上下文
+- skill 目录 / 激活 skill
+- 机器人运行时规则
+- 长期记忆上下文
+- 实时人脸上下文
 
-### Workspace prompt context
+### 工作区 prompt 上下文
 
-Owned by:
+由这里负责：
 
 - `chipper/pkg/xiaowan/workspace/loader.go`
 
-It reads, in priority order:
+它按优先级读取：
 
 - `workspace/AGENTS.md`
 - `workspace/IDENTITY.md`
@@ -150,82 +150,82 @@ It reads, in priority order:
 - `workspace/memory/MEMORY.md`
 - `workspace/TODO.md`
 
-### Long-term memory
+### 长期记忆
 
-Owned by:
+由这里负责：
 
 - `chipper/pkg/xiaowan/memory/profile.go`
 
-Important detail:
+重要细节：
 
-- durable memory now uses `workspace/memory/MEMORY.md` as the source of truth
-- `memory.BuildPromptContext(...)` currently returns empty because the memory content is already injected through workspace docs
+- 持久化记忆现在以 `workspace/memory/MEMORY.md` 为唯一事实来源
+- `memory.BuildPromptContext(...)` 当前返回空，因为记忆内容已经通过 workspace 文档注入到 prompt 里
 
-### Face context
+### 人脸上下文
 
-Owned by:
+由这里负责：
 
 - `chipper/pkg/xiaowan/vision/faces.go`
 
-Behavior:
+行为：
 
-- starts one watcher per robot ESN
-- listens for face-observation events
-- keeps the most recent observed person in memory
-- injects a short "who is in front of me" prompt for the LLM
+- 每个机器人 ESN 启动一个 watcher
+- 监听人脸观察事件
+- 在内存里保留最近一次观察到的人
+- 给 LLM 注入一个很短的“我面前是谁”上下文
 
-This replaces the old "auto greet on face detect" approach with contextual identity awareness during normal conversation.
+这取代了旧的“检测到人脸就主动打招呼”，改成在正常对话里具备身份感知能力。
 
-## 5. Native Tool Framework
+## 5. 原生工具框架
 
-The current framework is native-tool-first.
+当前框架是 native-tool-first。
 
-Main files:
+主要文件：
 
-- tool registry: `chipper/pkg/xiaowan/ttr/llm/native_tools.go`
-- tool execution logic: `chipper/pkg/xiaowan/ttr/llm/tool_runtime.go`
+- 工具注册表：`chipper/pkg/xiaowan/ttr/llm/native_tools.go`
+- 工具执行逻辑：`chipper/pkg/xiaowan/ttr/llm/tool_runtime.go`
 
-### Current tool categories
+### 当前工具分类
 
-- environment:
+- 环境：
   - `get_current_time`
   - `weather`
-- scheduler:
+- 定时调度：
   - `cron_add`
   - `cron_list`
   - `cron_remove`
-- planning:
+- 规划：
   - `todo_read`
   - `todo_write`
   - `todo_update`
   - `todo_clear`
-- direct robot actions:
+- 机器人直接动作：
   - `go_charge`
   - `take_photo`
   - `celebrate_fireworks`
   - `back_away`
-- workspace / file / shell tools:
+- 工作区 / 文件 / shell 工具：
   - `read_file`
   - `write_file`
   - `edit_file`
   - `list_dir`
   - `system_cmd`
 
-### Tool execution model
+### 工具执行模型
 
-`executeNativeToolCalls(...)` in `native_tools.go`:
+`native_tools.go` 里的 `executeNativeToolCalls(...)` 会：
 
-- resolves tool names and aliases
-- validates workspace document guards
-- executes tools
-- collects tool results as assistant-visible tool messages
-- returns deferred robot actions when a real action should happen after speech
+- 解析工具名和别名
+- 校验工作区文档保护规则
+- 执行工具
+- 收集工具结果，作为 assistant 可见的 tool message
+- 如果真实动作需要在播报后执行，则返回延迟机器人动作
 
-### Workspace mutation guards
+### 工作区修改保护
 
-Key workspace docs are protected.
+关键工作区文档是受保护的。
 
-For some files, the model must read first before editing:
+某些文件必须先读后改：
 
 - `workspace/AGENTS.md`
 - `workspace/IDENTITY.md`
@@ -233,252 +233,88 @@ For some files, the model must read first before editing:
 - `workspace/USER.md`
 - `workspace/memory/MEMORY.md`
 
-That logic lives in:
+这部分逻辑在：
 
-- `guardWorkspaceDocMutation(...)` in `native_tools.go`
+- `native_tools.go` 里的 `guardWorkspaceDocMutation(...)`
 
-## 6. Todo / Planning Layer
+## 6. Todo / 规划层
 
-This is the new planning layer that gives the robot a lightweight "working memory" for multi-step tasks.
+这是新的规划层，给机器人一个轻量“工作记忆”，用于多步骤任务。
 
-Main file:
+主要文件：
 
 - `chipper/pkg/xiaowan/workspace/todo.go`
 
-Files on disk:
+磁盘文件：
 
-- machine-readable: `workspace/state/todo.json`
-- human-readable: `workspace/TODO.md`
+- 机器可读：`workspace/state/todo.json`
+- 人类可读：`workspace/TODO.md`
 
-### State model
+### 状态模型
 
-`TodoState` contains:
+`TodoState` 包含：
 
 - `active_plan`
 - `recent_plans`
 - `updated_at`
 
-Each plan contains:
+每个 plan 包含：
 
 - `goal`
 - `status`
-- ordered `steps`
-- timestamps
+- 有序 `steps`
+- 时间戳
 
-### Behavior
+### 行为
 
-- multi-step requests can create a plan with `todo_write`
-- progress is recorded with `todo_update`
-- when all steps finish, the active plan is auto-archived
-- `todo_clear` also archives before clearing
-- archived plans are kept in `recent_plans`
+- 多步骤请求可以通过 `todo_write` 创建计划
+- 进度通过 `todo_update` 记录
+- 当所有步骤完成时，active plan 会自动归档
+- `todo_clear` 在清空前也会先归档
+- 归档计划会保留在 `recent_plans`
 
-### Auto-planning heuristics
+### 自动规划启发式
 
-Owned by:
+由这里负责：
 
 - `chipper/pkg/xiaowan/ttr/llm/todo_planning.go`
 
-It adds planning guidance when:
+它会在这些情况下给 LLM 增加规划提示：
 
-- the user asks for multi-step work
-- there is already an active plan and the user says "continue"
+- 用户请求的是多步骤工作
+- 已经存在 active plan，且用户说“继续”
 
-This is guidance-driven, not a separate planner daemon.
+这是提示驱动的，不是额外跑了一个 planner 守护进程。
 
-## 7. Direct Action Routing
+## 7. 直接动作路由
 
-For some very clear requests, the current framework does not rely only on model preference.
+对于一些非常明确的请求，当前框架不会只依赖模型偏好。
 
-Owned by:
+由这里负责：
 
 - `chipper/pkg/xiaowan/ttr/llm/direct_action.go`
 
-Current direct-action detection can force tool choice for:
+当前能强制工具选择的直接动作检测包括：
 
-- fireworks
-- charging
-- photo taking
-- back-away movement
+- 烟花
+- 回充
+- 拍照
+- 后退
 
-This means requests like "放烟花" or "回家充电去吧" can be routed to a specific native tool instead of hoping the model chooses correctly.
+这意味着像“放烟花”或“回家充电去吧”这类请求，可以直接路由到特定 native tool，而不是赌模型会不会自己选对。
 
-## 8. Streaming Response Pipeline
+## 8. 流式响应流水线
 
-Main file:
+主要文件：
 
 - `chipper/pkg/xiaowan/ttr/llm/stream.go`
 
-Core behavior during a turn:
+单轮对话中的核心行为：
 
-- create chat stream
-- accumulate text deltas
-- accumulate tool call deltas
-- sanitize output
-- split output into speakable chunks
-- prefetch TTS audio for later chunks
-- execute native tools after stream completion
-- optionally generate a post-tool follow-up answer
-- remember conversation history
-
-### Supporting pieces
-
-- `sanitize.go`
-  - cleans problematic output
-  - strips old fake action text
-- `sentence_split.go`
-  - splits stream text into speech chunks
-- `tts_prefetch.go`
-  - preloads future TTS segments
-- `session.go`
-  - saves remembered chats to disk
-- `provider.go`
-  - chooses provider/model/client
-
-## 9. Speech and Robot Execution
-
-Robot-side execution is split between LLM orchestration and robot helpers.
-
-### LLM action playback
-
-- `chipper/pkg/xiaowan/ttr/llm/commands.go`
-
-This file still owns:
-
-- speech text execution
-- lightweight animation and motor gesture helpers
-- image capture action path
-- deferred high-level action execution
-
-Even though legacy prompt/action syntax is gone, this file still serves as the action dispatcher for internal `RobotAction` values.
-
-### Robot control
-
-- `chipper/pkg/xiaowan/ttr/robot/controller.go`
-- `chipper/pkg/xiaowan/ttr/robot/voice.go`
-- `chipper/pkg/xiaowan/ttr/robot/behavior.go`
-- `chipper/pkg/xiaowan/ttr/robot/interrupt.go`
-
-This layer owns:
-
-- SDK speech
-- big-model TTS playback fallback path
-- behavior control acquisition/release
-- charger/photo/fireworks/back-away execution
-- touch / wake-word interrupt handling
-
-## 10. Chat Memory
-
-Conversation history is separate from long-term memory.
-
-Owned by:
-
-- `chipper/pkg/xiaowan/ttr/llm/session.go`
-
-Behavior:
-
-- remembers recent assistant/user/tool messages
-- stores them under the chat history directory beside `ApiConfigPath`
-- trims history to a bounded number of messages
-
-So there are now three different state layers:
-
-- chat history -> short conversational context
-- workspace memory -> durable user facts
-- todo state -> active task plan
-
-## 11. What Is Removed / No Longer Central
-
-The current framework no longer centers around:
-
-- custom web intent definitions as the main control surface
-- face-triggered proactive greeting behavior
-- old brace-style fake action syntax in prompts
-- legacy action catalogs injected into prompts
-
-The current direction is:
-
-- prompt + workspace context
-- native tools
-- todo planning
-- direct robot actions through actual execution paths
-
-## 12. Recommended Mental Model
-
-If you are modifying the system, think in this order:
-
-1. Is this durable user knowledge?
-   - put it in workspace memory
-2. Is this only for the current task?
-   - put it in todo state
-3. Is this only for the current conversation?
-   - keep it in remembered chat
-4. Is this a real robot-world action?
-   - expose or use a native tool
-5. Is this just prompt shaping?
-   - change workspace docs or LLM prompt-building code
-
-## 13. File Map For Common Work
-
-### Add a new native function tool
-
-- registry: `chipper/pkg/xiaowan/ttr/llm/native_tools.go`
-- execution: `chipper/pkg/xiaowan/ttr/llm/tool_runtime.go`
-- prompt rule if needed: `chipper/pkg/xiaowan/ttr/llm/commands.go`
-- tests: `chipper/pkg/xiaowan/ttr/llm/native_tools_test.go`
-
-### Change task planning behavior
-
-- runtime state: `chipper/pkg/xiaowan/workspace/todo.go`
-- planning heuristics: `chipper/pkg/xiaowan/ttr/llm/todo_planning.go`
-- tests: `chipper/pkg/xiaowan/ttr/llm/todo_planning_test.go`
-
-### Change long-term memory behavior
-
-- memory doc builder: `chipper/pkg/xiaowan/memory/profile.go`
-- workspace loading: `chipper/pkg/xiaowan/workspace/loader.go`
-
-### Change face identity context
-
-- `chipper/pkg/xiaowan/vision/faces.go`
-
-### Change direct robot actions
-
-- LLM-side routing: `chipper/pkg/xiaowan/ttr/llm/direct_action.go`
-- robot execution: `chipper/pkg/xiaowan/ttr/robot/controller.go`
-
-## 13.5 Developer Quick Reference
-
-If you want to change a specific behavior quickly, use this map:
-
-- "Why did the model say this?"
-  - `chipper/pkg/xiaowan/ttr/llm/commands.go`
-  - `chipper/pkg/xiaowan/ttr/llm/stream.go`
-- "Why did it call or not call a tool?"
-  - `chipper/pkg/xiaowan/ttr/llm/native_tools.go`
-  - `chipper/pkg/xiaowan/ttr/llm/direct_action.go`
-  - `chipper/pkg/xiaowan/ttr/llm/todo_planning.go`
-- "Why did a file edit get blocked?"
-  - `chipper/pkg/xiaowan/ttr/llm/native_tools.go`
-  - `chipper/pkg/xiaowan/ttr/llm/tool_runtime.go`
-- "Why did memory not show up in the prompt?"
-  - `chipper/pkg/xiaowan/workspace/loader.go`
-  - `chipper/pkg/xiaowan/memory/profile.go`
-- "Why did todo not update or auto-finish?"
-  - `chipper/pkg/xiaowan/workspace/todo.go`
-  - `chipper/pkg/xiaowan/ttr/llm/tool_runtime.go`
-- "Why did the robot not physically move?"
-  - `chipper/pkg/xiaowan/ttr/robot/controller.go`
-  - `chipper/pkg/xiaowan/ttr/robot/behavior.go`
-- "Why did the robot not know who was in front of it?"
-  - `chipper/pkg/xiaowan/vision/faces.go`
-- "Why did TTS or speech chunking behave strangely?"
-  - `chipper/pkg/xiaowan/ttr/llm/sanitize.go`
-  - `chipper/pkg/xiaowan/ttr/llm/sentence_split.go`
-  - `chipper/pkg/xiaowan/ttr/llm/tts_prefetch.go`
-
-## 14. Current Architecture Summary
-
-In one sentence:
-
-The current XiaoWan framework is a wire-pod-based voice runtime where workspace documents, remembered chat, live face context, native function tools, and a lightweight todo planner are combined into a streaming LLM loop that drives real Vector robot actions.
+- 创建 chat stream
+- 累积文本 delta
+- 累积 tool call delta
+- 清洗输出
+- 切分成可播报片段
+- 预取后续片段的 TTS 音频
+- 在流结束后执行 native tool

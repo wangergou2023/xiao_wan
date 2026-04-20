@@ -1,35 +1,35 @@
-# Long-term Memory
+# 长期记忆
 
-This file stores freeform durable memory that may matter across conversations.
+这个文件用于存放会跨多轮对话持续有意义的自由形式长期记忆。
 
-## How To Read This File
+## 如何阅读这个文件
 
-- Treat this as living memory, not a rigid database.
-- Prefer facts that are stable, user-confirmed, and likely to matter later.
-- Prefer concise summaries over chat transcripts.
-- If something is uncertain or old, keep the uncertainty visible instead of pretending it is fresh.
+- 把它当作活的记忆，不是死板数据库。
+- 优先记录稳定、经过用户确认、后续大概率还重要的事实。
+- 优先保留简洁总结，而不是聊天流水账。
+- 如果某件事不确定或者已经过时，要把“不确定”明确写出来，不要假装它还是新鲜事实。
 
-## Durable Remembered Context
+## 当前已记住的长期上下文
 
-No durable user facts have been confirmed yet.
+目前还没有确认过任何长期用户事实。
 
-## Memory Writing Guidance
+## 写入记忆的指导
 
-Good long-term memory includes:
-- how the user wants to be addressed
-- stable relationship facts
-- lasting preferences about greetings, language, and style
-- important life context the user explicitly wants remembered
-- repeated interests or dislikes that clearly matter over time
+好的长期记忆通常包括：
+- 用户希望被怎样称呼
+- 稳定的人际关系事实
+- 关于问候、语言、说话风格的长期偏好
+- 用户明确希望被记住的重要生活背景
+- 多次重复出现、且明显会长期有意义的兴趣或反感
 
-Do not store as long-term memory:
-- one-off requests
-- temporary moods
-- raw multi-turn chat logs
-- sensitive details unless the user clearly wants them remembered
-- guesses inferred without confirmation
+不要写入长期记忆的内容：
+- 一次性请求
+- 临时情绪
+- 原始多轮聊天记录
+- 敏感细节，除非用户明确希望记住
+- 没有确认、只是推测出来的内容
 
-## Sync Info
+## 同步信息
 
 - Robot ESN: test-esn
-- Source of truth: confirmed freeform memory saved by the system
+- 事实来源：系统保存的已确认自由形式记忆

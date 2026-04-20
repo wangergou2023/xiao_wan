@@ -1,88 +1,88 @@
 # XiaoWan
 
-This directory contains the current XiaoWan runtime built on top of wire-pod / chipper.
+这个目录存放当前基于 wire-pod / chipper 构建的小丸运行时。
 
-If you want the full architecture write-up, start here:
+如果你想先看完整架构说明，请从这里开始：
 
 - `chipper/pkg/xiaowan/FRAMEWORK.md`
 
-If you want practical debugging guidance, read:
+如果你更想先看排障和调试方法，请读：
 
 - `chipper/pkg/xiaowan/TROUBLESHOOTING.md`
 
-## Quick Map
+## 快速地图
 
-### Runtime entry
+### 运行时入口
 
-- server bootstrap: `chipper/pkg/initwirepod/startserver.go`
-- compatibility facade: `chipper/pkg/xiaowan/ttr/facade.go`
+- 服务启动入口：`chipper/pkg/initwirepod/startserver.go`
+- 兼容层门面：`chipper/pkg/xiaowan/ttr/facade.go`
 
-### Main package groups
+### 主要包分组
 
 - `preqs`
-  - earliest speech request processing
+  - 最早期的语音请求处理
 - `stt`
-  - speech-to-text integrations
+  - 语音转文本集成
 - `speechrequest`
-  - request shaping / audio helpers
+  - 请求整形 / 音频辅助
 - `ttr`
-  - text-to-response pipeline
+  - text-to-response 响应流水线
 - `workspace`
-  - workspace docs + todo state
+  - 工作区文档 + todo 状态
 - `memory`
-  - durable long-term memory document handling
+  - 持久化长期记忆文档处理
 - `vision`
-  - recent face observation context
+  - 最近一次人脸观察上下文
 - `skills`
-  - workspace skill loading
+  - 工作区 skill 加载
 - `cron`
-  - scheduled reminder jobs
+  - 定时提醒任务
 
-## Current Direction
+## 当前方向
 
-The current framework is centered around:
+当前框架的核心重点是：
 
-- workspace documents as persistent context
-- native function tools instead of fake action syntax
-- lightweight todo planning for multi-step tasks
-- real robot action execution for charge / photo / fireworks / back-away
-- live face context injected into normal conversation
+- 用工作区文档作为持久上下文
+- 使用原生 function tool，而不是假的动作语法
+- 用轻量 todo 规划支持多步骤任务
+- 真实执行机器人动作：回充、拍照、烟花、后退
+- 在正常对话里注入实时人脸上下文
 
-## Most Common Files To Change
+## 最常改的文件
 
-### Prompt / LLM behavior
+### Prompt / LLM 行为
 
 - `chipper/pkg/xiaowan/ttr/llm/commands.go`
 - `chipper/pkg/xiaowan/ttr/llm/stream.go`
 - `chipper/pkg/xiaowan/ttr/llm/provider.go`
 
-### Native tools
+### 原生工具
 
-- registry: `chipper/pkg/xiaowan/ttr/llm/native_tools.go`
-- execution: `chipper/pkg/xiaowan/ttr/llm/tool_runtime.go`
+- 注册表：`chipper/pkg/xiaowan/ttr/llm/native_tools.go`
+- 执行逻辑：`chipper/pkg/xiaowan/ttr/llm/tool_runtime.go`
 
-### Todo planning
+### Todo 规划
 
-- state: `chipper/pkg/xiaowan/workspace/todo.go`
-- auto-planning heuristics: `chipper/pkg/xiaowan/ttr/llm/todo_planning.go`
+- 状态：`chipper/pkg/xiaowan/workspace/todo.go`
+- 自动规划启发式：`chipper/pkg/xiaowan/ttr/llm/todo_planning.go`
 
-### Memory / workspace context
+### 记忆 / 工作区上下文
 
-- workspace loading: `chipper/pkg/xiaowan/workspace/loader.go`
-- long-term memory doc handling: `chipper/pkg/xiaowan/memory/profile.go`
+- 工作区加载：`chipper/pkg/xiaowan/workspace/loader.go`
+- 长期记忆文档处理：`chipper/pkg/xiaowan/memory/profile.go`
 
-### Face context
+### 人脸上下文
 
 - `chipper/pkg/xiaowan/vision/faces.go`
 
-### Direct robot actions
+### 机器人直接动作
 
-- direct tool forcing: `chipper/pkg/xiaowan/ttr/llm/direct_action.go`
-- robot execution: `chipper/pkg/xiaowan/ttr/robot/controller.go`
+- 直接工具强制路由：`chipper/pkg/xiaowan/ttr/llm/direct_action.go`
+- 机器人执行：`chipper/pkg/xiaowan/ttr/robot/controller.go`
 
-## Suggested Reading Order
+## 建议阅读顺序
 
-If you are new to this code, read in this order:
+如果你第一次看这套代码，建议按这个顺序：
 
 1. `chipper/pkg/xiaowan/FRAMEWORK.md`
 2. `chipper/pkg/initwirepod/startserver.go`
