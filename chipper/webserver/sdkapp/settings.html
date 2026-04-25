@@ -21,7 +21,7 @@
         <div class="minimal-titleblock">
           <p class="minimal-kicker">Xiao Wan</p>
           <h1>设备设置</h1>
-          <p class="minimal-copy">本体参数、人脸、动作、照片、区域和时间都放在这里。</p>
+          <p class="minimal-copy">本体、环境和账户设置都在这里。</p>
         </div>
         <div class="minimal-statusblock">
           <p class="minimal-label">设备状态</p>
@@ -33,25 +33,25 @@
         <div class="minimal-tabbar minimal-tabbar-dense">
           <a href="/sdkapp" class="minimal-tab"><i class="fa-solid fa-reply"></i><span>返回接入</span></a>
           <a href="#" onclick="goToControlPage()" class="minimal-tab is-primary"><i class="fa-solid fa-gamepad"></i><span>设备控制</span></a>
-          <a href="#" onclick="showSection('section-volume'); return false;" class="minimal-tab"><i class="fa-solid fa-volume-high" id="icon-volume" name="icon"></i><span>音量</span></a>
-          <a href="#" onclick="showSection('section-eyes'); return false;" class="minimal-tab"><i class="fa-solid fa-eye" id="icon-eyes" name="icon"></i><span>眼睛</span></a>
-          <a href="#" onclick="showSection('section-face'); return false;" class="minimal-tab"><i class="fa-solid fa-user" id="icon-face" name="icon"></i><span>人脸</span></a>
-          <a href="#" onclick="showSection('section-actions'); return false;" class="minimal-tab"><i class="fa-solid fa-person-running" id="icon-actions" name="icon"></i><span>动作</span></a>
-          <a href="#" onclick="showSection('section-stim'); return false;" class="minimal-tab"><i class="fa-solid fa-face-laugh-beam" id="icon-stim" name="icon"></i><span>情绪</span></a>
-          <a href="#" onclick="showSection('section-stats'); return false;" class="minimal-tab"><i class="fa-solid fa-chart-simple" id="icon-stats" name="icon"></i><span>统计</span></a>
-          <a href="#" onclick="showSection('section-photos'); getPhotos(); return false;" class="minimal-tab"><i class="fa-solid fa-images" id="icon-photos" name="icon"></i><span>照片</span></a>
-          <a href="#" onclick="showSection('section-locale'); return false;" class="minimal-tab"><i class="fa-solid fa-earth-americas" id="icon-locale" name="icon"></i><span>区域</span></a>
-          <a href="#" onclick="showSection('section-time'); return false;" class="minimal-tab"><i class="fa-solid fa-clock" id="icon-time" name="icon"></i><span>时间</span></a>
-          <a href="#" onclick="showSection('section-temp'); return false;" class="minimal-tab"><i class="fa-solid fa-temperature-half" id="icon-temp" name="icon"></i><span>温度</span></a>
-          <a href="#" onclick="showSection('section-button'); return false;" class="minimal-tab"><i class="fa-solid fa-circle-dot" id="icon-button" name="icon"></i><span>按钮</span></a>
-          <a href="#" onclick="showSection('section-alexa'); return false;" class="minimal-tab"><i class="fa-solid fa-house-signal" id="icon-alexa" name="icon"></i><span>Alexa</span></a>
-          <a href="#" onclick="showSection('section-location'); return false;" class="minimal-tab"><i class="fa-solid fa-location-crosshairs" id="icon-location" name="icon"></i><span>位置</span></a>
-          <a href="#" onclick="showSection('section-timezone'); return false;" class="minimal-tab"><i class="fa-solid fa-hourglass" id="icon-timezone" name="icon"></i><span>时区</span></a>
+          <a href="#" onclick="showSection('section-volume'); return false;" class="minimal-tab" data-section="section-volume"><i class="fa-solid fa-volume-high" id="icon-volume" name="icon"></i><span>音量</span></a>
+          <a href="#" onclick="showSection('section-eyes'); return false;" class="minimal-tab" data-section="section-eyes"><i class="fa-solid fa-eye" id="icon-eyes" name="icon"></i><span>眼睛</span></a>
+          <a href="#" onclick="showSection('section-face'); return false;" class="minimal-tab" data-section="section-face"><i class="fa-solid fa-user" id="icon-face" name="icon"></i><span>人脸</span></a>
+          <a href="#" onclick="showSection('section-actions'); return false;" class="minimal-tab" data-section="section-actions"><i class="fa-solid fa-person-running" id="icon-actions" name="icon"></i><span>动作</span></a>
+          <a href="#" onclick="showSection('section-stim'); return false;" class="minimal-tab" data-section="section-stim"><i class="fa-solid fa-face-laugh-beam" id="icon-stim" name="icon"></i><span>情绪</span></a>
+          <a href="#" onclick="showSection('section-stats'); return false;" class="minimal-tab" data-section="section-stats"><i class="fa-solid fa-chart-simple" id="icon-stats" name="icon"></i><span>统计</span></a>
+          <a href="#" onclick="showSection('section-photos'); getPhotos(); return false;" class="minimal-tab" data-section="section-photos"><i class="fa-solid fa-images" id="icon-photos" name="icon"></i><span>照片</span></a>
+          <a href="#" onclick="showSection('section-locale'); return false;" class="minimal-tab" data-section="section-locale"><i class="fa-solid fa-earth-americas" id="icon-locale" name="icon"></i><span>区域</span></a>
+          <a href="#" onclick="showSection('section-time'); return false;" class="minimal-tab" data-section="section-time"><i class="fa-solid fa-clock" id="icon-time" name="icon"></i><span>时间</span></a>
+          <a href="#" onclick="showSection('section-temp'); return false;" class="minimal-tab" data-section="section-temp"><i class="fa-solid fa-temperature-half" id="icon-temp" name="icon"></i><span>温度</span></a>
+          <a href="#" onclick="showSection('section-button'); return false;" class="minimal-tab" data-section="section-button"><i class="fa-solid fa-circle-dot" id="icon-button" name="icon"></i><span>按钮</span></a>
+          <a href="#" onclick="showSection('section-alexa'); return false;" class="minimal-tab" data-section="section-alexa"><i class="fa-solid fa-house-signal" id="icon-alexa" name="icon"></i><span>Alexa</span></a>
+          <a href="#" onclick="showSection('section-location'); return false;" class="minimal-tab" data-section="section-location"><i class="fa-solid fa-location-crosshairs" id="icon-location" name="icon"></i><span>位置</span></a>
+          <a href="#" onclick="showSection('section-timezone'); return false;" class="minimal-tab" data-section="section-timezone"><i class="fa-solid fa-hourglass" id="icon-timezone" name="icon"></i><span>时区</span></a>
         </div>
       </section>
 
       <div id="section-volume" class="toggleable-section section-panel sdk-detail-panel section-panel-wide minimal-panel" style="display:none;">
-        <div class="minimal-panel-head"><h2>音量档位</h2><p>快速切换整体音量。</p></div>
+        <div class="minimal-panel-head"><h2>音量档位</h2><p>切整体音量。</p></div>
         <div id="currentVolume"></div>
         <div class="sdk-choice-grid">
           <label><input type="radio" name="vol" id="Mute" value="Mute" onclick="sendForm('/api-sdk/volume?volume=0')">静音</label>
@@ -64,9 +64,10 @@
       </div>
 
       <div id="section-eyes" class="toggleable-section section-panel sdk-detail-panel section-panel-wide minimal-panel" style="display:none;">
-        <div class="minimal-panel-head"><h2>眼睛颜色</h2><p>预设和自定义都在这里。</p></div>
+        <div class="minimal-panel-head"><h2>眼睛颜色</h2><p>预设或自定义。</p></div>
         <div class="minimal-two-col">
           <div class="minimal-cardblock">
+            <div id="currentEyeColor"></div>
             <div class="sdk-choice-grid">
               <label><input type="radio" name="eye" id="Teal" value="Teal" onclick="sendForm('/api-sdk/eye_color?color=0')">青绿</label>
               <label><input type="radio" name="eye" id="Orange" value="Orange" onclick="sendForm('/api-sdk/eye_color?color=1')">橙色</label>
@@ -87,7 +88,7 @@
       </div>
 
       <div id="section-face" class="toggleable-section section-panel sdk-detail-panel section-panel-wide minimal-panel" style="display:none;">
-        <div class="minimal-panel-head"><h2>人脸管理</h2><p>录入、重命名和删除都在这里。</p></div>
+        <div class="minimal-panel-head"><h2>人脸管理</h2><p>录入、改名、删除。</p></div>
         <div class="minimal-two-col">
           <div class="minimal-cardblock">
             <label for="faceList">已记录人脸</label>
@@ -111,7 +112,7 @@
       </div>
 
       <div id="section-actions" class="toggleable-section section-panel sdk-detail-panel section-panel-wide minimal-panel" style="display:none;">
-        <div class="minimal-panel-head"><h2>快捷动作</h2><p>适合快速联调。</p></div>
+        <div class="minimal-panel-head"><h2>快捷动作</h2><p>常用联调动作。</p></div>
         <div class="minimal-cardblock">
           <div class="inline-actions compact-inline-actions">
             <button onclick="sendForm('/api-sdk/cloud_intent?intent=explore_start')">开始探索</button>
@@ -130,13 +131,13 @@
       </div>
 
       <div id="section-stim" class="toggleable-section section-panel sdk-detail-panel section-panel-wide minimal-panel" style="display:none;">
-        <div class="minimal-panel-head"><h2>情绪刺激值</h2><p>查看 stimulation 变化。</p></div>
+        <div class="minimal-panel-head"><h2>情绪刺激值</h2><p>查看刺激值变化。</p></div>
         <canvas id="stimChart"></canvas>
         <div id="stimStatus"></div>
       </div>
 
       <div id="section-stats" class="toggleable-section section-panel sdk-detail-panel section-panel-wide minimal-panel" style="display:none;">
-        <div class="minimal-panel-head"><h2>设备统计</h2><p>读取累计运行与互动数据。</p></div>
+        <div class="minimal-panel-head"><h2>设备统计</h2><p>累计运行和互动数据。</p></div>
         <div class="panel-actions"><button onclick="updateStats()">刷新统计</button></div>
         <div id="statsSection"></div>
       </div>
@@ -148,7 +149,7 @@
       </div>
 
       <div id="section-locale" class="toggleable-section section-panel sdk-detail-panel section-panel-wide minimal-panel" style="display:none;">
-        <div class="minimal-panel-head"><h2>区域语言</h2><p>设置设备使用的 locale。</p></div>
+        <div class="minimal-panel-head"><h2>区域语言</h2><p>切换设备 locale。</p></div>
         <div id="currentLocale"></div>
         <div class="sdk-choice-grid">
           <label><input type="radio" name="locale" id="en-US" value="English (US)" onclick="sendForm('/api-sdk/locale?locale=en-US')">英语（美国）</label>
@@ -156,12 +157,12 @@
           <label><input type="radio" name="locale" id="en-AU" value="English (AU)" onclick="sendForm('/api-sdk/locale?locale=en-AU')">英语（澳洲）</label>
           <label><input type="radio" name="locale" id="de-DE" value="German" onclick="sendForm('/api-sdk/locale?locale=de-DE')">德语</label>
           <label><input type="radio" name="locale" id="fr-FR" value="French" onclick="sendForm('/api-sdk/locale?locale=fr-FR')">法语</label>
-          <label><input type="radio" name="locale" id="ja-FP" value="Japanese" onclick="sendForm('/api-sdk/locale?locale=ja-JP')">日语</label>
+          <label><input type="radio" name="locale" id="ja-JP" value="Japanese" onclick="sendForm('/api-sdk/locale?locale=ja-JP')">日语</label>
         </div>
       </div>
 
       <div id="section-time" class="toggleable-section section-panel sdk-detail-panel section-panel-wide minimal-panel" style="display:none;">
-        <div class="minimal-panel-head"><h2>时间格式</h2><p>12 小时制或 24 小时制。</p></div>
+        <div class="minimal-panel-head"><h2>时间格式</h2><p>12 / 24 小时制。</p></div>
         <div id="currentTimeSet"></div>
         <div class="sdk-choice-grid">
           <label><input type="radio" name="time" id="12 Hour" value="12 Hour" onclick="sendForm('/api-sdk/time_format_12')">12 小时制</label>
@@ -170,7 +171,7 @@
       </div>
 
       <div id="section-temp" class="toggleable-section section-panel sdk-detail-panel section-panel-wide minimal-panel" style="display:none;">
-        <div class="minimal-panel-head"><h2>温度单位</h2><p>切换摄氏或华氏。</p></div>
+        <div class="minimal-panel-head"><h2>温度单位</h2><p>摄氏或华氏。</p></div>
         <div id="currentTempFormat"></div>
         <div class="sdk-choice-grid">
           <label><input type="radio" name="temp" id="Celsius" value="Celsius" onclick="sendForm('/api-sdk/temp_c')">摄氏</label>
@@ -179,7 +180,7 @@
       </div>
 
       <div id="section-button" class="toggleable-section section-panel sdk-detail-panel section-panel-wide minimal-panel" style="display:none;">
-        <div class="minimal-panel-head"><h2>顶部按钮</h2><p>设置按钮触发唤醒词还是 Alexa。</p></div>
+        <div class="minimal-panel-head"><h2>顶部按钮</h2><p>设置唤醒词或 Alexa。</p></div>
         <div id="currentButton"></div>
         <div class="sdk-choice-grid">
           <label><input type="radio" name="but" id="Hey Vector" value="Hey Vector" onclick="sendForm('/api-sdk/button_hey_vector')">唤醒词</label>
@@ -188,7 +189,7 @@
       </div>
 
       <div id="section-alexa" class="toggleable-section section-panel sdk-detail-panel section-panel-wide minimal-panel" style="display:none;">
-        <div class="minimal-panel-head"><h2>Alexa</h2><p>跳转到 Amazon 验证页完成登录或退出。</p></div>
+        <div class="minimal-panel-head"><h2>Alexa</h2><p>跳到 Amazon 完成登录。</p></div>
         <div id="alexaStatus"></div>
         <a target="_blank" rel="noopener noreferrer" href="https://amazon.com/code">https://amazon.com/code</a>
         <div class="inline-actions compact-inline-actions">
@@ -198,14 +199,14 @@
       </div>
 
       <div id="section-location" class="toggleable-section section-panel sdk-detail-panel section-panel-wide minimal-panel" style="display:none;">
-        <div class="minimal-panel-head"><h2>位置设置</h2><p>更新天气、时间等依赖的位置字段。</p></div>
+        <div class="minimal-panel-head"><h2>位置设置</h2><p>同步天气和时间用的位置。</p></div>
         <div id="currentLocation"></div>
         <input class="tinput" id="locationInput" name="locationInput" type="text" placeholder="输入城市或地区">
         <div class="panel-actions"><button onclick="sendLocation()">提交位置</button></div>
       </div>
 
       <div id="section-timezone" class="toggleable-section section-panel sdk-detail-panel section-panel-wide minimal-panel" style="display:none;">
-        <div class="minimal-panel-head"><h2>时区设置</h2><p>同步设备时区配置。</p></div>
+        <div class="minimal-panel-head"><h2>时区设置</h2><p>同步设备时区。</p></div>
         <select id="tzInput" value="" class="vec-field">
           <option value="Pacific/Honolulu">Pacific/Honolulu</option>
           <option value="America/Juneau">America/Juneau</option>

@@ -21,7 +21,7 @@
         <div class="minimal-titleblock">
           <p class="minimal-kicker">Xiao Wan</p>
           <h1>服务设置</h1>
-          <p class="minimal-copy">只看当前要配的东西，不把所有说明摊满整页。</p>
+          <p class="minimal-copy">按需打开模块，改完就保存。</p>
         </div>
         <div class="minimal-statusblock minimal-backblock">
           <a class="setup-back-link" href="index.html">
@@ -33,17 +33,21 @@
 
       <section class="minimal-section">
         <div class="minimal-tabbar">
-          <a href="#" onclick="showKG(); return false;" class="minimal-tab is-primary">
+          <a href="#" onclick="showKG(); return false;" class="minimal-tab" data-section="section-kg">
             <i class="fa-solid fa-diagram-project" id="icon-KG" name="icon"></i>
-            <span>大模型</span>
+            <span>模型</span>
           </a>
-          <a href="#" onclick="showMemory(); return false;" class="minimal-tab">
+          <a href="#" onclick="showMemory(); return false;" class="minimal-tab" data-section="section-memory">
             <i class="fa-solid fa-brain" id="icon-Memory" name="icon"></i>
-            <span>长期记忆</span>
+            <span>记忆</span>
           </a>
-          <a href="#" onclick="showWeather(); return false;" class="minimal-tab">
+          <a href="#" onclick="showWeather(); return false;" class="minimal-tab" data-section="section-weather">
             <i class="fa-solid fa-cloud-sun" id="icon-Weather" name="icon"></i>
             <span>天气</span>
+          </a>
+          <a href="#" onclick="showRestart(); return false;" class="minimal-tab" data-section="section-restart">
+            <i class="fa-solid fa-rotate-right" id="icon-Restart" name="icon"></i>
+            <span>维护</span>
           </a>
         </div>
       </section>
@@ -52,7 +56,7 @@
         <div class="section-panel section-stack section-panel-wide minimal-panel">
           <div class="minimal-panel-head">
             <h2>天气接口</h2>
-            <p>需要天气问答时再开。</p>
+            <p>要问天气时再配置。</p>
           </div>
           <div class="minimal-cardblock">
             <div id="addWeatherProviderAPI"></div>
@@ -71,7 +75,7 @@
               </div>
             </form>
             <div class="panel-actions">
-              <button onclick="sendWeatherAPIKey()">应用天气设置</button>
+              <button onclick="sendWeatherAPIKey()">保存天气</button>
             </div>
             <div id="addWeatherProviderAPIStatus" class="status-card"></div>
           </div>
@@ -82,7 +86,7 @@
         <div class="section-panel section-stack section-panel-wide minimal-panel">
           <div class="minimal-panel-head">
             <h2>大模型</h2>
-            <p>先选提供商，再补公共配置和视觉上下文。</p>
+            <p>先选提供商，再补公共参数。</p>
           </div>
 
           <div class="minimal-cardblock">
@@ -161,7 +165,7 @@
               </div>
 
               <div id="llmDefaultsNote" class="setup-note" style="display: none;">
-                <strong>默认行为：</strong>配置好后，会自动启用未命中回退、动作和对话记忆。需要时可 <a href="#" onclick="deleteSavedChats(); return false;">删除已保存对话</a>。
+                <strong>默认行为：</strong>保存后会启用回退、动作和对话记忆。需要时可 <a href="#" onclick="deleteSavedChats(); return false;">删除已保存对话</a>。
               </div>
             </form>
             <div class="panel-actions">
@@ -172,7 +176,7 @@
           <div class="minimal-two-col">
             <div id="bigModelSharedInput" class="minimal-cardblock">
               <div class="minimal-subhead">
-                <h3>BigModel 公共配置</h3>
+                <h3>BigModel 公共参数</h3>
               </div>
               <div class="form-grid">
                 <div class="form-grid-span-2">
@@ -218,7 +222,7 @@
                 <input type="checkbox" id="visionEnableFaceContext" />
                 <span>启用人脸上下文</span>
               </label>
-              <small class="form-help">识别到已知人脸时，把“当前面前是谁”交给大模型。</small>
+              <small class="form-help">识别到已知人脸时，把身份信息交给模型。</small>
               <div class="panel-actions">
                 <button onclick="sendVisionConfig()">保存视觉设置</button>
               </div>
@@ -232,7 +236,7 @@
         <div class="section-panel section-stack section-panel-wide minimal-panel">
           <div class="minimal-panel-head">
             <h2>长期记忆</h2>
-            <p>这里直接维护机器人长期读取的自由文本。</p>
+            <p>维护机器人长期读取的文本记忆。</p>
           </div>
           <div class="minimal-cardblock">
             <form id="memoryProfileForm" class="stack-tight">
@@ -259,7 +263,7 @@
         <div class="section-panel section-stack section-panel-wide minimal-panel">
           <div class="minimal-panel-head">
             <h2>重启 Wire-Pod</h2>
-            <p>如果刚改完初始化项、想立即生效，可以在这里重启。</p>
+            <p>改完关键配置后，可在这里重启。</p>
           </div>
           <div id="restart"></div>
           <div class="panel-actions">
@@ -273,7 +277,6 @@
 </body>
 <script src="./js/ui.js"></script>
 <script src="./js/main.js"></script>
-<script src="./sdkapp/js/main.js"></script>
 <script>
   updateWeatherAPI();
   updateKGAPI();

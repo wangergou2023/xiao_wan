@@ -3,6 +3,16 @@ function updateSetupStatus(statusString) {
   setupStatus.innerHTML = `<p>${statusString}</p>`;
 }
 
+function restoreSetupButton() {
+  const button = document.querySelector("button.is-busy");
+  if (!button) {
+    return;
+  }
+  button.disabled = false;
+  button.classList.remove("is-busy");
+  button.textContent = button.dataset.originalLabel || button.textContent;
+}
+
 function sendSetupInfo() {
   const button = document.activeElement instanceof HTMLButtonElement ? document.activeElement : null;
   if (button) {
@@ -40,16 +50,21 @@ function setConn() {
       } else {
         updateSetupStatus("初始化 wire-pod 失败，请检查日志。");
         document.getElementById("config-options").style.display = "block";
-        const button = document.querySelector("button.is-busy");
-        if (button) {
-          button.disabled = false;
-          button.classList.remove("is-busy");
-          button.textContent = button.dataset.originalLabel || button.textContent;
-        }
+        restoreSetupButton();
       }
+    })
+    .catch(() => {
+      updateSetupStatus("初始化 wire-pod 失败，请稍后再试。");
+      document.getElementById("config-options").style.display = "block";
+      restoreSetupButton();
     });
 }
 
 function directToIndex() {
   window.location.href = "/index.html";
 }
+
+document.addEventListener("DOMContentLoaded", () => {
+  updateSetupStatus("等待保存设置。");
+  checkConn();
+});

@@ -412,7 +412,7 @@ function displayError(elementId, message) {
 
 function updateColor(id) {
   const l_id = id.replace("section", "icon");
-  const elements = document.getElementsByName("icon");
+  const elements = Array.from(document.getElementsByName("icon"));
 
   elements.forEach((element) => {
     element.classList.remove("selectedicon");
@@ -420,8 +420,20 @@ function updateColor(id) {
   });
 
   const targetElement = document.getElementById(l_id);
+  if (!targetElement) {
+    return;
+  }
   targetElement.classList.remove("notselectedicon");
   targetElement.classList.add("selectedicon");
+}
+
+function syncSectionTabs(sectionToShow) {
+  const tabs = document.querySelectorAll(".minimal-tab[data-section]");
+  tabs.forEach((tab) => {
+    const isActive = tab.dataset.section === sectionToShow;
+    tab.classList.toggle("is-active", isActive);
+    tab.setAttribute("aria-current", isActive ? "page" : "false");
+  });
 }
 
 
@@ -461,6 +473,10 @@ function showMemory() {
   updateLongTermMemory();
 }
 
+function showRestart() {
+  toggleVisibility(["section-weather", "section-restart", "section-kg", "section-memory"], "section-restart", "icon-Restart");
+}
+
 function toggleVisibility(sections, sectionToShow, iconId) {
   if (sectionToShow != "section-log") {
     GetLog = false;
@@ -469,5 +485,12 @@ function toggleVisibility(sections, sectionToShow, iconId) {
     getE(section).style.display = "none";
   });
   getE(sectionToShow).style.display = "block";
+  syncSectionTabs(sectionToShow);
   updateColor(iconId);
 }
+
+document.addEventListener("DOMContentLoaded", () => {
+  if (getE("section-kg") && getE("section-weather") && getE("section-memory")) {
+    showKG();
+  }
+});

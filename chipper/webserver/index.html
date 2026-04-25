@@ -21,10 +21,10 @@
         <div class="minimal-titleblock">
           <p class="minimal-kicker">Xiao Wan</p>
           <h1>控制台</h1>
-          <p class="minimal-copy">只保留核心入口，别的都往下折叠。</p>
+          <p class="minimal-copy">核心入口都在这里。</p>
         </div>
         <div class="minimal-statusblock">
-          <p class="minimal-label">机器人状态</p>
+          <p class="minimal-label">在线状态</p>
           <div id="botStats"></div>
         </div>
       </section>
@@ -38,7 +38,7 @@
             <span class="minimal-linkicon"><i class="fa-solid fa-gear"></i></span>
             <span class="minimal-linkbody">
               <strong>服务设置</strong>
-              <small>模型、记忆、天气、视觉上下文</small>
+              <small>模型、记忆、天气</small>
             </span>
             <span class="minimal-linkarrow">↗</span>
           </a>
@@ -46,7 +46,7 @@
             <span class="minimal-linkicon"><i class="fa-solid fa-toolbox"></i></span>
             <span class="minimal-linkbody">
               <strong>机器人</strong>
-              <small>设备接入、控制、相机和本体设置</small>
+              <small>接入、控制、本体设置</small>
             </span>
             <span class="minimal-linkarrow">↗</span>
           </a>
@@ -54,7 +54,7 @@
             <span class="minimal-linkicon"><i class="fa-solid fa-file-lines" id="icon-Logs" name="icon"></i></span>
             <span class="minimal-linkbody">
               <strong>运行日志</strong>
-              <small>对话、动作执行、连接输出</small>
+              <small>对话、动作、连接日志</small>
             </span>
             <span class="minimal-linkarrow">展开</span>
           </a>
@@ -63,7 +63,7 @@
 
       <section class="minimal-section minimal-section-subtle">
         <div class="minimal-section-head minimal-section-head-inline">
-          <h2>低频工具</h2>
+          <h2>辅助入口</h2>
           <a href="#" onclick="showBotAuth(); return false;">
             <i class="fa-solid fa-robot" id="icon-BotAuth" name="icon"></i>
             <span>机器人接入 / OSKR</span>
@@ -75,11 +75,11 @@
         <div class="section-panel section-stack section-panel-wide minimal-panel">
           <div class="minimal-panel-head">
             <h2>机器人接入</h2>
-            <p>认证量产机，或者给 OSKR / 开发机做 SSH 预配置。</p>
+            <p>量产机认证，或给 OSKR / 开发机做 SSH 预配置。</p>
           </div>
           <div class="minimal-two-col">
             <div class="minimal-cardblock">
-              <p class="minimal-label">当前状态</p>
+              <p class="minimal-label">连接状态</p>
               <div id="disconnectButton"></div>
               <div id="botAuth"></div>
             </div>
@@ -102,7 +102,7 @@
         <div class="section-panel section-stack section-panel-wide minimal-panel">
           <div class="minimal-panel-head">
             <h2>运行日志</h2>
-            <p>实时刷新语音、LLM、动作执行和连接输出。</p>
+            <p>实时查看语音、动作和连接输出。</p>
           </div>
           <div class="toolbar-inline minimal-toolbar">
             <label class="toggle-line" for="logdebug">

@@ -21,7 +21,7 @@
         <div class="minimal-titleblock">
           <p class="minimal-kicker">Xiao Wan</p>
           <h1>设备控制</h1>
-          <p class="minimal-copy">相机、behavior control、文本播报都放在这里做联调。</p>
+          <p class="minimal-copy">相机、接管和播报都在这里。</p>
         </div>
         <div class="minimal-statusblock minimal-backblock">
           <a class="setup-back-link" href="#" onclick="goBackToSettings()">
@@ -35,7 +35,7 @@
         <section class="minimal-panel simple-panel">
           <div class="minimal-panel-head">
             <h2>摄像头</h2>
-            <p>先开流确认视角。</p>
+            <p>先看画面，再做控制。</p>
           </div>
           <div class="sdk-preview minimal-preview" id="camStream">
             <div class="sdk-empty-state">未开启视频流时，这里会显示设备画面。</div>
@@ -49,7 +49,7 @@
         <section class="minimal-panel simple-panel">
           <div class="minimal-panel-head">
             <h2>行为控制</h2>
-            <p>大部分设备动作前要先接管。</p>
+            <p>多数动作前要先接管。</p>
           </div>
           <div class="sdk-option-list dual-option-list compact-option-list">
             <label><input type="radio" name="control" id="assume_control"
@@ -73,13 +73,13 @@
         <section class="minimal-panel simple-panel">
           <div class="minimal-panel-head">
             <h2>播报与音频</h2>
-            <p>快速验证文本和 wav 回放链路。</p>
+            <p>验证文本和 wav 回放。</p>
           </div>
           <div class="sdk-form-stack compact-stack">
             <label for="textSay">让机器人说一句话</label>
             <input class="tinput" name="textSay" id="textSay" type="text" placeholder="输入要让机器人说的话" disabled />
             <div class="panel-actions">
-              <button onclick="sayText()" type="submit">发送播报</button>
+              <button onclick="sayText()" type="submit">发送文本</button>
             </div>
           </div>
           <div class="sdk-form-stack compact-stack">

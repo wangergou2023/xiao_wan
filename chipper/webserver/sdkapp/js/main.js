@@ -1,11 +1,12 @@
-var colorPicker = new iro.ColorPicker("#picker", {
+const pickerElement = document.getElementById("picker");
+var colorPicker = pickerElement ? new iro.ColorPicker("#picker", {
   width: 250,
   layout: [
     {
       component: iro.ui.Wheel,
     },
   ],
-});
+}) : null;
 
 var stimRunning = false;
 
@@ -23,7 +24,7 @@ function revealSdkActions() {
 }
 
 const stimChart = document.getElementById("stimChart");
-let myChart = new Chart(stimChart, {
+let myChart = stimChart ? new Chart(stimChart, {
   type: "line",
   data: {
     labels: [],
@@ -31,9 +32,8 @@ let myChart = new Chart(stimChart, {
       {
         label: "Stimulation",
         data: [],
-        //backgroundColor: 'rgba(255, 99, 132, 0.2)',
-        backgroundColor: "rgba(51, 237, 109, 1)",
-        borderColor: "rgba(51, 237, 109, 1)",
+        backgroundColor: "rgba(31, 109, 89, 0.9)",
+        borderColor: "rgba(31, 109, 89, 0.9)",
         borderWidth: 1,
       },
     ],
@@ -53,9 +53,12 @@ let myChart = new Chart(stimChart, {
       },
     },
   },
-});
+}) : null;
 
 function stimHandler() {
+  if (!myChart) {
+    return;
+  }
   // array to store data
   let stimData = [];
 
@@ -91,11 +94,16 @@ function stimHandler() {
 }
 
 function showSection(id) {
+  const target = document.getElementById(id);
+  if (!target) {
+    return;
+  }
   var headings = document.getElementsByClassName("toggleable-section");
   for (var i = 0; i < headings.length; i++) {
     headings[i].style.display = "none";
   }
-  document.getElementById(id).style.display = "block";
+  target.style.display = "block";
+  syncSectionTabs(id);
   updateColor(id);
   if (id == "section-stim") {
     stimRunning = true;
@@ -119,6 +127,33 @@ function sendForm(formURL) {
   xhr.onload = function () {
     getCurrentSettings();
   };
+}
+
+function syncSectionTabs(sectionToShow) {
+  const tabs = document.querySelectorAll(".minimal-tab[data-section]");
+  tabs.forEach((tab) => {
+    const isActive = tab.dataset.section === sectionToShow;
+    tab.classList.toggle("is-active", isActive);
+    tab.setAttribute("aria-current", isActive ? "page" : "false");
+  });
+}
+
+function setCurrentSetting(id, message) {
+  const container = document.getElementById(id);
+  if (!container) {
+    return;
+  }
+  container.innerHTML = "";
+  const p = document.createElement("p");
+  p.textContent = message;
+  container.appendChild(p);
+}
+
+function setCheckedIfPresent(id) {
+  const input = document.getElementById(id);
+  if (input) {
+    input.checked = true;
+  }
 }
 
 function getPhotos() {
@@ -374,46 +409,84 @@ function getCurrentSettings() {
       var buttonT = "Alexa";
     }
 
-    var s1 = document.getElementById("currentVolume");
-    const s1P = document.createElement("p");
-    document.getElementById(volumeT).checked = true;
+    setCheckedIfPresent(volumeT);
 
-    var s2 = document.getElementById("currentEyeColor");
-    const s2P = document.createElement("p");
     if (eyeColorT != "none" && eyeColorT != "Custom") {
-      document.getElementById(eyeColorT).checked = true;
+      setCheckedIfPresent(eyeColorT);
     }
 
-    var s3 = document.getElementById("currentLocale");
-    const s3P = document.createElement("p");
-    document.getElementById(localeS).checked = true;
+    setCheckedIfPresent(localeS);
 
-    var s4 = document.getElementById("currentTimeSet");
-    const s4P = document.createElement("p");
-    document.getElementById(timeSetT).checked = true;
+    setCheckedIfPresent(timeSetT);
 
-    var s5 = document.getElementById("currentTempFormat");
-    const s5P = document.createElement("p");
-    document.getElementById(tempFormatT).checked = true;
+    setCheckedIfPresent(tempFormatT);
 
-    var s6 = document.getElementById("currentButton");
-    const s6P = document.createElement("p");
-    document.getElementById(buttonT).checked = true;
+    setCheckedIfPresent(buttonT);
 
-    var s10 = document.getElementById("currentLocation");
-    const s10P = document.createElement("p");
-    s10P.textContent = "当前位置设置：" + `${location}`;
+    setCurrentSetting(
+      "currentVolume",
+      "当前音量：" + ({
+        "Mute": "静音",
+        "Low": "低",
+        "Medium Low": "中低",
+        "Medium": "中",
+        "Medium High": "中高",
+        "High": "高"
+      }[volumeT] || volumeT)
+    );
+    setCurrentSetting(
+      "currentEyeColor",
+      "当前眼睛：" + ({
+        "Teal": "青绿",
+        "Orange": "橙色",
+        "Yellow": "黄色",
+        "Lime Green": "亮绿",
+        "Azure Blue": "天蓝",
+        "Purple": "紫色",
+        "Other Green": "草绿",
+        "Custom": "自定义"
+      }[eyeColorT] || eyeColorT)
+    );
+    setCurrentSetting(
+      "currentLocale",
+      "当前区域：" + ({
+        "en-US": "英语（美国）",
+        "en-GB": "英语（英国）",
+        "en-AU": "英语（澳洲）",
+        "de-DE": "德语",
+        "fr-FR": "法语",
+        "ja-JP": "日语"
+      }[localeS] || localeS)
+    );
+    setCurrentSetting(
+      "currentTimeSet",
+      "当前格式：" + ({
+        "12 Hour": "12 小时制",
+        "24 Hour": "24 小时制"
+      }[timeSetT] || timeSetT)
+    );
+    setCurrentSetting(
+      "currentTempFormat",
+      "当前单位：" + ({
+        "Celsius": "摄氏",
+        "Fahrenheit": "华氏"
+      }[tempFormatT] || tempFormatT)
+    );
+    setCurrentSetting(
+      "currentButton",
+      "当前按钮：" + ({
+        "Hey Vector": "唤醒词",
+        "Alexa": "Alexa"
+      }[buttonT] || buttonT)
+    );
+
+    setCurrentSetting("currentLocation", "当前位置：" + `${location}`);
     document.getElementById("locationInput").placeholder = `${location}`;
-    s10.innerHTML = "";
-    s10.appendChild(s10P);
 
-    var s11 = document.getElementById("currentTimeZone");
-    const s11P = document.createElement("p");
-    s11P.textContent = "当前时区设置：" + `${timezone}`;
+    setCurrentSetting("currentTimeZone", "当前时区：" + `${timezone}`);
     document.getElementById("tzInput").value = `${timezone}`;
-    s11.innerHTML = "";
-    s11.appendChild(s11P);
   };
 }
 
 renderBatteryInfo(esn);
+showSection("section-volume");
