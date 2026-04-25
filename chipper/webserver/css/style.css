@@ -1679,6 +1679,8 @@ iframe[name="hiddenFrame"] {
   --radius-sm: 12px;
   --shadow-panel: 0 12px 30px rgba(32, 38, 34, 0.06);
   --shadow-button: none;
+  --measure-form: 46rem;
+  --measure-status: 32rem;
 }
 
 body {
@@ -2013,7 +2015,7 @@ textarea:focus {
 .section-panel form,
 .minimal-panel form,
 .minimal-panel .form-grid {
-  max-width: none;
+  max-width: var(--measure-form);
 }
 
 .form-grid {
@@ -2077,6 +2079,28 @@ textarea:focus {
   background: rgba(17, 24, 39, 0.04);
   border-style: dashed;
   box-shadow: none;
+}
+
+.status-card,
+.status-strip,
+#currentVolume,
+#currentEyeColor,
+#currentLocale,
+#currentTimeSet,
+#currentTempFormat,
+#currentButton,
+#currentLocation,
+#currentTimeZone,
+#alexaStatus,
+#heyVectorStatus,
+#stimStatus,
+#authResult,
+#connStatus,
+#setup-status {
+  display: inline-flex;
+  width: fit-content;
+  min-width: 14rem;
+  max-width: min(100%, var(--measure-status));
 }
 
 #currentVolume p,
@@ -2197,6 +2221,15 @@ audio#audioOutput {
   .form-grid,
   .dual-option-list {
     grid-template-columns: 1fr;
+  }
+
+  .form-grid,
+  .toolbar-inline,
+  .panel-actions,
+  .section-panel form,
+  .minimal-panel form,
+  .minimal-panel .form-grid {
+    max-width: 100%;
   }
 
   textarea {
