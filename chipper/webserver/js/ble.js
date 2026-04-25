@@ -17,6 +17,9 @@ function toggleSections(showSection, icon) {
   const sections = ["section-log", "section-botauth"];
   sections.forEach((section) => (document.getElementById(section).style.display = "none"));
   document.getElementById(showSection).style.display = "block";
+  if (typeof syncSectionTabs === "function") {
+    syncSectionTabs(showSection);
+  }
   updateColor(icon);
 }
 

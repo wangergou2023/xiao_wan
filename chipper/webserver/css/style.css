@@ -2011,6 +2011,13 @@ textarea:focus {
   gap: 0.42rem;
 }
 
+.settings-group-card select,
+.settings-group-card input[type="text"],
+.settings-group-card input[type="file"] {
+  width: 100%;
+  max-width: none;
+}
+
 .settings-jump {
   display: inline-flex;
   align-items: center;
@@ -2039,6 +2046,35 @@ textarea:focus {
 
 .settings-jump.is-active i {
   color: inherit;
+}
+
+.settings-note-chip {
+  display: inline-flex;
+  align-items: center;
+  min-height: 36px;
+  padding: 0.42rem 0.68rem;
+  border: 1px dashed rgba(22, 27, 24, 0.12);
+  border-radius: 999px;
+  background: rgba(17, 24, 39, 0.03);
+  color: var(--text-color-muted);
+  font-size: 0.88rem;
+}
+
+.utility-block,
+.utility-strip {
+  width: 100%;
+  padding: 0.7rem 0.78rem;
+  border: 1px dashed rgba(22, 27, 24, 0.12);
+  border-radius: 14px;
+  background: rgba(17, 24, 39, 0.03);
+  box-shadow: none;
+}
+
+.control-panel-stack .simple-panel,
+#panel-camera,
+#panel-control,
+#panel-audio {
+  scroll-margin-top: 1.2rem;
 }
 
 .minimal-section-head,

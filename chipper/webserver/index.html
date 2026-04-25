@@ -30,44 +30,40 @@
       </section>
 
       <section class="minimal-section">
-        <div class="minimal-section-head">
-          <h2>主入口</h2>
-        </div>
-        <div class="minimal-linklist">
-          <a class="minimal-linkcard" href="setup.html">
-            <span class="minimal-linkicon"><i class="fa-solid fa-gear"></i></span>
-            <span class="minimal-linkbody">
-              <strong>服务设置</strong>
-              <small>模型、记忆、天气</small>
-            </span>
-            <span class="minimal-linkarrow">↗</span>
-          </a>
-          <a class="minimal-linkcard" href="/sdkapp">
-            <span class="minimal-linkicon"><i class="fa-solid fa-toolbox"></i></span>
-            <span class="minimal-linkbody">
-              <strong>机器人</strong>
-              <small>接入、控制、本体设置</small>
-            </span>
-            <span class="minimal-linkarrow">↗</span>
-          </a>
-          <a class="minimal-linkcard" href="#" onclick="showLog(); return false;">
-            <span class="minimal-linkicon"><i class="fa-solid fa-file-lines" id="icon-Logs" name="icon"></i></span>
-            <span class="minimal-linkbody">
-              <strong>运行日志</strong>
-              <small>对话、动作、连接日志</small>
-            </span>
-            <span class="minimal-linkarrow">展开</span>
-          </a>
-        </div>
-      </section>
+        <div class="settings-launcher-grid">
+          <article class="settings-group-card">
+            <p class="minimal-label">Server</p>
+            <h2>服务端</h2>
+            <p>配置模型、记忆、天气和后台日志。</p>
+            <div class="settings-chiplist">
+              <a href="setup.html" class="settings-jump"><i class="fa-solid fa-gear"></i><span>服务设置</span></a>
+              <a href="#" onclick="showLog(); return false;" class="settings-jump" data-section="section-log">
+                <i class="fa-solid fa-file-lines" id="icon-Logs" name="icon"></i>
+                <span>运行日志</span>
+              </a>
+            </div>
+          </article>
 
-      <section class="minimal-section minimal-section-subtle">
-        <div class="minimal-section-head minimal-section-head-inline">
-          <h2>辅助入口</h2>
-          <a href="#" onclick="showBotAuth(); return false;">
-            <i class="fa-solid fa-robot" id="icon-BotAuth" name="icon"></i>
-            <span>机器人接入 / OSKR</span>
-          </a>
+          <article class="settings-group-card">
+            <p class="minimal-label">Device</p>
+            <h2>机器人</h2>
+            <p>进入设备接入、控制和本体设置页面。</p>
+            <div class="settings-chiplist">
+              <a href="/sdkapp" class="settings-jump"><i class="fa-solid fa-toolbox"></i><span>设备中心</span></a>
+            </div>
+          </article>
+
+          <article class="settings-group-card">
+            <p class="minimal-label">Access</p>
+            <h2>接入与维护</h2>
+            <p>认证量产机，或者给 OSKR / 开发机做预配置。</p>
+            <div class="settings-chiplist">
+              <a href="#" onclick="showBotAuth(); return false;" class="settings-jump" data-section="section-botauth">
+                <i class="fa-solid fa-robot" id="icon-BotAuth" name="icon"></i>
+                <span>机器人接入 / OSKR</span>
+              </a>
+            </div>
+          </article>
         </div>
       </section>
 
@@ -78,12 +74,12 @@
             <p>量产机认证，或给 OSKR / 开发机做 SSH 预配置。</p>
           </div>
           <div class="minimal-two-col">
-            <div class="minimal-cardblock">
+            <div class="utility-block">
               <p class="minimal-label">连接状态</p>
               <div id="disconnectButton"></div>
               <div id="botAuth"></div>
             </div>
-            <div class="minimal-cardblock">
+            <div class="utility-block">
               <p class="minimal-label">SSH 预设置</p>
               <div id="oskrSetupProgress"></div>
               <div id="oskrSetup" class="stack-tight">
@@ -104,7 +100,7 @@
             <h2>运行日志</h2>
             <p>实时查看语音、动作和连接输出。</p>
           </div>
-          <div class="toolbar-inline minimal-toolbar">
+          <div class="toolbar-inline utility-strip">
             <label class="toggle-line" for="logdebug">
               <input id="logdebug" name="logdebug" type="checkbox" />
               <span>显示全部日志</span>

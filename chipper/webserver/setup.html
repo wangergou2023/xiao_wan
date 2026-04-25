@@ -32,7 +32,8 @@
       </section>
 
       <section class="minimal-section">
-        <div class="minimal-tabbar">
+        <div class="settings-actionbar">
+          <a href="#" onclick="showSetupHome(); return false;" class="minimal-tab"><i class="fa-solid fa-grip"></i><span>设置首页</span></a>
           <a href="#" onclick="showKG(); return false;" class="minimal-tab" data-section="section-kg">
             <i class="fa-solid fa-diagram-project" id="icon-KG" name="icon"></i>
             <span>模型</span>
@@ -49,6 +50,38 @@
             <i class="fa-solid fa-rotate-right" id="icon-Restart" name="icon"></i>
             <span>维护</span>
           </a>
+        </div>
+      </section>
+
+      <section class="minimal-section">
+        <div class="settings-launcher-grid">
+          <article class="settings-group-card">
+            <p class="minimal-label">Model</p>
+            <h2>模型与视觉</h2>
+            <p>配置提供商、BigModel 公共参数和视觉上下文。</p>
+            <div class="settings-chiplist">
+              <a href="#" onclick="showKG(); return false;" class="settings-jump" data-section="section-kg"><i class="fa-solid fa-diagram-project"></i><span>模型设置</span></a>
+            </div>
+          </article>
+
+          <article class="settings-group-card">
+            <p class="minimal-label">Memory</p>
+            <h2>记忆与天气</h2>
+            <p>维护长期记忆，并按需补充天气接口。</p>
+            <div class="settings-chiplist">
+              <a href="#" onclick="showMemory(); return false;" class="settings-jump" data-section="section-memory"><i class="fa-solid fa-brain"></i><span>长期记忆</span></a>
+              <a href="#" onclick="showWeather(); return false;" class="settings-jump" data-section="section-weather"><i class="fa-solid fa-cloud-sun"></i><span>天气接口</span></a>
+            </div>
+          </article>
+
+          <article class="settings-group-card">
+            <p class="minimal-label">Maintenance</p>
+            <h2>维护操作</h2>
+            <p>改完关键配置后，可以直接从这里重启服务。</p>
+            <div class="settings-chiplist">
+              <a href="#" onclick="showRestart(); return false;" class="settings-jump" data-section="section-restart"><i class="fa-solid fa-rotate-right"></i><span>重启服务</span></a>
+            </div>
+          </article>
         </div>
       </section>
 

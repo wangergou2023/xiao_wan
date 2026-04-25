@@ -32,19 +32,34 @@
       </section>
 
       <section class="minimal-section">
-        <div class="minimal-panel simple-panel structured-panel">
-          <div class="minimal-panel-head">
+        <div class="settings-actionbar">
+          <a href="#" onclick="window.location.reload(); return false;" class="minimal-tab"><i class="fa-solid fa-rotate-right"></i><span>刷新设备列表</span></a>
+        </div>
+      </section>
+
+      <section class="minimal-section">
+        <div class="settings-launcher-grid">
+          <article class="settings-group-card">
+            <p class="minimal-label">Connect</p>
             <h2>选择机器人</h2>
-            <p>连通后再进入设备页。</p>
-          </div>
-          <div class="minimal-cardblock compact-cardblock">
+            <p>先确认设备在线，再进入设置页。</p>
             <label for="botList">设备列表</label>
             <select id="botList" name="botList"></select>
             <div class="panel-actions">
               <button onclick="connectSDK()">进入设备</button>
             </div>
             <div id="authResult" class="status-card"></div>
-          </div>
+          </article>
+
+          <article class="settings-group-card">
+            <p class="minimal-label">Next</p>
+            <h2>连接后去哪</h2>
+            <p>连接成功后会先进入设备设置页，音量、人脸、动作、时间等都在那里统一管理。</p>
+            <div class="settings-chiplist">
+              <span class="settings-note-chip">设备设置</span>
+              <span class="settings-note-chip">设备控制</span>
+            </div>
+          </article>
         </div>
       </section>
     </div>

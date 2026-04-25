@@ -31,8 +31,16 @@
         </div>
       </section>
 
-      <div class="minimal-sdk-grid" id="sdkActions">
-        <section class="minimal-panel simple-panel">
+      <section class="minimal-section">
+        <div class="settings-actionbar">
+          <a href="#panel-camera" class="settings-jump"><i class="fa-solid fa-camera"></i><span>摄像头</span></a>
+          <a href="#panel-control" class="settings-jump"><i class="fa-solid fa-gamepad"></i><span>行为控制</span></a>
+          <a href="#panel-audio" class="settings-jump"><i class="fa-solid fa-volume-high"></i><span>播报与音频</span></a>
+        </div>
+      </section>
+
+      <div class="minimal-sdk-grid control-panel-stack" id="sdkActions">
+        <section class="minimal-panel simple-panel" id="panel-camera">
           <div class="minimal-panel-head">
             <h2>摄像头</h2>
             <p>先看画面，再做控制。</p>
@@ -46,7 +54,7 @@
           </div>
         </section>
 
-        <section class="minimal-panel simple-panel">
+        <section class="minimal-panel simple-panel" id="panel-control">
           <div class="minimal-panel-head">
             <h2>行为控制</h2>
             <p>多数动作前要先接管。</p>
@@ -70,7 +78,7 @@
           </div>
         </section>
 
-        <section class="minimal-panel simple-panel">
+        <section class="minimal-panel simple-panel" id="panel-audio">
           <div class="minimal-panel-head">
             <h2>播报与音频</h2>
             <p>验证文本和 wav 回放。</p>

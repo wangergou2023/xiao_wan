@@ -428,11 +428,19 @@ function updateColor(id) {
 }
 
 function syncSectionTabs(sectionToShow) {
-  const tabs = document.querySelectorAll(".minimal-tab[data-section]");
+  const tabs = document.querySelectorAll(".minimal-tab[data-section], .settings-jump[data-section]");
   tabs.forEach((tab) => {
     const isActive = tab.dataset.section === sectionToShow;
     tab.classList.toggle("is-active", isActive);
     tab.setAttribute("aria-current", isActive ? "page" : "false");
+  });
+}
+
+function clearSectionIcons() {
+  const icons = Array.from(document.getElementsByName("icon"));
+  icons.forEach((icon) => {
+    icon.classList.remove("selectedicon");
+    icon.classList.add("nowselectedicon");
   });
 }
 
@@ -477,6 +485,17 @@ function showRestart() {
   toggleVisibility(["section-weather", "section-restart", "section-kg", "section-memory"], "section-restart", "icon-Restart");
 }
 
+function showSetupHome() {
+  ["section-weather", "section-restart", "section-kg", "section-memory"].forEach((section) => {
+    if (getE(section)) {
+      getE(section).style.display = "none";
+    }
+  });
+  GetLog = false;
+  syncSectionTabs("");
+  clearSectionIcons();
+}
+
 function toggleVisibility(sections, sectionToShow, iconId) {
   if (sectionToShow != "section-log") {
     GetLog = false;
@@ -491,6 +510,6 @@ function toggleVisibility(sections, sectionToShow, iconId) {
 
 document.addEventListener("DOMContentLoaded", () => {
   if (getE("section-kg") && getE("section-weather") && getE("section-memory")) {
-    showKG();
+    showSetupHome();
   }
 });
