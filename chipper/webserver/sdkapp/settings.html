@@ -17,21 +17,8 @@
 <body>
   <div id="outer">
     <div id="content" class="page-shell minimal-shell">
-      <section class="minimal-topbar">
-        <div class="minimal-titleblock">
-          <p class="minimal-kicker">Xiao Wan</p>
-          <h1>设备设置</h1>
-          <p class="minimal-copy">本体、环境和账户设置都在这里。</p>
-        </div>
-        <div class="minimal-statusblock">
-          <p class="minimal-label">设备状态</p>
-          <div id="botStats"></div>
-        </div>
-      </section>
-
       <section class="minimal-section">
         <div class="settings-actionbar">
-          <a href="/sdkapp" class="minimal-tab"><i class="fa-solid fa-reply"></i><span>返回接入</span></a>
           <a href="#" onclick="goToControlPage()" class="minimal-tab is-primary"><i class="fa-solid fa-gamepad"></i><span>设备控制</span></a>
           <a href="#" onclick="showSettingsHome(); return false;" class="minimal-tab"><i class="fa-solid fa-grip"></i><span>设置首页</span></a>
         </div>
@@ -293,6 +280,7 @@
       </div>
     </div>
   </div>
+  <div id="botStats" style="display: none" aria-hidden="true"></div>
 
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="./js/settings.js"></script>

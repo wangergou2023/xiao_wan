@@ -160,6 +160,9 @@ async function updateBatteryInfo(serial, i) {
 }
 
 async function renderBatteryInfo(serial, i = 0) {
+  if (!botStats) {
+    return;
+  }
   // For each robot, we'll create a new div to hold the battery information with a class of "batteryContainer"
   var batteryContainer = document.createElement("div");
   batteryContainer.className = "batteryContainer";
@@ -243,6 +246,9 @@ async function renderBatteryInfo(serial, i = 0) {
 }
 
 async function processBotStats() {
+  if (!botStats) {
+    return;
+  }
   try {
     // While loading, set a loading gif in a class div of "botLoader" to the botStats div
     var botLoader = document.createElement("div");

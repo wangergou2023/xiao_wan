@@ -1,5 +1,12 @@
 function updateSetupStatus(statusString) {
   const setupStatus = document.getElementById("setup-status");
+  if (!setupStatus) {
+    return;
+  }
+  if (!statusString) {
+    setupStatus.innerHTML = "";
+    return;
+  }
   setupStatus.innerHTML = `<p>${statusString}</p>`;
 }
 
@@ -65,6 +72,6 @@ function directToIndex() {
 }
 
 document.addEventListener("DOMContentLoaded", () => {
-  updateSetupStatus("等待保存设置。");
+  updateSetupStatus("");
   checkConn();
 });
