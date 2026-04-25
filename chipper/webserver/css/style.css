@@ -2438,3 +2438,255 @@ audio#audioOutput {
     min-height: 200px;
   }
 }
+
+/* 2026 desktop cleanup */
+
+body {
+  background: linear-gradient(180deg, #f5f4f1, #ece9e3);
+}
+
+#content {
+  width: min(920px, calc(100vw - 40px)) !important;
+}
+
+h1 {
+  font-size: clamp(1.9rem, 3vw, 2.8rem);
+  letter-spacing: -0.03em;
+}
+
+.section-panel p,
+.section-panel small,
+.section-panel label,
+.section-panel li {
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+
+.initial-shell {
+  gap: 0;
+}
+
+.initial-card {
+  width: min(100%, 29rem);
+  margin: 3.25rem auto 0;
+  padding: 1.25rem 1.25rem 1.1rem;
+  border: 1px solid var(--panel-border);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.88);
+  box-shadow: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+}
+
+.initial-head h1 {
+  margin: 0;
+  text-align: center;
+}
+
+.initial-config,
+.initial-form-stack {
+  width: 100%;
+}
+
+.initial-form-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 0.78rem;
+}
+
+.initial-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.34rem;
+  width: 100%;
+}
+
+.initial-field label {
+  font-weight: 600;
+}
+
+.initial-field input[type="text"],
+.initial-field select {
+  width: 100%;
+  max-width: none;
+}
+
+.initial-status {
+  display: flex;
+  width: 100%;
+  min-width: 0;
+  max-width: none;
+  justify-content: center;
+}
+
+.initial-status p {
+  width: 100%;
+  text-align: center;
+}
+
+.initial-actions {
+  width: 100%;
+  max-width: none;
+}
+
+.initial-actions button {
+  width: 100%;
+  justify-content: center;
+}
+
+.setup-shell {
+  gap: 0.78rem;
+}
+
+.setup-topbar {
+  align-items: center;
+}
+
+.setup-topbar .minimal-titleblock,
+.setup-topbar .minimal-statusblock {
+  padding-top: 1rem;
+  padding-bottom: 1rem;
+}
+
+.setup-topbar h1 {
+  margin: 0;
+}
+
+.setup-switcher {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.5rem;
+  width: min(44rem, 100%);
+  margin: 0 auto;
+}
+
+.setup-switcher .minimal-tab {
+  justify-content: center;
+  min-height: 44px;
+  padding: 0.58rem 0.72rem;
+  font-size: 0.95rem;
+}
+
+.setup-card,
+.setup-shell .section-panel-wide {
+  width: min(100%, 44rem);
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.setup-card {
+  gap: 0.8rem;
+}
+
+.setup-shell .structured-panel,
+.setup-shell .setup-card {
+  grid-template-columns: 1fr;
+}
+
+.setup-shell .minimal-panel-head {
+  margin-bottom: 0;
+}
+
+.setup-shell .minimal-panel-head h2 {
+  margin: 0;
+  font-size: 1.18rem;
+}
+
+.setup-secondary-stack {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.72rem;
+}
+
+.setup-shell form,
+.setup-shell .form-grid,
+.setup-shell .panel-actions,
+.setup-shell .status-card,
+.setup-shell .status-strip,
+.setup-shell .setup-note,
+.setup-shell .memory-field,
+.setup-shell .toggle-line,
+.setup-shell textarea {
+  width: 100%;
+  max-width: 34rem;
+  min-width: 0;
+}
+
+.setup-shell .form-grid {
+  grid-template-columns: 1fr;
+  gap: 0.68rem;
+}
+
+.setup-shell .provider-panel {
+  border: 1px solid var(--panel-border);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.58);
+}
+
+.setup-shell .provider-panel,
+.setup-shell .minimal-cardblock {
+  box-shadow: none;
+}
+
+.setup-shell .status-card,
+.setup-shell .status-strip {
+  display: flex;
+  width: 100%;
+  min-width: 0;
+  max-width: 34rem;
+}
+
+.setup-shell .status-card p,
+.setup-shell .status-strip p {
+  width: 100%;
+}
+
+.setup-shell .toggle-line span {
+  font-size: 0.95rem;
+}
+
+.setup-shell .setup-note {
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+
+.setup-shell .setup-note a {
+  color: var(--text-color-muted);
+}
+
+.memory-field textarea {
+  width: 100%;
+  max-width: none;
+}
+
+@media screen and (max-width: 860px) {
+  .initial-card {
+    width: 100%;
+    margin-top: 0;
+    padding: 0.98rem 0.94rem;
+  }
+
+  .setup-switcher {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    width: 100%;
+  }
+
+  .setup-card,
+  .setup-shell .section-panel-wide {
+    width: 100%;
+  }
+
+  .setup-shell form,
+  .setup-shell .form-grid,
+  .setup-shell .panel-actions,
+  .setup-shell .status-card,
+  .setup-shell .status-strip,
+  .setup-shell .setup-note,
+  .setup-shell .memory-field,
+  .setup-shell .toggle-line,
+  .setup-shell textarea {
+    max-width: 100%;
+  }
+}

@@ -16,53 +16,35 @@
 
 <body>
   <div id="outer">
-    <div id="content" class="page-shell">
-      <section class="home-hero">
-        <div class="hero-copy hero-copy-rich">
-          <p class="hero-badge">Wire-Pod First Run</p>
-          <h1>Wire-Pod 初始设置</h1>
-          <p class="hero-subtitle">选连接方式，保存后进入主页。</p>
-          <div class="hero-pills">
-            <span>Escape Pod</span>
-            <span>IP 接入</span>
-          </div>
-        </div>
-        <div class="hero-status-card setup-status-card">
-          <p class="hero-status-label">当前状态</p>
-          <div id="setup-status" class="status-strip"></div>
-        </div>
-      </section>
-
-      <div id="config-options" class="section-panel section-stack section-panel-wide structured-panel" style="display: block">
-        <div class="section-heading section-heading-inline">
-          <div>
-            <p class="section-kicker">Connection</p>
-            <h3>连接方式</h3>
-          </div>
-          <p>量产机选 Escape Pod，开发机选 IP。</p>
+    <div id="content" class="page-shell initial-shell">
+      <section class="initial-card">
+        <div class="initial-head">
+          <h1>初始设置</h1>
         </div>
 
-        <div id="section-conn" class="fieldset-card stack-tight" style="display: block">
-          <div class="center" id="connStatus"></div>
-          <div class="form-grid">
-            <div>
-              <label for="connSelection">连接模式</label>
+        <div id="setup-status" class="status-strip initial-status"></div>
+
+        <div id="config-options" class="initial-config" style="display: block">
+          <div class="initial-form-stack">
+            <div class="initial-field">
+              <label for="connSelection">连接方式</label>
               <select onchange="checkConn()" name="connSelection" id="connSelection">
-                <option value="ep">Escape Pod（量产机）</option>
-                <option value="ip">IP 地址（OSKR / 开发机）</option>
+                <option value="ep">Escape Pod</option>
+                <option value="ip">IP 地址</option>
               </select>
             </div>
-            <div id="portViz" style="display: none">
-              <label for="portInput">端口（默认 443）</label>
+
+            <div id="portViz" class="initial-field" style="display: none">
+              <label for="portInput">端口</label>
               <input type="text" id="portInput" name="portInput" placeholder="443" />
+            </div>
+
+            <div class="panel-actions initial-actions">
+              <button onclick="sendSetupInfo()">保存并继续</button>
             </div>
           </div>
         </div>
-
-        <div class="panel-actions">
-          <button onclick="sendSetupInfo()">保存并继续</button>
-        </div>
-      </div>
+      </section>
     </div>
   </div>
 </body>

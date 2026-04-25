@@ -510,6 +510,6 @@ function toggleVisibility(sections, sectionToShow, iconId) {
 
 document.addEventListener("DOMContentLoaded", () => {
   if (getE("section-kg") && getE("section-weather") && getE("section-memory")) {
-    showSetupHome();
+    showKG();
   }
 });

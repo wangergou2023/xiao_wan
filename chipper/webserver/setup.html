@@ -16,118 +16,44 @@
 
 <body>
   <div id="outer">
-    <div id="content" class="page-shell minimal-shell">
-      <section class="minimal-topbar minimal-topbar-tight">
+    <div id="content" class="page-shell minimal-shell setup-shell">
+      <section class="minimal-topbar minimal-topbar-tight setup-topbar">
         <div class="minimal-titleblock">
-          <p class="minimal-kicker">Xiao Wan</p>
           <h1>服务设置</h1>
-          <p class="minimal-copy">按需打开模块，改完就保存。</p>
         </div>
         <div class="minimal-statusblock minimal-backblock">
           <a class="setup-back-link" href="index.html">
-            <i class="fa-solid fa-reply"></i>
             <span>返回控制台</span>
           </a>
         </div>
       </section>
 
-      <section class="minimal-section">
-        <div class="settings-actionbar">
-          <a href="#" onclick="showSetupHome(); return false;" class="minimal-tab"><i class="fa-solid fa-grip"></i><span>设置首页</span></a>
-          <a href="#" onclick="showKG(); return false;" class="minimal-tab" data-section="section-kg">
-            <i class="fa-solid fa-diagram-project" id="icon-KG" name="icon"></i>
-            <span>模型</span>
-          </a>
-          <a href="#" onclick="showMemory(); return false;" class="minimal-tab" data-section="section-memory">
-            <i class="fa-solid fa-brain" id="icon-Memory" name="icon"></i>
-            <span>记忆</span>
-          </a>
-          <a href="#" onclick="showWeather(); return false;" class="minimal-tab" data-section="section-weather">
-            <i class="fa-solid fa-cloud-sun" id="icon-Weather" name="icon"></i>
-            <span>天气</span>
-          </a>
-          <a href="#" onclick="showRestart(); return false;" class="minimal-tab" data-section="section-restart">
-            <i class="fa-solid fa-rotate-right" id="icon-Restart" name="icon"></i>
-            <span>维护</span>
-          </a>
-        </div>
-      </section>
+      <nav class="setup-switcher" aria-label="设置模块">
+        <a href="#" onclick="showKG(); return false;" class="minimal-tab is-active" data-section="section-kg">
+          <span>模型</span>
+        </a>
+        <a href="#" onclick="showMemory(); return false;" class="minimal-tab" data-section="section-memory">
+          <span>记忆</span>
+        </a>
+        <a href="#" onclick="showWeather(); return false;" class="minimal-tab" data-section="section-weather">
+          <span>天气</span>
+        </a>
+        <a href="#" onclick="showRestart(); return false;" class="minimal-tab" data-section="section-restart">
+          <span>维护</span>
+        </a>
+      </nav>
 
-      <section class="minimal-section">
-        <div class="settings-launcher-grid">
-          <article class="settings-group-card">
-            <p class="minimal-label">Model</p>
-            <h2>模型与视觉</h2>
-            <p>配置提供商、BigModel 公共参数和视觉上下文。</p>
-            <div class="settings-chiplist">
-              <a href="#" onclick="showKG(); return false;" class="settings-jump" data-section="section-kg"><i class="fa-solid fa-diagram-project"></i><span>模型设置</span></a>
-            </div>
-          </article>
-
-          <article class="settings-group-card">
-            <p class="minimal-label">Memory</p>
-            <h2>记忆与天气</h2>
-            <p>维护长期记忆，并按需补充天气接口。</p>
-            <div class="settings-chiplist">
-              <a href="#" onclick="showMemory(); return false;" class="settings-jump" data-section="section-memory"><i class="fa-solid fa-brain"></i><span>长期记忆</span></a>
-              <a href="#" onclick="showWeather(); return false;" class="settings-jump" data-section="section-weather"><i class="fa-solid fa-cloud-sun"></i><span>天气接口</span></a>
-            </div>
-          </article>
-
-          <article class="settings-group-card">
-            <p class="minimal-label">Maintenance</p>
-            <h2>维护操作</h2>
-            <p>改完关键配置后，可以直接从这里重启服务。</p>
-            <div class="settings-chiplist">
-              <a href="#" onclick="showRestart(); return false;" class="settings-jump" data-section="section-restart"><i class="fa-solid fa-rotate-right"></i><span>重启服务</span></a>
-            </div>
-          </article>
-        </div>
-      </section>
-
-      <div id="section-weather" style="display: none">
-        <div class="section-panel section-stack section-panel-wide minimal-panel structured-panel">
+      <div id="section-kg" class="setup-section" style="display: block">
+        <div class="section-panel section-stack section-panel-wide minimal-panel structured-panel setup-card">
           <div class="minimal-panel-head">
-            <h2>天气接口</h2>
-            <p>要问天气时再配置。</p>
-          </div>
-          <div class="minimal-cardblock">
-            <div id="addWeatherProviderAPI"></div>
-            <form id="weatherAPIAddForm" class="form-grid">
-              <div>
-                <label for="weatherProvider">天气服务提供商</label>
-                <select name="weatherProvider" id="weatherProvider" form="weatherAPIAddForm" onchange="checkWeather()">
-                  <option value="" selected>无</option>
-                  <option value="openweathermap.org">OpenWeatherMap</option>
-                  <option value="weatherapi.com">WeatherAPI</option>
-                </select>
-              </div>
-              <div id="apiKeySpan" style="display: none">
-                <label for="apiKey">API Key</label>
-                <input class="tinput" type="text" name="apiKey" id="apiKey" />
-              </div>
-            </form>
-            <div class="panel-actions">
-              <button onclick="sendWeatherAPIKey()">保存天气</button>
-            </div>
-            <div id="addWeatherProviderAPIStatus" class="status-card"></div>
-          </div>
-        </div>
-      </div>
-
-      <div id="section-kg" style="display: none">
-        <div class="section-panel section-stack section-panel-wide minimal-panel structured-panel">
-          <div class="minimal-panel-head">
-            <h2>大模型</h2>
-            <p>先选提供商，再补公共参数。</p>
+            <h2>模型</h2>
           </div>
 
           <div class="minimal-cardblock">
-            <div id="addKGProviderAPI" class="status-card"></div>
             <form id="kgAPIAddForm" class="stack-tight">
               <div class="form-grid">
                 <div>
-                  <label for="kgProvider">大模型提供商</label>
+                  <label for="kgProvider">提供商</label>
                   <select name="kgProvider" id="kgProvider" form="kgAPIAddForm" onchange="checkKG()">
                     <option value="" selected>无</option>
                     <option value="bigmodel">BigModel</option>
@@ -137,7 +63,7 @@
                 </div>
               </div>
 
-              <div id="openAIInput" class="provider-panel">
+              <div id="openAIInput" class="provider-panel" style="display: none">
                 <div class="minimal-subhead">
                   <h3>OpenAI</h3>
                 </div>
@@ -153,29 +79,29 @@
                 </div>
               </div>
 
-              <div id="bigModelInput" class="provider-panel">
+              <div id="bigModelInput" class="provider-panel" style="display: none">
                 <div class="minimal-subhead">
                   <h3>BigModel</h3>
                 </div>
                 <div class="form-grid">
                   <div>
                     <label for="bigmodelKey">API Key</label>
-                    <input type="text" name="bigmodelKey" id="bigmodelKey" placeholder="留空则复用下方公共配置" />
+                    <input type="text" name="bigmodelKey" id="bigmodelKey" placeholder="留空则复用公共配置" />
                   </div>
                   <div>
                     <label for="bigmodelModel">模型名称</label>
                     <input type="text" name="bigmodelModel" id="bigmodelModel" placeholder="glm-5.1" />
                   </div>
-                  <div class="form-grid-span-2">
+                  <div>
                     <label for="bigmodelPrompt">系统提示词</label>
                     <input type="text" name="bigmodelPrompt" id="bigmodelPrompt" placeholder="留空则使用默认提示词" />
                   </div>
                 </div>
               </div>
 
-              <div id="customAIInput" class="provider-panel">
+              <div id="customAIInput" class="provider-panel" style="display: none">
                 <div class="minimal-subhead">
-                  <h3>自定义兼容接口</h3>
+                  <h3>自定义接口</h3>
                 </div>
                 <div class="form-grid">
                   <div>
@@ -198,22 +124,24 @@
               </div>
 
               <div id="llmDefaultsNote" class="setup-note" style="display: none;">
-                <strong>默认行为：</strong>保存后会启用回退、动作和对话记忆。需要时可 <a href="#" onclick="deleteSavedChats(); return false;">删除已保存对话</a>。
+                <a href="#" onclick="deleteSavedChats(); return false;">清空已保存对话</a>
               </div>
             </form>
+
             <div class="panel-actions">
-              <button onclick="sendKGAPIKey()">应用设置</button>
+              <button onclick="sendKGAPIKey()">保存模型</button>
             </div>
+            <div id="addKGProviderAPIStatus" class="status-card"></div>
           </div>
 
-          <div class="minimal-two-col">
+          <div class="setup-secondary-stack">
             <div id="bigModelSharedInput" class="minimal-cardblock">
               <div class="minimal-subhead">
                 <h3>BigModel 公共参数</h3>
               </div>
               <div class="form-grid">
-                <div class="form-grid-span-2">
-                  <label for="bigmodelSharedKey">BigModel API Key</label>
+                <div>
+                  <label for="bigmodelSharedKey">API Key</label>
                   <input type="text" name="bigmodelSharedKey" id="bigmodelSharedKey" placeholder="填写你的 BigModel API Key" />
                 </div>
                 <div>
@@ -249,13 +177,12 @@
 
             <div id="visionInput" class="minimal-cardblock">
               <div class="minimal-subhead">
-                <h3>视觉上下文</h3>
+                <h3>视觉</h3>
               </div>
               <label class="toggle-line" for="visionEnableFaceContext">
                 <input type="checkbox" id="visionEnableFaceContext" />
                 <span>启用人脸上下文</span>
               </label>
-              <small class="form-help">识别到已知人脸时，把身份信息交给模型。</small>
               <div class="panel-actions">
                 <button onclick="sendVisionConfig()">保存视觉设置</button>
               </div>
@@ -265,11 +192,10 @@
         </div>
       </div>
 
-      <div id="section-memory" style="display: none">
-        <div class="section-panel section-stack section-panel-wide minimal-panel structured-panel">
+      <div id="section-memory" class="setup-section" style="display: none">
+        <div class="section-panel section-stack section-panel-wide minimal-panel structured-panel setup-card">
           <div class="minimal-panel-head">
             <h2>长期记忆</h2>
-            <p>维护机器人长期读取的文本记忆。</p>
           </div>
           <div class="minimal-cardblock">
             <form id="memoryProfileForm" class="stack-tight">
@@ -279,30 +205,60 @@
                   <select id="memoryRobotESN" onchange="updateLongTermMemory()"></select>
                 </div>
               </div>
-              <div>
-                <label for="memoryText">长期记忆内容</label>
-                <textarea id="memoryText" rows="14" placeholder="例如&#10;- 主人叫王二狗&#10;- 家住东北&#10;- 打招呼时可以自然一点&#10;- 喜欢聊做饭、日常、机器人"></textarea>
+              <div class="memory-field">
+                <label for="memoryText">记忆内容</label>
+                <textarea id="memoryText" rows="12" placeholder="例如&#10;- 主人叫王二狗&#10;- 家住东北&#10;- 喜欢聊做饭、日常、机器人"></textarea>
               </div>
             </form>
             <div class="panel-actions">
-              <button onclick="saveLongTermMemory()">保存长期记忆</button>
+              <button onclick="saveLongTermMemory()">保存记忆</button>
             </div>
             <div id="memoryStatus" class="status-card"></div>
           </div>
         </div>
       </div>
 
-      <div id="section-restart" style="display: none">
-        <div class="section-panel section-stack section-panel-wide minimal-panel structured-panel">
+      <div id="section-weather" class="setup-section" style="display: none">
+        <div class="section-panel section-stack section-panel-wide minimal-panel structured-panel setup-card">
           <div class="minimal-panel-head">
-            <h2>重启 Wire-Pod</h2>
-            <p>改完关键配置后，可在这里重启。</p>
+            <h2>天气接口</h2>
           </div>
-          <div id="restart"></div>
-          <div class="panel-actions">
-            <button onclick="sendRestart()">重启 Wire-Pod</button>
+          <div class="minimal-cardblock">
+            <form id="weatherAPIAddForm" class="stack-tight">
+              <div class="form-grid">
+                <div>
+                  <label for="weatherProvider">服务提供商</label>
+                  <select name="weatherProvider" id="weatherProvider" form="weatherAPIAddForm" onchange="checkWeather()">
+                    <option value="" selected>无</option>
+                    <option value="openweathermap.org">OpenWeatherMap</option>
+                    <option value="weatherapi.com">WeatherAPI</option>
+                  </select>
+                </div>
+                <div id="apiKeySpan" style="display: none">
+                  <label for="apiKey">API Key</label>
+                  <input class="tinput" type="text" name="apiKey" id="apiKey" />
+                </div>
+              </div>
+            </form>
+            <div class="panel-actions">
+              <button onclick="sendWeatherAPIKey()">保存天气</button>
+            </div>
+            <div id="addWeatherProviderAPIStatus" class="status-card"></div>
           </div>
-          <div id="restartStatus" class="status-card"></div>
+        </div>
+      </div>
+
+      <div id="section-restart" class="setup-section" style="display: none">
+        <div class="section-panel section-stack section-panel-wide minimal-panel structured-panel setup-card">
+          <div class="minimal-panel-head">
+            <h2>维护</h2>
+          </div>
+          <div class="minimal-cardblock">
+            <div class="panel-actions">
+              <button onclick="sendRestart()">重启 Wire-Pod</button>
+            </div>
+            <div id="restartStatus" class="status-card"></div>
+          </div>
         </div>
       </div>
     </div>
