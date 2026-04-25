@@ -114,6 +114,24 @@ function showSection(id) {
   }
 }
 
+function clearSectionIcons() {
+  const icons = Array.from(document.getElementsByName("icon"));
+  icons.forEach((icon) => {
+    icon.classList.remove("selectedicon");
+    icon.classList.add("nowselectedicon");
+  });
+}
+
+function showSettingsHome() {
+  var headings = document.getElementsByClassName("toggleable-section");
+  for (var i = 0; i < headings.length; i++) {
+    headings[i].style.display = "none";
+  }
+  stimRunning = false;
+  syncSectionTabs("");
+  clearSectionIcons();
+}
+
 function sendForm(formURL) {
   let xhr = new XMLHttpRequest();
   if (formURL.includes("?")) {
@@ -130,7 +148,7 @@ function sendForm(formURL) {
 }
 
 function syncSectionTabs(sectionToShow) {
-  const tabs = document.querySelectorAll(".minimal-tab[data-section]");
+  const tabs = document.querySelectorAll(".minimal-tab[data-section], .settings-jump[data-section]");
   tabs.forEach((tab) => {
     const isActive = tab.dataset.section === sectionToShow;
     tab.classList.toggle("is-active", isActive);
@@ -489,4 +507,4 @@ function getCurrentSettings() {
 }
 
 renderBatteryInfo(esn);
-showSection("section-volume");
+showSettingsHome();

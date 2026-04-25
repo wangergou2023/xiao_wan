@@ -30,23 +30,60 @@
       </section>
 
       <section class="minimal-section">
-        <div class="minimal-tabbar minimal-tabbar-dense">
+        <div class="settings-actionbar">
           <a href="/sdkapp" class="minimal-tab"><i class="fa-solid fa-reply"></i><span>返回接入</span></a>
           <a href="#" onclick="goToControlPage()" class="minimal-tab is-primary"><i class="fa-solid fa-gamepad"></i><span>设备控制</span></a>
-          <a href="#" onclick="showSection('section-volume'); return false;" class="minimal-tab" data-section="section-volume"><i class="fa-solid fa-volume-high" id="icon-volume" name="icon"></i><span>音量</span></a>
-          <a href="#" onclick="showSection('section-eyes'); return false;" class="minimal-tab" data-section="section-eyes"><i class="fa-solid fa-eye" id="icon-eyes" name="icon"></i><span>眼睛</span></a>
-          <a href="#" onclick="showSection('section-face'); return false;" class="minimal-tab" data-section="section-face"><i class="fa-solid fa-user" id="icon-face" name="icon"></i><span>人脸</span></a>
-          <a href="#" onclick="showSection('section-actions'); return false;" class="minimal-tab" data-section="section-actions"><i class="fa-solid fa-person-running" id="icon-actions" name="icon"></i><span>动作</span></a>
-          <a href="#" onclick="showSection('section-stim'); return false;" class="minimal-tab" data-section="section-stim"><i class="fa-solid fa-face-laugh-beam" id="icon-stim" name="icon"></i><span>情绪</span></a>
-          <a href="#" onclick="showSection('section-stats'); return false;" class="minimal-tab" data-section="section-stats"><i class="fa-solid fa-chart-simple" id="icon-stats" name="icon"></i><span>统计</span></a>
-          <a href="#" onclick="showSection('section-photos'); getPhotos(); return false;" class="minimal-tab" data-section="section-photos"><i class="fa-solid fa-images" id="icon-photos" name="icon"></i><span>照片</span></a>
-          <a href="#" onclick="showSection('section-locale'); return false;" class="minimal-tab" data-section="section-locale"><i class="fa-solid fa-earth-americas" id="icon-locale" name="icon"></i><span>区域</span></a>
-          <a href="#" onclick="showSection('section-time'); return false;" class="minimal-tab" data-section="section-time"><i class="fa-solid fa-clock" id="icon-time" name="icon"></i><span>时间</span></a>
-          <a href="#" onclick="showSection('section-temp'); return false;" class="minimal-tab" data-section="section-temp"><i class="fa-solid fa-temperature-half" id="icon-temp" name="icon"></i><span>温度</span></a>
-          <a href="#" onclick="showSection('section-button'); return false;" class="minimal-tab" data-section="section-button"><i class="fa-solid fa-circle-dot" id="icon-button" name="icon"></i><span>按钮</span></a>
-          <a href="#" onclick="showSection('section-alexa'); return false;" class="minimal-tab" data-section="section-alexa"><i class="fa-solid fa-house-signal" id="icon-alexa" name="icon"></i><span>Alexa</span></a>
-          <a href="#" onclick="showSection('section-location'); return false;" class="minimal-tab" data-section="section-location"><i class="fa-solid fa-location-crosshairs" id="icon-location" name="icon"></i><span>位置</span></a>
-          <a href="#" onclick="showSection('section-timezone'); return false;" class="minimal-tab" data-section="section-timezone"><i class="fa-solid fa-hourglass" id="icon-timezone" name="icon"></i><span>时区</span></a>
+          <a href="#" onclick="showSettingsHome(); return false;" class="minimal-tab"><i class="fa-solid fa-grip"></i><span>设置首页</span></a>
+        </div>
+      </section>
+
+      <section class="minimal-section">
+        <div class="settings-launcher-grid">
+          <article class="settings-group-card">
+            <p class="minimal-label">Appearance</p>
+            <h2>声音与外观</h2>
+            <p>调声音、眼睛和顶部按钮。</p>
+            <div class="settings-chiplist">
+              <a href="#" onclick="showSection('section-volume'); return false;" class="settings-jump" data-section="section-volume"><i class="fa-solid fa-volume-high" id="icon-volume" name="icon"></i><span>音量</span></a>
+              <a href="#" onclick="showSection('section-eyes'); return false;" class="settings-jump" data-section="section-eyes"><i class="fa-solid fa-eye" id="icon-eyes" name="icon"></i><span>眼睛</span></a>
+              <a href="#" onclick="showSection('section-button'); return false;" class="settings-jump" data-section="section-button"><i class="fa-solid fa-circle-dot" id="icon-button" name="icon"></i><span>顶部按钮</span></a>
+            </div>
+          </article>
+
+          <article class="settings-group-card">
+            <p class="minimal-label">Interaction</p>
+            <h2>识别与互动</h2>
+            <p>管理人脸、动作、情绪和统计。</p>
+            <div class="settings-chiplist">
+              <a href="#" onclick="showSection('section-face'); return false;" class="settings-jump" data-section="section-face"><i class="fa-solid fa-user" id="icon-face" name="icon"></i><span>人脸</span></a>
+              <a href="#" onclick="showSection('section-actions'); return false;" class="settings-jump" data-section="section-actions"><i class="fa-solid fa-person-running" id="icon-actions" name="icon"></i><span>动作</span></a>
+              <a href="#" onclick="showSection('section-stim'); return false;" class="settings-jump" data-section="section-stim"><i class="fa-solid fa-face-laugh-beam" id="icon-stim" name="icon"></i><span>情绪</span></a>
+              <a href="#" onclick="showSection('section-stats'); return false;" class="settings-jump" data-section="section-stats"><i class="fa-solid fa-chart-simple" id="icon-stats" name="icon"></i><span>统计</span></a>
+            </div>
+          </article>
+
+          <article class="settings-group-card">
+            <p class="minimal-label">Region</p>
+            <h2>环境与时间</h2>
+            <p>设置区域、时间、温度、位置和时区。</p>
+            <div class="settings-chiplist">
+              <a href="#" onclick="showSection('section-locale'); return false;" class="settings-jump" data-section="section-locale"><i class="fa-solid fa-earth-americas" id="icon-locale" name="icon"></i><span>区域</span></a>
+              <a href="#" onclick="showSection('section-time'); return false;" class="settings-jump" data-section="section-time"><i class="fa-solid fa-clock" id="icon-time" name="icon"></i><span>时间</span></a>
+              <a href="#" onclick="showSection('section-temp'); return false;" class="settings-jump" data-section="section-temp"><i class="fa-solid fa-temperature-half" id="icon-temp" name="icon"></i><span>温度</span></a>
+              <a href="#" onclick="showSection('section-location'); return false;" class="settings-jump" data-section="section-location"><i class="fa-solid fa-location-crosshairs" id="icon-location" name="icon"></i><span>位置</span></a>
+              <a href="#" onclick="showSection('section-timezone'); return false;" class="settings-jump" data-section="section-timezone"><i class="fa-solid fa-hourglass" id="icon-timezone" name="icon"></i><span>时区</span></a>
+            </div>
+          </article>
+
+          <article class="settings-group-card">
+            <p class="minimal-label">Media</p>
+            <h2>媒体与账户</h2>
+            <p>查看照片，或处理 Alexa 登录状态。</p>
+            <div class="settings-chiplist">
+              <a href="#" onclick="showSection('section-photos'); getPhotos(); return false;" class="settings-jump" data-section="section-photos"><i class="fa-solid fa-images" id="icon-photos" name="icon"></i><span>照片</span></a>
+              <a href="#" onclick="showSection('section-alexa'); return false;" class="settings-jump" data-section="section-alexa"><i class="fa-solid fa-house-signal" id="icon-alexa" name="icon"></i><span>Alexa</span></a>
+            </div>
+          </article>
         </div>
       </section>
 
