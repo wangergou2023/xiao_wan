@@ -1550,7 +1550,7 @@ iframe[name="hiddenFrame"] {
 .minimal-backblock {
   display: flex;
   align-items: flex-start;
-  justify-content: flex-end;
+  justify-content: flex-start;
 }
 
 @media screen and (max-width: 860px) {
@@ -1681,7 +1681,7 @@ iframe[name="hiddenFrame"] {
   --shadow-button: none;
   --measure-form: 46rem;
   --measure-status: 32rem;
-  --measure-content: 56rem;
+  --measure-content: 52rem;
   --measure-aside: 14rem;
 }
 
@@ -1698,7 +1698,7 @@ body {
 }
 
 #content {
-  width: min(1120px, calc(100vw - 32px)) !important;
+  width: min(980px, calc(100vw - 40px)) !important;
   padding: 24px 0 44px;
 }
 
@@ -1847,28 +1847,28 @@ textarea:focus {
 }
 
 .home-hero {
-  max-width: 920px;
-  grid-template-columns: minmax(0, 1.18fr) minmax(250px, 0.82fr);
+  max-width: 820px;
+  grid-template-columns: minmax(0, 1fr);
 }
 
 .minimal-topbar {
-  max-width: 920px;
-  grid-template-columns: minmax(0, 1fr) minmax(240px, 300px);
+  max-width: 820px;
+  grid-template-columns: minmax(0, 1fr);
 }
 
 .minimal-topbar-tight {
-  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-columns: minmax(0, 1fr);
 }
 
 .minimal-section,
 .simple-panel,
 .section-panel-wide {
-  max-width: 920px;
+  max-width: 820px;
 }
 
 .minimal-sdk-grid {
-  max-width: 920px;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  max-width: 820px;
+  grid-template-columns: minmax(0, 1fr);
 }
 
 .hero-copy {
@@ -1945,15 +1945,10 @@ textarea:focus {
 }
 
 .minimal-tabbar {
-  flex-wrap: nowrap;
-  overflow-x: auto;
+  flex-wrap: wrap;
+  overflow-x: visible;
   gap: 0.5rem;
   padding-bottom: 0.12rem;
-  scrollbar-width: none;
-}
-
-.minimal-tabbar::-webkit-scrollbar {
-  display: none;
 }
 
 .minimal-tab {
@@ -2026,10 +2021,10 @@ textarea:focus {
 .structured-panel,
 .sdk-detail-panel {
   display: grid;
-  grid-template-columns: minmax(11rem, var(--measure-aside)) minmax(0, var(--measure-content));
+  grid-template-columns: minmax(0, var(--measure-content));
   justify-content: center;
   align-items: start;
-  gap: 1rem 1.2rem;
+  gap: 0.9rem;
 }
 
 .structured-panel > .minimal-panel-head,
@@ -2038,7 +2033,7 @@ textarea:focus {
   grid-column: 1;
   align-self: start;
   margin: 0;
-  max-width: var(--measure-aside);
+  max-width: none;
 }
 
 .structured-panel > .minimal-panel-head,
@@ -2059,9 +2054,13 @@ textarea:focus {
 
 .structured-panel > :not(.minimal-panel-head):not(.section-heading),
 .sdk-detail-panel > :not(.minimal-panel-head) {
-  grid-column: 2;
+  grid-column: 1;
   width: 100%;
   min-width: 0;
+}
+
+.minimal-two-col {
+  grid-template-columns: minmax(0, 1fr);
 }
 
 .structured-panel .minimal-cardblock,
@@ -2292,6 +2291,16 @@ audio#audioOutput {
   }
 
   .minimal-linkarrow {
+    display: none;
+  }
+
+  .minimal-tabbar {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .minimal-tabbar::-webkit-scrollbar {
     display: none;
   }
 
