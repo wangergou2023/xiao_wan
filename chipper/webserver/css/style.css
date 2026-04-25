@@ -1671,9 +1671,9 @@ iframe[name="hiddenFrame"] {
   --text-color-muted: rgba(23, 24, 22, 0.68);
   --text-color-faint: rgba(23, 24, 22, 0.46);
   --text-color-alt: #f6f1e9;
-  --body-font-family: 'DroidSans', sans-serif;
-  --display-font-family: 'DroidSans', sans-serif;
-  --label-font-family: 'IBMVGA', 'DroidSans', sans-serif;
+  --body-font-family: "Noto Sans SC", "Microsoft YaHei", "PingFang SC", "Helvetica Neue", Arial, sans-serif;
+  --display-font-family: "Noto Sans SC", "Microsoft YaHei", "PingFang SC", "Helvetica Neue", Arial, sans-serif;
+  --label-font-family: "Noto Sans SC", "Microsoft YaHei", "PingFang SC", "Helvetica Neue", Arial, sans-serif;
   --radius-lg: 18px;
   --radius-md: 14px;
   --radius-sm: 12px;
@@ -1681,6 +1681,8 @@ iframe[name="hiddenFrame"] {
   --shadow-button: none;
   --measure-form: 46rem;
   --measure-status: 32rem;
+  --measure-content: 56rem;
+  --measure-aside: 14rem;
 }
 
 body {
@@ -1692,6 +1694,7 @@ body {
     linear-gradient(180deg, var(--bg-color), var(--bg-color-deep));
   color: var(--text-color);
   text-align: left;
+  font-size: 1.08rem;
 }
 
 #content {
@@ -1707,8 +1710,8 @@ body {
 h1 {
   color: var(--text-color);
   font-family: var(--display-font-family);
-  font-size: clamp(2.2rem, 4vw, 3.6rem);
-  line-height: 0.98;
+  font-size: clamp(2.35rem, 4vw, 3.7rem);
+  line-height: 1.04;
   letter-spacing: -0.04em;
 }
 
@@ -1732,8 +1735,8 @@ li {
 .minimal-label {
   color: var(--accent-cool);
   font-family: var(--label-font-family);
-  font-size: 0.56em;
-  letter-spacing: 0.16em;
+  font-size: 0.68rem;
+  letter-spacing: 0.08em;
 }
 
 button,
@@ -1744,7 +1747,7 @@ button[type="submit"] {
   border-radius: 14px;
   background: var(--button-color);
   color: var(--text-color-alt);
-  font-size: 0.78em;
+  font-size: 0.92rem;
   font-weight: 700;
   letter-spacing: 0.02em;
   box-shadow: none;
@@ -1766,7 +1769,7 @@ textarea {
   border-radius: 14px;
   background: rgba(255, 255, 255, 0.64);
   color: var(--text-color);
-  font-size: 0.78em;
+  font-size: 0.95rem;
   box-shadow: none;
 }
 
@@ -1884,13 +1887,24 @@ textarea:focus {
 .section-heading p {
   max-width: 42rem;
   color: var(--text-color-muted);
-  font-size: 0.72em;
+  font-size: 0.92rem;
   line-height: 1.52;
+}
+
+.section-panel p,
+.section-panel small,
+.section-panel li,
+.section-panel label,
+.minimal-panel label,
+.minimal-cardblock label,
+.toolbar-inline span,
+.toggle-line span {
+  font-size: 0.92rem;
 }
 
 .minimal-titleblock h1 {
   margin-bottom: 0.16rem;
-  font-size: clamp(1.8rem, 3vw, 2.8rem);
+  font-size: clamp(2rem, 3vw, 2.95rem);
 }
 
 .hero-pills {
@@ -1908,7 +1922,7 @@ textarea:focus {
 
 .hero-pills span {
   padding: 0.32rem 0.62rem;
-  font-size: 0.64em;
+  font-size: 0.82rem;
 }
 
 .setup-back-link,
@@ -1945,7 +1959,7 @@ textarea:focus {
 .minimal-tab {
   flex: 0 0 auto;
   padding: 0.52rem 0.78rem;
-  font-size: 0.7em;
+  font-size: 0.9rem;
 }
 
 .minimal-tab.is-primary {
@@ -2002,11 +2016,72 @@ textarea:focus {
 }
 
 .minimal-linkbody strong {
-  font-size: 0.82em;
+  font-size: 1rem;
 }
 
 .minimal-linkarrow {
-  font-size: 0.66em;
+  font-size: 0.82rem;
+}
+
+.structured-panel,
+.sdk-detail-panel {
+  display: grid;
+  grid-template-columns: minmax(11rem, var(--measure-aside)) minmax(0, var(--measure-content));
+  justify-content: center;
+  align-items: start;
+  gap: 1rem 1.2rem;
+}
+
+.structured-panel > .minimal-panel-head,
+.structured-panel > .section-heading,
+.sdk-detail-panel > .minimal-panel-head {
+  grid-column: 1;
+  align-self: start;
+  margin: 0;
+  max-width: var(--measure-aside);
+}
+
+.structured-panel > .minimal-panel-head,
+.sdk-detail-panel > .minimal-panel-head,
+.structured-panel > .section-heading.section-heading-inline {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: flex-start;
+  gap: 0.22rem;
+}
+
+.structured-panel > .section-heading.section-heading-inline > p,
+.structured-panel > .minimal-panel-head p,
+.sdk-detail-panel > .minimal-panel-head p {
+  max-width: 100%;
+}
+
+.structured-panel > :not(.minimal-panel-head):not(.section-heading),
+.sdk-detail-panel > :not(.minimal-panel-head) {
+  grid-column: 2;
+  width: 100%;
+  min-width: 0;
+}
+
+.structured-panel .minimal-cardblock,
+.structured-panel .fieldset-card,
+.structured-panel .minimal-two-col,
+.structured-panel .toolbar-inline,
+.structured-panel .panel-actions,
+.structured-panel form,
+.structured-panel .form-grid,
+.sdk-detail-panel .minimal-cardblock,
+.sdk-detail-panel .sdk-choice-grid,
+.sdk-detail-panel .inline-actions,
+.sdk-detail-panel .panel-actions,
+.sdk-detail-panel .toolbar-inline,
+.sdk-detail-panel form,
+.sdk-detail-panel .form-grid,
+.sdk-detail-panel #statsSection,
+.sdk-detail-panel #photoSection,
+.sdk-detail-panel canvas {
+  max-width: none;
 }
 
 .form-grid,
@@ -2043,7 +2118,7 @@ textarea:focus {
   padding: 0.7rem 0.8rem;
   border-radius: 14px;
   background: rgba(255, 255, 255, 0.42);
-  font-size: 0.72em;
+  font-size: 0.92rem;
 }
 
 .sdk-preview {
@@ -2053,7 +2128,7 @@ textarea:focus {
 }
 
 .sdk-empty-state {
-  font-size: 0.74em;
+  font-size: 0.92rem;
 }
 
 .toolbar-inline,
@@ -2121,7 +2196,7 @@ textarea:focus {
 #connStatus p,
 #setup-status p {
   margin: 0;
-  font-size: 0.72em;
+  font-size: 0.92rem;
 }
 
 #authResult:empty,
@@ -2177,7 +2252,7 @@ canvas {
   border-radius: 14px;
   background: rgba(17, 24, 39, 0.03);
   color: var(--text-color-muted);
-  font-size: 0.7em;
+  font-size: 0.92rem;
 }
 
 audio#audioOutput {
@@ -2195,7 +2270,9 @@ audio#audioOutput {
   .minimal-topbar,
   .minimal-topbar-tight,
   .minimal-two-col,
-  .minimal-sdk-grid {
+  .minimal-sdk-grid,
+  .structured-panel,
+  .sdk-detail-panel {
     grid-template-columns: 1fr;
   }
 
@@ -2221,6 +2298,14 @@ audio#audioOutput {
   .form-grid,
   .dual-option-list {
     grid-template-columns: 1fr;
+  }
+
+  .structured-panel > .minimal-panel-head,
+  .structured-panel > .section-heading,
+  .structured-panel > :not(.minimal-panel-head):not(.section-heading),
+  .sdk-detail-panel > * {
+    grid-column: 1;
+    max-width: none;
   }
 
   .form-grid,
